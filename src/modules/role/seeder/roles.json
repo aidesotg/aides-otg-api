@@ -1,0 +1,7 @@
+[
+  { "name": "Super Admin" },
+  { "name": "Support Admin" },
+  { "name": "Customer" },
+  { "name": "Insurance Admin" },
+  { "name": "Care Giver" }
+]

@@ -1,0 +1,49 @@
+[
+    {
+        "module": "role",
+        "name": "role:create",
+        "description": "can create new role and assign permissions"
+    },
+    {
+        "module": "role",
+        "name": "role:read",
+        "description": "can get all roles"
+    },
+    {
+        "module": "role",
+        "name": "role:update",
+        "description": "can update role/role permissions"
+    },
+    {
+        "module": "role",
+        "name": "role:delete",
+        "description": "can delete role"
+    },
+
+    
+    {
+        "module": "user",
+        "name": "user:create",
+        "description": "can create user"
+    },
+    {
+        "module": "user",
+        "name": "user:read",
+        "description": "can view user"
+    },
+    {
+        "module": "user",
+        "name": "user:update-self",
+        "description": "can edit individual profile"
+    },
+    {
+        "module": "user",
+        "name": "user:update-any",
+        "description": "can edit any profile"
+    },
+    {
+        "module": "user",
+        "name": "user:delete",
+        "description": "can delete user"
+    }
+]
