@@ -33,7 +33,6 @@ export class CreateUserDto {
   password: string;
 
   @ApiProperty() @IsString() @IsOptional() role: string;
-  @ApiProperty() @IsString() @IsOptional() bvn: string;
   @ApiProperty() @IsString() @IsOptional() occupation: string;
   @ApiProperty() @IsString() @IsOptional() description: string;
   @ApiProperty() @IsString() @IsOptional() nationality: string;

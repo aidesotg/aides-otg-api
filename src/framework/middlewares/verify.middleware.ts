@@ -16,7 +16,7 @@ export class VerificationMiddleware implements NestMiddleware {
     const query: any = [{ username: username?.toLowerCase() }, { email }];
 
     if (phone) {
-      query.push({ phone: `+234${phone.slice(1)}` });
+      query.push({ phone });
     }
 
     const users = await this.userService.verifyUser(query);
@@ -24,8 +24,12 @@ export class VerificationMiddleware implements NestMiddleware {
 
     if (users.length) {
       for (let user of users) {
-        if (email && user.email == email) {
+        if (email && user.email.toLowerCase() == email) {
           message = 'Account with email already exists';
+        }
+
+        if (phone && user.phone == phone) {
+          message = 'Account with phone already exists';
         }
         // if (username && user.username == username.toLowerCase()) {
         //   message = 'Account with username already exists';

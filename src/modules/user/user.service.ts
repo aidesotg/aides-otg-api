@@ -22,7 +22,7 @@ import { RoleService } from 'src/modules/role/role.service';
 import { Mailer } from 'src/services/mailer.service';
 import PlainMail from 'src/services/mailers/templates/plain-mail';
 import AccountCreationMail from 'src/services/mailers/templates/account-registration.mail';
-import { CreateProfileDto } from './dto/create-profile.dto';
+import { CreateProfileDto } from './dto/profile.dto';
 
 @Injectable()
 export class UserService {

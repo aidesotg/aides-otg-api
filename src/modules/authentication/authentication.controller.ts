@@ -33,6 +33,12 @@ export class AuthenticationController {
     return this.authenticationService.login(loginDto);
   }
 
+  @Get('/roles')
+  @UseFilters(ExceptionsLoggerFilter)
+  async getRoles() {
+    return this.authenticationService.getRolesPublic();
+  }
+
   @Post('/admin/login/')
   @UseFilters(ExceptionsLoggerFilter)
   async loginAdmin(@Body() loginDto: LoginDto) {

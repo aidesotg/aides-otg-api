@@ -2,12 +2,12 @@ import * as mongoose from 'mongoose';
 
 export interface User extends mongoose.Document {
   readonly id: string;
-  fullname: string;
+  first_name: string;
+  last_name: string;
   email: string;
   phone: string;
   password: string;
-  country: string;
-  language: string;
+  date_of_birth: string;
   device_token: string[];
   role: string;
   activation_code: string;
@@ -24,9 +24,16 @@ export interface User extends mongoose.Document {
       country: string;
     },
   ];
-  profilePicture: string;
-  sex: string;
+  profile_picture: string;
+  gender: string;
   occupation: string;
+  ssn: string;
+  emergency_contact: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
+  document_url: string;
   readonly createdAt: Date;
   updatedAt: Date;
 }

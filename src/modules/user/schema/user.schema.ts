@@ -4,7 +4,10 @@ import { User } from '../interface/user.interface';
 
 export const UserSchema = new mongoose.Schema<User>(
   {
-    fullname: {
+    first_name: {
+      type: String,
+    },
+    last_name: {
       type: String,
     },
     email: {
@@ -17,15 +20,12 @@ export const UserSchema = new mongoose.Schema<User>(
       required: true,
       unique: true,
     },
-    country: {
-      type: String,
-    },
-    language: {
-      type: String,
-    },
     password: {
       type: String,
       required: true,
+    },
+    date_of_birth: {
+      type: String,
     },
     device_token: [
       {
@@ -77,10 +77,24 @@ export const UserSchema = new mongoose.Schema<User>(
     profilePicture: {
       type: String,
     },
-    sex: {
+    gender: {
       type: String,
     },
-    occupation: {
+    ssn: {
+      type: String,
+    },
+    emergency_contact: {
+      name: {
+        type: String,
+      },
+      phone: {
+        type: String,
+      },
+      relationship: {
+        type: String,
+      },
+    },
+    document_url: {
       type: String,
     },
   },
@@ -92,7 +106,7 @@ export const UserSchema = new mongoose.Schema<User>(
 );
 
 UserSchema.method('toJSON', function () {
-  const { __v, password, ...object } = this.toObject();
+  const { __v, password, device_token, ...object } = this.toObject();
   const newObject = {
     ...object,
   };

@@ -26,6 +26,7 @@ import { RegistrationDto } from './dto/registration.dto';
 import { AdminLogin } from './interface/admin-login.interface';
 import AdminLoginMail from 'src/services/mailers/templates/admin-login-mail';
 import { FirebaseService } from 'src/services/firebase.service';
+import { Role } from '../role/interface/role.interface';
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ dotenv.config();
 export class AuthenticationService {
   constructor(
     @InjectModel('User') private userModel: Model<User>,
+    @InjectModel('Role') private roleModel: Model<Role>,
     @InjectModel('PasswordReset')
     private passwordResetModel: Model<PasswordReset>,
     @InjectModel('AdminLogin') private adminLoginModel: Model<AdminLogin>,
@@ -42,7 +44,7 @@ export class AuthenticationService {
   ) {}
 
   async register(body: RegistrationDto) {
-    const { fullname, email, password, country } = body;
+    const { email, password, phone } = body;
     const pass = bcrypt.hashSync(password.replaceAll(' ', ''), 11);
     // const phoneNum = `+234${phone}`;
 
@@ -57,10 +59,9 @@ export class AuthenticationService {
     const expire = moment().add(4, 'hours').format('YYYY-MM-DD HH:mm:ss');
 
     const data: any = {
-      fullname,
-      email,
+      email: email.toLowerCase(),
       password: pass,
-      country,
+      phone,
       role: role._id,
       activation_code,
       activation_expires_in: expire,
@@ -262,7 +263,7 @@ export class AuthenticationService {
   async verify(token: string) {
     const user = await this.userModel
       .findOne({ activation_code: token, isDeleted: false })
-      .populate('roles')
+      .populate('role')
       .exec();
 
     if (!user) {
@@ -409,6 +410,53 @@ export class AuthenticationService {
     };
   }
 
+  async verifyPasswordResetCode(body: PasswordResetDto) {
+    const resetRequest = await this.passwordResetModel
+      .findOne({ token: body.token })
+      .exec();
+
+    if (!resetRequest || resetRequest.used) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Invalid/expired link',
+      });
+    }
+
+    const time = new Date().getTime();
+    const expires_in = new Date(resetRequest.expiry).getTime();
+
+    if (time > expires_in) {
+      resetRequest.used = true;
+      resetRequest.save();
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Link expired',
+      });
+    }
+
+    const user = await this.userModel
+      .findOne({ email: resetRequest.email, isDeleted: false })
+      .exec();
+
+    if (!user) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Unable to get account details',
+      });
+    }
+
+    resetRequest.used = true;
+    user.password = bcrypt.hashSync(body.password.replaceAll(' ', ''), 11);
+
+    await resetRequest.save();
+    await user.save();
+
+    return {
+      status: 'success',
+      message: 'Password updated successfully, you can now login',
+    };
+  }
+
   async passwordReset(body: PasswordResetDto) {
     const resetRequest = await this.passwordResetModel
       .findOne({ token: body.token })
@@ -477,6 +525,18 @@ export class AuthenticationService {
     return {
       status: 'success',
       message: 'logged out successfully',
+    };
+  }
+
+  async getRolesPublic() {
+    const roles = await this.roleModel
+      .find({ name: { $in: ['Customer', 'Care Giver'] } })
+      .select('id name')
+      .exec();
+    return {
+      status: 'success',
+      message: 'Roles fetched',
+      data: roles,
     };
   }
 }

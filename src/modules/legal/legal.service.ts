@@ -1,0 +1,300 @@
+import {
+  Injectable,
+  NotFoundException,
+  HttpException,
+  BadRequestException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { LegalDocument } from './interface/legal-document.interface';
+import { LegalAgreement } from './interface/legal-agreement.interface';
+import {
+  CreateLegalDocumentDto,
+  UpdateLegalDocumentDto,
+  SignAgreementDto,
+  LegalDocumentQueryDto,
+} from './dto/legal.dto';
+import { MiscCLass } from 'src/services/misc.service';
+import { NotificationService } from 'src/modules/notification/notification.service';
+
+@Injectable()
+export class LegalService {
+  constructor(
+    @InjectModel('LegalDocument')
+    private readonly legalDocumentModel: Model<LegalDocument>,
+    @InjectModel('LegalAgreement')
+    private readonly legalAgreementModel: Model<LegalAgreement>,
+    private miscService: MiscCLass,
+    private notificationService: NotificationService,
+  ) {}
+
+  async createLegalDocument(
+    createLegalDocumentDto: CreateLegalDocumentDto,
+    user: any,
+  ) {
+    const data = {
+      ...createLegalDocumentDto,
+      created_by: user._id,
+    };
+
+    const newDocument = new this.legalDocumentModel(data);
+    const document = await newDocument.save();
+
+    return {
+      status: 'success',
+      message: 'Legal document created',
+      data: { document },
+    };
+  }
+
+  async getLegalDocuments(params: any, user: any) {
+    const { page = 1, pageSize = 50, ...rest } = params;
+    const pagination = await this.miscService.paginate({ page, pageSize });
+
+    const query: any = { is_deleted: false };
+
+    if (rest.agreement_type) query.agreement_type = rest.agreement_type;
+    if (rest.is_active !== undefined) query.is_active = rest.is_active;
+
+    // Filter by user role if specified
+    if (rest.role) {
+      query.$or = [
+        { roles: { $in: [rest.role] } },
+        { roles: { $size: 0 } }, // Documents that apply to all roles
+      ];
+    } else if (user.role !== 'admin' && user.role !== 'super_admin') {
+      // For non-admin users, only show documents that apply to their role or all roles
+      query.$or = [{ roles: { $in: [user.role] } }, { roles: { $size: 0 } }];
+    }
+
+    const documents = await this.legalDocumentModel
+      .find(query)
+      .populate('created_by', ['fullname', 'email'])
+      .skip(pagination.offset)
+      .limit(pagination.limit)
+      .sort({ createdAt: -1 })
+      .exec();
+
+    const count = await this.legalDocumentModel.countDocuments(query).exec();
+
+    return {
+      pagination: {
+        ...(await this.miscService.pageCount({ count, page, pageSize })),
+        total: count,
+      },
+      documents,
+    };
+  }
+
+  async getLegalDocumentById(id: string) {
+    const document = await this.legalDocumentModel
+      .findOne({ _id: id, is_deleted: false })
+      .populate('created_by', ['fullname', 'email'])
+      .populate('agreements')
+      .exec();
+
+    if (!document) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Legal document not found',
+      });
+    }
+
+    return document;
+  }
+
+  async getDocumentAgreements(id: string, params: any) {
+    const { page = 1, pageSize = 50 } = params;
+    const pagination = await this.miscService.paginate({ page, pageSize });
+
+    const agreements = await this.legalAgreementModel
+      .find({ document: id, is_deleted: false })
+      .populate('user', ['fullname', 'email'])
+      .skip(pagination.offset)
+      .limit(pagination.limit)
+      .sort({ createdAt: -1 })
+      .exec();
+
+    const count = await this.legalAgreementModel
+      .countDocuments({ document: id, is_deleted: false })
+      .exec();
+
+    return {
+      pagination: {
+        ...(await this.miscService.pageCount({ count, page, pageSize })),
+        total: count,
+      },
+      agreements,
+    };
+  }
+
+  async getDocumentStats(id: string) {
+    const document = await this.getLegalDocumentById(id);
+
+    const totalAgreements = await this.legalAgreementModel
+      .countDocuments({ document: id, is_deleted: false })
+      .exec();
+
+    const latestVersionAgreements = await this.legalAgreementModel
+      .countDocuments({
+        document: id,
+        version: document.version,
+        is_deleted: false,
+      })
+      .exec();
+
+    return {
+      document_version: document.version,
+      total_agreements: totalAgreements,
+      latest_version_agreements: latestVersionAgreements,
+      agreement_percentage:
+        totalAgreements > 0
+          ? (latestVersionAgreements / totalAgreements) * 100
+          : 0,
+    };
+  }
+
+  async getUserAgreements(user: any) {
+    const agreements = await this.legalAgreementModel
+      .find({ user: user._id, is_deleted: false })
+      .populate('document', ['title', 'version', 'agreement_type'])
+      .sort({ createdAt: -1 })
+      .exec();
+
+    return agreements;
+  }
+
+  async updateLegalDocument(
+    id: string,
+    updateLegalDocumentDto: UpdateLegalDocumentDto,
+  ) {
+    const document = await this.legalDocumentModel
+      .findOne({ _id: id, is_deleted: false })
+      .exec();
+
+    if (!document) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Legal document not found',
+      });
+    }
+
+    const data: any = { ...updateLegalDocumentDto };
+
+    // If body is being updated, increment version
+    if (
+      updateLegalDocumentDto.body &&
+      updateLegalDocumentDto.body !== document.body
+    ) {
+      data.version = document.version + 1;
+    }
+
+    for (const value in data) {
+      if (data[value] !== undefined) {
+        document[value] = data[value];
+      }
+    }
+
+    await document.save();
+
+    // Notify users if document was updated
+    if (data.version > document.version) {
+      await this.notificationService.sendMessage(
+        { _id: 'all' }, // This would need to be implemented to notify all users
+        'Legal Document Updated',
+        `The legal document "${document.title}" has been updated. Please review and re-agree to the new version.`,
+        document._id,
+      );
+    }
+
+    return {
+      status: 'success',
+      message: 'Legal document updated',
+      data: { document },
+    };
+  }
+
+  async signAgreement(signAgreementDto: SignAgreementDto, user: any) {
+    const document = await this.legalDocumentModel
+      .findOne({
+        _id: signAgreementDto.document_id,
+        is_deleted: false,
+        is_active: true,
+      })
+      .exec();
+
+    if (!document) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Legal document not found or inactive',
+      });
+    }
+
+    // Check if user already has an agreement for this document version
+    const existingAgreement = await this.legalAgreementModel
+      .findOne({
+        document: signAgreementDto.document_id,
+        user: user._id,
+        version: document.version,
+        is_deleted: false,
+      })
+      .exec();
+
+    if (existingAgreement) {
+      throw new BadRequestException(
+        'You have already agreed to this document version',
+      );
+    }
+
+    const agreement = new this.legalAgreementModel({
+      document: signAgreementDto.document_id,
+      user: user._id,
+      version: document.version,
+      agreement_type: document.agreement_type,
+      signature_data: signAgreementDto.signature_data,
+      ip_address: signAgreementDto.ip_address,
+      user_agent: signAgreementDto.user_agent,
+    });
+
+    await agreement.save();
+
+    return {
+      status: 'success',
+      message: 'Agreement signed successfully',
+      data: { agreement },
+    };
+  }
+
+  async activateDocument(id: string) {
+    const document = await this.getLegalDocumentById(id);
+    document.is_active = true;
+    await document.save();
+
+    return {
+      status: 'success',
+      message: 'Document activated successfully',
+    };
+  }
+
+  async deactivateDocument(id: string) {
+    const document = await this.getLegalDocumentById(id);
+    document.is_active = false;
+    await document.save();
+
+    return {
+      status: 'success',
+      message: 'Document deactivated successfully',
+    };
+  }
+
+  async deleteDocument(id: string) {
+    const document = await this.getLegalDocumentById(id);
+    document.is_deleted = true;
+    await document.save();
+
+    return {
+      status: 'success',
+      message: 'Document deleted successfully',
+    };
+  }
+}

@@ -20,7 +20,7 @@ import {
   PasswordResetAdmin,
   PasswordResetSelf,
 } from './dto/password-reset.dto';
-import { CreateProfileDto } from './dto/create-profile.dto';
+import { CreateProfileDto } from './dto/profile.dto';
 
 @ApiTags('user')
 @Controller('user')
