@@ -5,13 +5,7 @@ export interface TicketMessage extends mongoose.Document {
   ticket: string;
   sender: string;
   message: string;
-  attachments: Array<{
-    filename: string;
-    original_name: string;
-    file_path: string;
-    file_size: number;
-    mime_type: string;
-  }>;
+  attachments: string[];
   is_internal: boolean;
   is_deleted: boolean;
   readonly createdAt: Date;

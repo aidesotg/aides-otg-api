@@ -16,6 +16,7 @@ import {
 } from './dto/support.dto';
 import { MiscCLass } from 'src/services/misc.service';
 import { NotificationService } from 'src/modules/notification/notification.service';
+import constants from 'src/framework/constants';
 
 @Injectable()
 export class SupportService {
@@ -28,9 +29,9 @@ export class SupportService {
   ) {}
 
   generateTicketNumber(): string {
-    const timestamp = Date.now().toString().slice(-6);
+    const timestamp = Date.now().toString().slice(-4);
     const random = Math.random().toString(36).substr(2, 4).toUpperCase();
-    return `TKT-${timestamp}-${random}`;
+    return `#${timestamp}${random}`;
   }
 
   async createTicket(createTicketDto: CreateTicketDto, user: any) {
@@ -46,17 +47,17 @@ export class SupportService {
     const ticket = await newTicket.save();
 
     // Send notification to support team
-    await this.notificationService.sendMessage(
-      { _id: 'admin' }, // This would be the admin user
-      'New Support Ticket',
-      `New ticket ${ticketNumber} has been created by ${user.fullname}`,
-      ticket._id,
-    );
+    // await this.notificationService.sendMessage(
+    //   { _id: 'admin' }, // This would be the admin user
+    //   'New Support Ticket',
+    //   `New ticket ${ticketNumber} has been created by ${user.fullname}`,
+    //   ticket._id,
+    // );
 
     return {
       status: 'success',
       message: 'Ticket created successfully',
-      data: { ticket },
+      data: ticket,
     };
   }
 
@@ -68,9 +69,8 @@ export class SupportService {
 
     // If user is not admin/support, only show their tickets
     if (
-      user.role !== 'admin' &&
-      user.role !== 'super_admin' &&
-      user.role !== 'support_admin'
+      user.role !== constants.roles.SUPER_ADMIN &&
+      user.role !== constants.roles.SUPPORT_ADMIN
     ) {
       query.created_by = user._id;
     }
@@ -206,13 +206,13 @@ export class SupportService {
     await message.save();
 
     // Send notification to ticket creator or assigned admin
-    const notifyUser = ticket.assigned_to || ticket.created_by;
-    await this.notificationService.sendMessage(
-      { _id: notifyUser },
-      'New Message on Ticket',
-      `New message added to ticket ${ticket.ticket_number}`,
-      ticket._id,
-    );
+    // const notifyUser = ticket.assigned_to || ticket.created_by;
+    // await this.notificationService.sendMessage(
+    //   { _id: notifyUser },
+    //   'New Message on Ticket',
+    //   `New message added to ticket ${ticket.ticket_number}`,
+    //   ticket._id,
+    // );
 
     return {
       status: 'success',

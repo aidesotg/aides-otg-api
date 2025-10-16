@@ -13,8 +13,11 @@ export class VerificationMiddleware implements NestMiddleware {
 
   async use(req: Request, res: Response, next: NextFunction) {
     const { phone, email } = req.body;
-    const query: any = [{ email }];
+    const query: any = [];
 
+    if (email) {
+      query.push({ email });
+    }
     if (phone) {
       query.push({ phone });
     }

@@ -8,6 +8,7 @@ import { Mailer } from 'src/services/mailer.service';
 import AccountCreationMail from 'src/services/mailers/templates/account-registration.mail';
 import constants from 'src/framework/constants';
 import { InsuranceInfoDto } from './dto/insurance.dto';
+import { User } from '../user/interface/user.interface';
 
 @Injectable()
 export class InsuranceService {
@@ -92,6 +93,37 @@ export class InsuranceService {
   ) {
     const insurance = await this.insuranceModel
       .findOne({ _id: id, is_deleted: false })
+      .exec();
+
+    if (!insurance) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Insurance not found',
+      });
+    }
+
+    const data: any = { ...updateInsuranceDto };
+    for (const value in data) {
+      if (data[value] !== undefined) {
+        insurance[value] = data[value];
+      }
+    }
+
+    await insurance.save();
+
+    return {
+      status: 'success',
+      message: 'Insurance updated',
+      data: { insurance },
+    };
+  }
+
+  async updateUserInsurance(
+    user: User,
+    updateInsuranceDto: Partial<InsuranceInfoDto>,
+  ) {
+    const insurance = await this.insuranceModel
+      .findOne({ user: user._id })
       .exec();
 
     if (!insurance) {

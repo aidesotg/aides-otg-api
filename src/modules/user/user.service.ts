@@ -23,11 +23,22 @@ import { RoleService } from 'src/modules/role/role.service';
 import { Mailer } from 'src/services/mailer.service';
 import PlainMail from 'src/services/mailers/templates/plain-mail';
 import AccountCreationMail from 'src/services/mailers/templates/account-registration.mail';
-import { CreateProfileDto, UpdateProfileDto } from './dto/profile.dto';
+import {
+  CreateProfileDto,
+  EmergencyContactDto,
+  UpdateEmailDto,
+  UpdatePhoneDto,
+  UpdatePreferenceDto,
+  UpdateProfileDto,
+} from './dto/profile.dto';
 import { Beneficiary } from './interface/beneficiary.interface';
 import { Insurance } from '../insurance/interface/insurance.interface';
 import { InsuranceService } from '../insurance/insurance.service';
 import { UserBeneficiary } from './interface/user-beneficiary.interface';
+import {
+  CreateBeneficiaryDto,
+  UpdateBeneficiaryDto,
+} from './dto/beneficiary.dto';
 
 @Injectable()
 export class UserService {
@@ -49,7 +60,7 @@ export class UserService {
   ) {}
 
   async createProfile(user: User, body: CreateProfileDto) {
-    const { beneficiaries, insurance, ...rest } = body;
+    const { beneficiaries, insurance, emergency_contact, ...rest } = body;
     const userDetails = await this.userModel.findById(user._id);
 
     if (!userDetails) {
@@ -63,6 +74,9 @@ export class UserService {
       if (value) {
         userDetails[value] = rest[value];
       }
+    }
+    if (emergency_contact) {
+      userDetails.emergency_contact = [emergency_contact];
     }
     const beneficiariesData: any = [];
     const insuranceData: any = [];
@@ -299,6 +313,91 @@ export class UserService {
     };
   }
 
+  async updateEmail(body: UpdateEmailDto, user: User) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+    userDetails.email = body.email;
+    // TODO: Send email verification
+    await userDetails.save();
+    return {
+      status: 'success',
+      message: 'Email updated successfully',
+      data: userDetails,
+    };
+  }
+
+  async updatePreference(preference: UpdatePreferenceDto, user: any) {
+    const { insurance, ...rest } = preference;
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+    for (const value in rest) {
+      if (value) {
+        userDetails[value] = preference[value];
+      }
+    }
+    await userDetails.save();
+    if (insurance) {
+      await this.insuranceService.updateUserInsurance(userDetails, insurance);
+    }
+    return {
+      status: 'success',
+      message: 'Preference updated successfully',
+      data: userDetails,
+    };
+  }
+
+  async updatePhone(body: UpdatePhoneDto, user: User) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+    userDetails.phone = body.phone;
+    // TODO: Send phone verification
+    await userDetails.save();
+    return {
+      status: 'success',
+      message: 'Phone updated successfully',
+      data: userDetails,
+    };
+  }
+
+  async updateEmergencyContact(body: EmergencyContactDto[], user: User) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    userDetails.emergency_contact.push(...body);
+    await userDetails.save();
+    return {
+      status: 'success',
+      message: 'Emergency contact updated successfully',
+      data: userDetails,
+    };
+  }
+
+  async deleteEmergencyContact(id: string, user: User) {
+    const userDetails: any = await this.userModel.findOne({ _id: user._id });
+    userDetails.emergency_contact = userDetails.emergency_contact.filter(
+      (contact) => String(contact._id) !== String(id),
+    );
+    await userDetails.save();
+    return {
+      status: 'success',
+      message: 'Emergency contact deleted successfully',
+      data: userDetails,
+    };
+  }
+
   async getUserReferrals(user: any, params?: any) {
     const id = params && params.id ? params.id : user._id;
     const users = await this.userModel
@@ -474,6 +573,94 @@ export class UserService {
     };
   }
 
+  //BENEFICIARY
+  async createBeneficiary(
+    createBeneficiaryDto: CreateBeneficiaryDto[],
+    user: User,
+  ) {
+    const beneficiariesData: any = [];
+    const insuranceData: any = [];
+    const userBeneficiaryData: any = [];
+
+    for (const beneficiary of createBeneficiaryDto) {
+      const { insurance, ...rest } = beneficiary;
+      const policyExists = await this.insuranceService.verifyExistingInsurance(
+        insurance.policy_number,
+      );
+      if (policyExists) {
+        throw new BadRequestException({
+          status: 'error',
+          message: `Beneficiary with Policy number: ${insurance.policy_number} already exists`,
+        });
+      }
+      const newBeneficiary = new this.beneficiaryModel({
+        ...rest,
+        user: user._id,
+      });
+
+      const newInsurance = new this.insuranceModel({
+        ...insurance,
+        beneficiary: newBeneficiary._id,
+      });
+
+      const newUserBeneficiary = new this.userBeneficiaryModel({
+        user: user._id,
+        beneficiary: newBeneficiary._id,
+      });
+
+      beneficiariesData.push(newBeneficiary.save());
+      insuranceData.push(newInsurance.save());
+      userBeneficiaryData.push(newUserBeneficiary.save());
+    }
+
+    await Promise.all(beneficiariesData);
+    await Promise.all(insuranceData);
+    await Promise.all(userBeneficiaryData);
+
+    return {
+      status: 'success',
+      message: 'Beneficiary created successfully',
+    };
+  }
+
+  async updateBeneficiary(
+    id: string,
+    updateBeneficiaryDto: UpdateBeneficiaryDto,
+    user: any,
+  ) {
+    const { insurance, ...rest } = updateBeneficiaryDto;
+    const userBeneficiary = await this.userBeneficiaryModel.findOne({
+      beneficiary: id,
+      user: user._id,
+    });
+    if (!userBeneficiary) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Beneficiary not found for user',
+      });
+    }
+    const beneficiary = await this.beneficiaryModel.findOne({
+      _id: id,
+    });
+    if (!beneficiary) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Beneficiary not found',
+      });
+    }
+    for (const value in rest) {
+      if (value) {
+        beneficiary[value] = updateBeneficiaryDto[value];
+      }
+    }
+    await beneficiary.save();
+    return {
+      status: 'success',
+      message: 'Beneficiary updated successfully',
+      data: beneficiary,
+    };
+  }
+
   async getBeneficariesByUserId(userId: string) {
     const beneficiaryIds = await Promise.all(
       (
@@ -515,5 +702,31 @@ export class UserService {
       is_deleted: false,
     });
     return beneficiary;
+  }
+
+  async deleteBeneficiary(id: string, user: any) {
+    const userBeneficiary = await this.userBeneficiaryModel.findOne({
+      beneficiary: id,
+      user: user._id,
+    });
+    if (!userBeneficiary) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Beneficiary not found for user',
+      });
+    }
+    await this.userBeneficiaryModel.deleteOne({
+      user: user._id,
+      beneficiary: id,
+    });
+    await this.beneficiaryModel.deleteOne({ _id: id });
+    await this.insuranceModel.deleteOne({
+      beneficiary: id,
+      user: { $eq: null },
+    });
+    return {
+      status: 'success',
+      message: 'Beneficiary deleted successfully',
+    };
   }
 }

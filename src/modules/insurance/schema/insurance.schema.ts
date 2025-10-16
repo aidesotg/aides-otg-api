@@ -33,6 +33,7 @@ export const InsuranceSchema = new mongoose.Schema<Insurance>(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+      default: null,
     },
     beneficiary: {
       type: mongoose.Schema.Types.ObjectId,

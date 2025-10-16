@@ -17,15 +17,7 @@ export const TicketMessageSchema = new mongoose.Schema<TicketMessage>(
       type: String,
       required: true,
     },
-    attachments: [
-      {
-        filename: String,
-        original_name: String,
-        file_path: String,
-        file_size: Number,
-        mime_type: String,
-      },
-    ],
+    attachments: [{ type: String }],
     is_internal: {
       type: Boolean,
       default: false,

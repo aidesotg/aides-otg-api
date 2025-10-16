@@ -41,7 +41,7 @@ export class CreateTicketDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(5)
-  title: string;
+  subject: string;
 
   @ApiProperty()
   @IsString()
@@ -50,20 +50,24 @@ export class CreateTicketDto {
   description: string;
 
   @ApiProperty()
-  @IsEnum(['technical', 'billing', 'general', 'complaint', 'dispute'])
-  category: 'technical' | 'billing' | 'general' | 'complaint' | 'dispute';
+  @IsEnum(['technical', 'billing', 'general', 'complaint', 'dispute', 'other'])
+  category:
+    | 'technical'
+    | 'billing'
+    | 'general'
+    | 'complaint'
+    | 'dispute'
+    | 'other';
 
   @ApiProperty()
-  @IsEnum(['low', 'medium', 'high', 'urgent'])
+  @IsEnum(['low', 'medium', 'high'])
   @IsOptional()
-  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  priority?: 'low' | 'medium' | 'high';
 
   @ApiProperty()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => AttachmentDto)
   @IsOptional()
-  attachments?: AttachmentDto[];
+  attachments?: string[];
 }
 
 export class UpdateTicketDto {
@@ -89,15 +93,15 @@ export class UpdateTicketDto {
   @IsOptional()
   priority?: 'low' | 'medium' | 'high' | 'urgent';
 
-  @ApiProperty()
-  @IsEnum(['open', 'in_review', 'closed'])
-  @IsOptional()
-  status?: 'open' | 'in_review' | 'closed';
+  // @ApiProperty()
+  // @IsEnum(['open', 'in_review', 'closed'])
+  // @IsOptional()
+  // status?: 'open' | 'in_review' | 'closed';
 
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  assigned_to?: string;
+  // @ApiProperty()
+  // @IsString()
+  // @IsOptional()
+  // assigned_to?: string;
 }
 
 export class CreateTicketMessageDto {
@@ -109,10 +113,8 @@ export class CreateTicketMessageDto {
 
   @ApiProperty()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => AttachmentDto)
   @IsOptional()
-  attachments?: AttachmentDto[];
+  attachments?: string[];
 
   @ApiProperty()
   @IsBoolean()
@@ -129,7 +131,13 @@ export class TicketQueryDto {
   @ApiProperty()
   @IsString()
   @IsOptional()
-  category?: 'technical' | 'billing' | 'general' | 'complaint' | 'dispute';
+  category?:
+    | 'technical'
+    | 'billing'
+    | 'general'
+    | 'complaint'
+    | 'dispute'
+    | 'other';
 
   @ApiProperty()
   @IsString()

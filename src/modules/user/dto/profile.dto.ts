@@ -7,15 +7,17 @@ import {
   ValidateNested,
   MinLength,
   MaxLength,
+  IsEmail,
+  IsNotEmpty,
 } from 'class-validator';
 import { CreateBeneficiaryDto } from './beneficiary.dto';
 import { InsuranceInfoDto } from 'src/modules/insurance/dto/insurance.dto';
 import { AddressDto } from './address.dto';
 
 export class EmergencyContactDto {
-  @ApiProperty() @IsString() @IsOptional() name?: string;
-  @ApiProperty() @IsString() @IsOptional() phone?: string;
-  @ApiProperty() @IsString() @IsOptional() relationship?: string;
+  @ApiProperty() @IsString() name: string;
+  @ApiProperty() @IsString() phone: string;
+  @ApiProperty() @IsString() relationship: string;
 }
 
 export class CreateProfileDto {
@@ -24,7 +26,7 @@ export class CreateProfileDto {
   @ApiProperty() @IsString() date_of_birth: string;
   @ApiProperty() @IsString() gender: string;
   @ApiProperty() @IsString() @IsOptional() profile_picture?: string;
-  @ApiProperty() @IsString() @IsOptional() type_of_care?: string;
+  @ApiProperty() @IsString() type_of_care: string;
   @ApiProperty() @IsArray() @IsOptional() special_requirements?: string[];
   @ApiProperty() @IsArray() @IsOptional() health_conditions?: string[];
   @ApiProperty() @IsString() ssn: string;
@@ -78,4 +80,21 @@ export class UpdatePhoneDto {
     message: 'Phone number too long',
   })
   phone?: string;
+}
+
+export class UpdateEmailDto {
+  @ApiProperty()
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+}
+
+export class UpdatePreferenceDto {
+  @ApiProperty() @IsArray() @IsOptional() special_requirements?: string[];
+  @ApiProperty() @IsArray() @IsOptional() health_conditions?: string[];
+  @ApiProperty() @IsString() @IsOptional() type_of_care?: string;
+  @ValidateNested({ each: true })
+  @IsOptional()
+  @Type(() => InsuranceInfoDto)
+  insurance: InsuranceInfoDto;
 }

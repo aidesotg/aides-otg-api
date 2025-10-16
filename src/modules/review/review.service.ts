@@ -280,7 +280,7 @@ export class ReviewService {
     // Create support ticket for reported review
     await this.supportService.createTicket(
       {
-        title: `Reported Review - ${review._id}`,
+        subject: `Reported Review - ${review._id}`,
         description: `Review reported: ${reportReviewDto.report_reason}. Details: ${reportReviewDto.report_details}`,
         category: 'complaint',
         priority: 'medium',

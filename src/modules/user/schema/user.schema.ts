@@ -87,17 +87,19 @@ export const UserSchema = new mongoose.Schema<User>(
     ssn: {
       type: String,
     },
-    emergency_contact: {
-      name: {
-        type: String,
+    emergency_contact: [
+      {
+        name: {
+          type: String,
+        },
+        phone: {
+          type: String,
+        },
+        relationship: {
+          type: String,
+        },
       },
-      phone: {
-        type: String,
-      },
-      relationship: {
-        type: String,
-      },
-    },
+    ],
     document_url: {
       type: String,
     },

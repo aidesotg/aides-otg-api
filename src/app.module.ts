@@ -14,6 +14,8 @@ import { VerificationMiddleware } from './framework/middlewares/verify.middlewar
 import { NotificationModule } from './modules/notification/notification.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ServiceModule } from './modules/service/service.module';
+import { TermsModule } from './modules/terms/terms.module';
+import { SupportModule } from './modules/support/support.module';
 
 dotenv.config();
 
@@ -36,8 +38,10 @@ dotenv.config();
     RolePermissionsModule,
     ServiceModule,
     ServicesModule,
+    SupportModule,
     NotificationModule,
     SettingsModule,
+    TermsModule,
   ],
   controllers: [],
   providers: [],
@@ -46,6 +50,12 @@ export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(VerificationMiddleware)
-      .forRoutes('auth/register', 'user/create', 'user/profile/update');
+      .forRoutes(
+        'auth/register',
+        'user/create',
+        'user/profile/update',
+        'user/profile/update/email',
+        'user/profile/update/phone',
+      );
   }
 }

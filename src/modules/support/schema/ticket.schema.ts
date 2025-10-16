@@ -8,7 +8,7 @@ export const TicketSchema = new mongoose.Schema<Ticket>(
       required: true,
       unique: true,
     },
-    title: {
+    subject: {
       type: String,
       required: true,
     },
@@ -23,12 +23,19 @@ export const TicketSchema = new mongoose.Schema<Ticket>(
     },
     priority: {
       type: String,
-      enum: ['low', 'medium', 'high', 'urgent'],
+      enum: ['low', 'medium', 'high'],
       default: 'medium',
     },
     category: {
       type: String,
-      enum: ['technical', 'billing', 'general', 'complaint', 'dispute'],
+      enum: [
+        'technical',
+        'billing',
+        'general',
+        'complaint',
+        'dispute',
+        'other',
+      ],
       required: true,
     },
     created_by: {
@@ -40,15 +47,7 @@ export const TicketSchema = new mongoose.Schema<Ticket>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
-    attachments: [
-      {
-        filename: String,
-        original_name: String,
-        file_path: String,
-        file_size: Number,
-        mime_type: String,
-      },
-    ],
+    attachments: [String],
     is_deleted: {
       type: Boolean,
       default: false,

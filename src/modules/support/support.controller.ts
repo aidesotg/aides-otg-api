@@ -27,7 +27,7 @@ import {
 export class SupportController {
   constructor(private readonly supportService: SupportService) {}
 
-  @Get('/tickets')
+  @Get('/my-tickets')
   @UseGuards(AuthGuard('jwt'))
   async getTickets(@Query() params: TicketQueryDto, @AuthUser() user: any) {
     const tickets = await this.supportService.getTickets(params, user);

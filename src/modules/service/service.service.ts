@@ -27,6 +27,12 @@ export class ServiceService {
     private miscService: MiscCLass,
   ) {}
 
+  private generateBookingId() {
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.random().toString(36).substr(2, 4).toUpperCase();
+    return `BKNG-${timestamp}-${random}`;
+  }
+
   async createService(createServiceDto: CreateServiceDto, user: User) {
     const { beneficiary, date_list, ...rest } = createServiceDto;
     const isBeneficiary = await this.userBeneficiaryModel.findOne({
@@ -53,6 +59,7 @@ export class ServiceService {
     }
     const data = {
       ...createServiceDto,
+      booking_id: this.generateBookingId(),
       date_list: dateList,
       created_by: user._id,
     };

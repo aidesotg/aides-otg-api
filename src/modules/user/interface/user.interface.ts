@@ -33,7 +33,8 @@ export interface User extends mongoose.Document {
     name: string;
     phone: string;
     relationship: string;
-  };
+  }[];
+
   document_url: string;
   special_requirements: string[];
   health_conditions: string[];
