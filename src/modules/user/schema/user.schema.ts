@@ -61,20 +61,24 @@ export const UserSchema = new mongoose.Schema<User>(
     status: {
       type: Boolean,
     },
-    address: [
-      {
-        city: {
-          type: String,
-        },
-        state: {
-          type: String,
-        },
-        country: {
-          type: String,
-        },
+    address: {
+      street: {
+        type: String,
       },
-    ],
-    profilePicture: {
+      city: {
+        type: String,
+      },
+      state: {
+        type: String,
+      },
+      country: {
+        type: String,
+      },
+      zip_code: {
+        type: String,
+      },
+    },
+    profile_picture: {
       type: String,
     },
     gender: {
@@ -97,6 +101,16 @@ export const UserSchema = new mongoose.Schema<User>(
     document_url: {
       type: String,
     },
+    special_requirements: [
+      {
+        type: String,
+      },
+    ],
+    health_conditions: [
+      {
+        type: String,
+      },
+    ],
   },
   {
     timestamps: true,

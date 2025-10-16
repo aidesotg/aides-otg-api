@@ -24,7 +24,7 @@ class AccountCreationMail implements Imail {
   setBody() {
     this.body = {
       body: {
-        title: `Hi ${this.user.fullname.split(' ')[0]}`,
+        title: `Hi ${this.user.first_name} ${this.user.last_name}`,
         intro: [
           "Welcome to AidesOnTheGo! We're very excited to have you on board.",
           `An account has just been created for you. please use these credentials to login and validate your account`,

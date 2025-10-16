@@ -5,8 +5,6 @@ export const InsuranceSchema = new mongoose.Schema<Insurance>(
   {
     name: {
       type: String,
-      required: true,
-      unique: true,
     },
     policy_number: {
       type: String,
@@ -35,12 +33,10 @@ export const InsuranceSchema = new mongoose.Schema<Insurance>(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
     },
     beneficiary: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Beneficiary',
-      required: true,
     },
   },
   {

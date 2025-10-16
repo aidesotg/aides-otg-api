@@ -24,7 +24,7 @@ class ResendActivationMail implements Imail {
   setBody() {
     this.body = {
       body: {
-        title: `Hi ${this.user.fullname.split(' ')[0]}`,
+        title: `Hi ${this.user.first_name} ${this.user.last_name}`,
         intro: [
           `please use this token to complete your registration, token expires in 4 hours`,
           `<b>${this.token}</b>`,

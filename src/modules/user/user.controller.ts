@@ -20,7 +20,7 @@ import {
   PasswordResetAdmin,
   PasswordResetSelf,
 } from './dto/password-reset.dto';
-import { CreateProfileDto } from './dto/profile.dto';
+import { CreateProfileDto, UpdateProfileDto } from './dto/profile.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -47,6 +47,18 @@ export class UserController {
       message: 'Users fetched',
       data: users,
     };
+  }
+
+  @Get('/beneficiaries')
+  @UseGuards(AuthGuard('jwt'))
+  async getBeneficiaries(@AuthUser() user: any) {
+    return this.userService.getBeneficariesByUserId(user._id);
+  }
+
+  @Get('/beneficiaries/:id')
+  @UseGuards(AuthGuard('jwt'))
+  async getBeneficiaryById(@Param('id') id: string) {
+    return this.userService.getBeneficaryById(id);
   }
 
   @Get('/role-count')
@@ -84,18 +96,18 @@ export class UserController {
     };
   }
 
-  @Post('/create')
+  @Post('/profile')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async passwordRequest(@Body() body: CreateUserDto) {
-    return this.userService.createUser(body);
+  async passwordRequest(@Body() body: CreateProfileDto, @AuthUser() user: any) {
+    return this.userService.createProfile(user, body);
   }
 
   @Put('/profile/update/:userId')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
   async updateProfileUser(
-    @Body() body: CreateProfileDto,
+    @Body() body: UpdateProfileDto,
     @Param('userId') userId: string,
   ) {
     return this.userService.updateProfile(body, { _id: userId });
@@ -104,7 +116,7 @@ export class UserController {
   @Put('/profile/update')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async updateProfile(@Body() body: CreateProfileDto, @AuthUser() user: any) {
+  async updateProfile(@Body() body: UpdateProfileDto, @AuthUser() user: any) {
     return this.userService.updateProfile(body, user);
   }
 

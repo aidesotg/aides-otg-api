@@ -11,7 +11,7 @@ require('dotenv').config();
 export class AwsService {
   async signUrl(file: any) {
     try {
-      const file_name = `counsellme-${Date.now()}${file.file_name}`;
+      const file_name = `aides-otg-${Date.now()}${file.file_name}`;
       const file_type = file.file_type;
       const bucket_name = process.env.BACKBLAZE_BUCKET;
       const s3Params = {

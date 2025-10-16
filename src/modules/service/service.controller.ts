@@ -16,6 +16,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AuthUser } from 'src/framework/decorators/user.decorator';
 import { ExceptionsLoggerFilter } from 'src/framework/exceptions/exceptionLogger.filter';
 import { CreateServiceDto, UpdateServiceDto } from './dto/service.dto';
+import { AddFavoriteDto } from './dto/favorite.dto';
 
 @ApiTags('service')
 @Controller('service')
@@ -33,6 +34,37 @@ export class ServiceController {
     };
   }
 
+  @Get('/my-requests')
+  @UseGuards(AuthGuard('jwt'))
+  async getMyRequests(@AuthUser() user: any, @Query() params: any) {
+    return this.serviceService.getServices(params, user);
+  }
+
+  @Get('/my-requests/:id')
+  @UseGuards(AuthGuard('jwt'))
+  async getMyRequestById(@Param('id') id: string) {
+    const service = await this.serviceService.getServiceById(id);
+    return {
+      status: 'success',
+      message: 'Service fetched',
+      data: service,
+    };
+  }
+
+  @Get('/favorites')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getFavorites(@AuthUser() user: any) {
+    return this.serviceService.getFavorites(user);
+  }
+
+  @Get('/favorites/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getFavoriteById(@Param('id') id: string) {
+    return this.serviceService.getFavoriteById(id);
+  }
+
   @Get('/:id')
   @UseGuards(AuthGuard('jwt'))
   async getServiceById(@Param('id') id: string) {
@@ -44,31 +76,42 @@ export class ServiceController {
     };
   }
 
-  @Post('/create')
+  @Post('')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
   async createService(@Body() body: CreateServiceDto, @AuthUser() user: any) {
     return this.serviceService.createService(body, user);
   }
 
-  @Put('/:id/update')
+  @Post('/favorites')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async updateService(@Param('id') id: string, @Body() body: UpdateServiceDto) {
-    return this.serviceService.updateService(id, body);
+  async addFavorite(@Body() body: AddFavoriteDto, @AuthUser() user: any) {
+    return this.serviceService.addFavorite(body, user);
   }
 
-  @Put('/:id/suspend')
+  @Put('/:id')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async suspendService(@Param('id') id: string) {
-    return this.serviceService.suspendService(id);
+  async updateService(
+    @Param('id') id: string,
+    @Body() body: UpdateServiceDto,
+    @AuthUser() user: any,
+  ) {
+    return this.serviceService.updateService(id, body, user);
   }
 
   @Delete('/:id')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async deleteService(@Param('id') id: string) {
-    return this.serviceService.deleteService(id);
+  async deleteService(@Param('id') id: string, @AuthUser() user: any) {
+    return this.serviceService.deleteService(id, user);
+  }
+
+  @Delete('/favorites/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async removeFavorite(@Param('id') id: string, @AuthUser() user: any) {
+    return this.serviceService.removeFavorite(id, user);
   }
 }

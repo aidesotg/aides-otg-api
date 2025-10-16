@@ -3,54 +3,92 @@ import { Service } from '../interface/service.interface';
 
 export const ServiceSchema = new mongoose.Schema<Service>(
   {
-    title: {
-      type: String,
-      required: true,
-    },
-    description: {
+    booking_id: {
       type: String,
     },
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'ServiceCategory',
-      required: true,
+    transaction_id: {
+      type: String,
     },
-    price: {
-      type: Number,
-      required: true,
-    },
-    commission_percentage: {
-      type: Number,
-      required: true,
-      min: 0,
-      max: 100,
-    },
-    caregiver_commission: {
-      type: Number,
-      required: true,
-    },
-    duration_hours: {
-      type: Number,
-      default: 1,
-    },
-    is_active: {
+    self_care: {
       type: Boolean,
-      default: true,
-    },
-    is_deleted: {
-      type: Boolean,
-      default: false,
     },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
     },
-    service_type: {
+    beneficiary: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Beneficiary',
+    },
+    details: {
       type: String,
-      enum: ['head', 'knee', 'shoulder', 'foot', 'general'],
-      required: true,
     },
+    location: {
+      street: {
+        type: String,
+        required: false,
+      },
+      city: {
+        type: String,
+      },
+      state: {
+        type: String,
+      },
+      country: {
+        type: String,
+      },
+      zip_code: {
+        type: String,
+        required: false,
+      },
+    },
+    care_type: {
+      type: String,
+    },
+    notes: {
+      type: String,
+    },
+    duration_type: {
+      type: String,
+    },
+    date_list: [
+      {
+        date: {
+          type: Date,
+        },
+        day_of_week: {
+          type: String,
+        },
+        start_time: {
+          type: String,
+        },
+        end_time: {
+          type: String,
+        },
+      },
+    ],
+    care_giver: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    status: {
+      type: String,
+
+      enum: ['Pending', 'Accepted', 'In Progress', 'Completed', 'Cancelled'],
+      default: 'Pending',
+    },
+    status_history: [
+      {
+        status: {
+          type: String,
+        },
+        created_at: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

@@ -58,12 +58,12 @@ export class CreateBeneficiaryDto {
   @ApiProperty()
   @IsString()
   @IsOptional()
-  profilePicture?: string;
+  profile_picture?: string;
 
   @ValidateNested({ each: true })
   @IsOptional()
   @Type(() => InsuranceInfoDto)
-  insurances: InsuranceInfoDto;
+  insurance: InsuranceInfoDto;
 }
 
 export class UpdateBeneficiaryDto {
@@ -113,10 +113,10 @@ export class UpdateBeneficiaryDto {
   @ApiProperty()
   @IsString()
   @IsOptional()
-  profilePicture?: string;
+  profile_picture?: string;
 
   @ValidateNested({ each: true })
   @IsOptional()
   @Type(() => InsuranceInfoDto)
-  insurances: InsuranceInfoDto;
+  insurance: InsuranceInfoDto;
 }

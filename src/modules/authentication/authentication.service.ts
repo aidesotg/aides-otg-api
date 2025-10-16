@@ -44,12 +44,21 @@ export class AuthenticationService {
   ) {}
 
   async register(body: RegistrationDto) {
-    const { email, password, phone } = body;
+    console.log(
+      '🚀 ~ AuthenticationService ~ register ~ RegistrationDto:',
+      RegistrationDto,
+    );
+    const { email, password, phone, roleId } = body;
     const pass = bcrypt.hashSync(password.replaceAll(' ', ''), 11);
     // const phoneNum = `+234${phone}`;
 
-    const role = await this.roleService.getRole({ name: 'Customer' });
-
+    const role = await this.roleModel.findOne({ _id: roleId });
+    if (!role) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Role not found',
+      });
+    }
     const activation_code = otpGenerator.generate(6, {
       digits: true,
       alphabets: false,
@@ -83,10 +92,10 @@ export class AuthenticationService {
   }
 
   async login(loginDto: LoginDto, route?: string) {
-    const { id, password, device_token } = loginDto;
+    const { email, password, device_token } = loginDto;
     const user: any = await this.userModel
       .findOne({
-        email: id.toLowerCase(),
+        email: email.toLowerCase(),
         isDeleted: false,
       })
       .populate('role', ['name'])

@@ -17,13 +17,14 @@ export interface User extends mongoose.Document {
   isDeleted: boolean;
   notification_counter: number;
   status: boolean;
-  address: [
-    {
-      city: string;
-      state: string;
-      country: string;
-    },
-  ];
+  address: {
+    street?: string;
+    city: string;
+    state: string;
+    country: string;
+    zip_code?: string;
+  };
+
   profile_picture: string;
   gender: string;
   occupation: string;
@@ -34,6 +35,8 @@ export interface User extends mongoose.Document {
     relationship: string;
   };
   document_url: string;
+  special_requirements: string[];
+  health_conditions: string[];
   readonly createdAt: Date;
   updatedAt: Date;
 }

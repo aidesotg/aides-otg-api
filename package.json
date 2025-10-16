@@ -49,6 +49,7 @@
     "jwks-rsa": "^2.0.3",
     "mailgen": "^2.0.15",
     "moment": "^2.29.1",
+    "moment-timezone": "^0.6.0",
     "mongoose": "^5.12.14",
     "mongoose-slug-generator": "^1.0.4",
     "nanoid": "^4.0.0",

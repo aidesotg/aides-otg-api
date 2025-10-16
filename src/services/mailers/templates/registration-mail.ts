@@ -24,7 +24,7 @@ class RegistrationMail implements Imail {
   setBody() {
     this.body = {
       body: {
-        title: `Hi ${this.user.fullname.split(' ')[0]}`,
+        title: `Hi,`,
         intro: [
           "Welcome to AidesOnTheGo! We're very excited to have you on board.",
           `Please use this token to complete your registration, token expires in 4 hours`,

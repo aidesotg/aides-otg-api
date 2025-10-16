@@ -29,7 +29,7 @@ class EcommerceMail implements Imail {
   setBody() {
     this.body = {
       body: {
-        title: `Hi ${this.user.fullname.split(' ')[0]}`,
+        title: `Hi ${this.user.first_name} ${this.user.last_name}`,
         intro: [`${this.message}`, `${this.details}`],
       },
     };

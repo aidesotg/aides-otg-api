@@ -206,14 +206,14 @@ export class RateService {
 
     const platformCommission =
       (amount * settings.platform_commission_percentage) / 100;
-    const caregiverAmount = service.caregiver_commission;
-    const netAmount = amount - platformCommission - caregiverAmount;
+    // const caregiverAmount = service.caregiver_commission;
+    const netAmount = amount - platformCommission;
 
     return {
       service_amount: amount,
       platform_commission_percentage: settings.platform_commission_percentage,
       platform_commission_amount: platformCommission,
-      caregiver_amount: caregiverAmount,
+      // caregiver_amount: caregiverAmount,
       net_amount: netAmount,
       currency: settings.currency,
       penalty_settings: settings.penalty_settings,

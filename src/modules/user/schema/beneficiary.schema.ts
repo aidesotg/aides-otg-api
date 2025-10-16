@@ -12,13 +12,9 @@ export const BeneficiarySchema = new mongoose.Schema<Beneficiary>(
     },
     label: {
       type: String,
-      required: true,
-      unique: true,
     },
     date_of_birth: {
       type: String,
-      required: true,
-      unique: true,
     },
     gender: {
       type: String,
@@ -26,16 +22,17 @@ export const BeneficiarySchema = new mongoose.Schema<Beneficiary>(
     relationship: {
       type: String,
     },
-    special_requirements: {
-      type: String,
-      required: true,
-    },
+    special_requirements: [
+      {
+        type: String,
+      },
+    ],
     health_conditions: [
       {
         type: String,
       },
     ],
-    profilePicture: {
+    profile_picture: {
       type: String,
     },
     user: {
@@ -57,4 +54,11 @@ BeneficiarySchema.method('toJSON', function () {
     ...object,
   };
   return newObject;
+});
+
+BeneficiarySchema.virtual('insurance', {
+  ref: 'Insurance',
+  localField: '_id',
+  foreignField: 'beneficiary',
+  justOne: true,
 });

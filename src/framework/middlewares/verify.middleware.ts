@@ -12,8 +12,8 @@ export class VerificationMiddleware implements NestMiddleware {
   constructor(private userService: UserService) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
-    const { phone, username, email } = req.body;
-    const query: any = [{ username: username?.toLowerCase() }, { email }];
+    const { phone, email } = req.body;
+    const query: any = [{ email }];
 
     if (phone) {
       query.push({ phone });

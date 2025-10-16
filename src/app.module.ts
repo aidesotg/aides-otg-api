@@ -13,6 +13,7 @@ import { ServicesModule } from './services/services.module';
 import { VerificationMiddleware } from './framework/middlewares/verify.middleware';
 import { NotificationModule } from './modules/notification/notification.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { ServiceModule } from './modules/service/service.module';
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ dotenv.config();
     RoleModule,
     PermissionModule,
     RolePermissionsModule,
+    ServiceModule,
     ServicesModule,
     NotificationModule,
     SettingsModule,

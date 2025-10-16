@@ -24,7 +24,7 @@ class AdminLoginMail implements Imail {
   setBody() {
     this.body = {
       body: {
-        title: `Hi ${this.user.fullname.split(' ')[0]}`,
+        title: `Hi ${this.user.first_name} ${this.user.last_name}`,
         intro: [
           `A new login attempt was noticed on your account, use this token to verify that attempt`,
           `<b>${this.token}</b>`,

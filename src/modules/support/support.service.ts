@@ -240,7 +240,7 @@ export class SupportService {
     return {
       status: 'success',
       message: 'Ticket assigned successfully',
-      data: { ticket },
+      data: ticket,
     };
   }
 

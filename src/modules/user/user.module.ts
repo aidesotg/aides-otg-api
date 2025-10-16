@@ -8,16 +8,24 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { RoleModule } from 'src/modules/role/role.module';
 import { NotificationModule } from '../notification/notification.module';
+import { UserBeneficiarySchema } from './schema/user-beneficiary.schema';
+import { BeneficiarySchema } from './schema/beneficiary.schema';
+import { InsuranceSchema } from '../insurance/schema/insurance.schema';
+import { InsuranceModule } from '../insurance/insurance.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: 'User', schema: UserSchema },
       { name: 'Role', schema: RoleSchema },
+      { name: 'UserBeneficiary', schema: UserBeneficiarySchema },
+      { name: 'Beneficiary', schema: BeneficiarySchema },
+      { name: 'Insurance', schema: InsuranceSchema },
     ]),
     ServicesModule,
     RoleModule,
     forwardRef(() => NotificationModule),
+    forwardRef(() => InsuranceModule),
   ],
   controllers: [UserController],
   providers: [UserService, VerificationMiddleware],

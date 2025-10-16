@@ -14,9 +14,19 @@ export class InsuranceService {
   constructor(
     @InjectModel('Insurance') private readonly insuranceModel: Model<Insurance>,
     private miscService: MiscCLass,
-    private userService: UserService,
     private mailerService: Mailer,
   ) {}
+
+  async verifyExistingInsurance(policy_number: string) {
+    const existingInsurance = await this.insuranceModel.findOne({
+      policy_number: policy_number,
+      is_deleted: false,
+    });
+    if (existingInsurance) {
+      return true;
+    }
+    return false;
+  }
 
   async getInsurances(params: any) {
     const { page = 1, pageSize = 50, ...rest } = params;

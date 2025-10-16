@@ -5,12 +5,18 @@ import { ServiceCategorySchema } from 'src/modules/service-category/schema/servi
 import { ServicesModule } from 'src/services/services.module';
 import { ServiceController } from './service.controller';
 import { ServiceService } from './service.service';
+import { UserBeneficiarySchema } from '../user/schema/user-beneficiary.schema';
+import { ServiceDayLogsSchema } from './schema/service-day-logs.schema';
+import { FavoriteSchema } from './schema/favortite.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: 'Service', schema: ServiceSchema },
       { name: 'ServiceCategory', schema: ServiceCategorySchema },
+      { name: 'UserBeneficiary', schema: UserBeneficiarySchema },
+      { name: 'ServiceDayLogs', schema: ServiceDayLogsSchema },
+      { name: 'Favorite', schema: FavoriteSchema },
     ]),
     ServicesModule,
   ],

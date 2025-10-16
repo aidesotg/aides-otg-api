@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import moment from 'moment';
 import fs from 'fs';
+import { ObjectId } from 'bson';
+import * as momentTz from 'moment-timezone';
 
 @Injectable()
 export class MiscCLass {
@@ -8,7 +10,7 @@ export class MiscCLass {
     const time = moment().format('YYYY-MM-DD hh:mm:ss');
     const rand = Math.floor(Math.random() * Date.now());
 
-    return `BAM|${time.replace(/[\-]|[\s]|[\:]/g, '')}|${rand}`;
+    return `CNFDNT-${time.replace(/[\-]|[\s]|[\:]/g, '')}-${rand}`;
   }
 
   async paginate({ page, pageSize }) {
@@ -45,10 +47,16 @@ export class MiscCLass {
     };
   }
 
+  async millisToMinutesAndSeconds(millis: number) {
+    const minutes = Math.floor(millis / 60000);
+    const seconds = Number(((millis % 60000) / 1000).toFixed(0));
+    return seconds == 60 ? minutes : minutes;
+  }
+
   async getStates() {
     const stateObj = [];
     const states = JSON.parse(
-      fs.readFileSync(`${__dirname}/assets/states.txt`, 'utf-8'),
+      fs.readFileSync(`${__dirname}/states/states.txt`, 'utf-8'),
     );
 
     for (const state of states) {
@@ -61,27 +69,163 @@ export class MiscCLass {
     };
   }
 
+  async IsObjectId(value: string) {
+    try {
+      return (
+        value &&
+        value.length > 12 &&
+        String(new ObjectId(value)) === String(value)
+      );
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
+  }
+
   async search(params: any) {
     console.log(
-      '🚀 ~ file: misc.service.ts ~ line 65 ~ MiscCLass ~ search ~ params',
+      '🚀 ~ file: misc.service.ts:71 ~ MiscCLass ~ search ~ params:',
       params,
     );
-    const query = {};
+    let query = {};
+    let date;
+    let endDate;
     for (const value in params) {
-      if (value.match(/date|Date|createdAt/g)) {
-        const date = new Date(params[value]);
-        const endDate = moment(date).add(1, 'day').format();
-        query['createdAt'] = { $gte: date, $lte: new Date(endDate) };
-      } else if (params[value] == 'true') {
+      if (value.match(/date|Date|createdAt|endDate|startDate/g)) {
+        if (value == 'startDate') date = new Date(params[value]);
+        if (value == 'endDate') endDate = new Date(params[value]);
+        if (value !== 'startDate' && value !== 'endDate') {
+          date = new Date(params[value]);
+          endDate = new Date(moment(date).add(1, 'day').format());
+        }
+        if (value == 'date') {
+          query['date'] = { $gte: date, $lte: endDate };
+        } else {
+          query['createdAt'] = { $gte: date, $lte: endDate };
+        }
+      } else if (await this.IsObjectId(String(params[value]))) {
+        query[value] = params[value];
+      } else if (value == 'recepient') {
+        query = {
+          ...query,
+          $or: [{ user: params[value] }, { counsellor: params[value] }],
+        };
+      } else if (params[value] == 'true' || params[value] == true) {
         query[value] = true;
-      } else if (params[value] == 'false') {
+      } else if (params[value] == 'false' || params[value] == false) {
         query[value] = false;
-      } else if (value == 'category') {
+      } else if (value == 'category' || value == 'categories') {
         query[value] = { $in: params[value] };
       } else {
-        query[value] = params[value];
+        const $regex = new RegExp(params[value]);
+        const $options = 'i';
+        query[value] = { $regex, $options };
       }
     }
     return query;
+  }
+
+  async globalSearch(query: any) {
+    const $regex = new RegExp(query);
+    const $options = 'i';
+    return { $regex, $options };
+  }
+
+  async getFirstAndLastDay() {
+    const date_today = new Date();
+
+    const firstDay = new Date(
+      date_today.getFullYear(),
+      date_today.getMonth(),
+      1,
+    );
+
+    const lastDay = new Date(
+      date_today.getFullYear(),
+      date_today.getMonth() + 1,
+      0,
+    );
+
+    console.log(`The first date of the current month is: ${firstDay}`);
+
+    console.log(`The last date of the current month is: ${new Date(lastDay)}`);
+    return {
+      firstDay,
+      lastDay,
+    };
+  }
+
+  async createDateFromTimezone(dateTime: string, timezone: string) {
+    // Create a moment object with the given date, time, and timezone
+    const eventMoment = momentTz.tz(dateTime, timezone);
+    console.log(
+      '🚀 ~ MiscCLass ~ createDateFromTimezone ~ eventMoment:',
+      eventMoment,
+    );
+
+    // Convert to UTC for storage
+    const utcDate = eventMoment.utc().toDate();
+
+    return utcDate;
+  }
+
+  async getTimeFromDateTimeString(
+    dateTimeString: string,
+    format: string = 'YYYY-MM-DD HH:mm:ss',
+  ): Promise<string> {
+    const momentObj = moment(dateTimeString, format);
+
+    if (!momentObj.isValid()) {
+      throw new Error('Invalid datetime string');
+    }
+
+    return momentObj.format('HH:mm:ss');
+  }
+
+  async capitalizeFirstLetter(word: string): Promise<string> {
+    if (!word) return '';
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }
+
+  async getDayOfWeek(dateString: string): Promise<string> {
+    if (!dateString) {
+      throw new Error('Date string is required');
+    }
+
+    const momentObj = moment(dateString);
+
+    if (!momentObj.isValid()) {
+      throw new Error('Invalid date string');
+    }
+
+    return momentObj.format('dddd'); // Returns full day name (e.g., "Monday", "Tuesday")
+  }
+
+  async getDayOfWeekShort(dateString: string): Promise<string> {
+    if (!dateString) {
+      throw new Error('Date string is required');
+    }
+
+    const momentObj = moment(dateString);
+
+    if (!momentObj.isValid()) {
+      throw new Error('Invalid date string');
+    }
+
+    return momentObj.format('ddd'); // Returns short day name (e.g., "Mon", "Tue")
+  }
+
+  async getDayOfWeekNumber(dateString: string): Promise<number> {
+    if (!dateString) {
+      throw new Error('Date string is required');
+    }
+
+    const momentObj = moment(dateString);
+
+    if (!momentObj.isValid()) {
+      throw new Error('Invalid date string');
+    }
+
+    return momentObj.day(); // Returns day number (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
   }
 }

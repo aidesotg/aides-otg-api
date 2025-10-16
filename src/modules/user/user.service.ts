@@ -4,6 +4,7 @@ import {
   HttpException,
   Inject,
   forwardRef,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -22,49 +23,108 @@ import { RoleService } from 'src/modules/role/role.service';
 import { Mailer } from 'src/services/mailer.service';
 import PlainMail from 'src/services/mailers/templates/plain-mail';
 import AccountCreationMail from 'src/services/mailers/templates/account-registration.mail';
-import { CreateProfileDto } from './dto/profile.dto';
+import { CreateProfileDto, UpdateProfileDto } from './dto/profile.dto';
+import { Beneficiary } from './interface/beneficiary.interface';
+import { Insurance } from '../insurance/interface/insurance.interface';
+import { InsuranceService } from '../insurance/insurance.service';
+import { UserBeneficiary } from './interface/user-beneficiary.interface';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel('User') private readonly userModel: Model<User>,
+    @InjectModel('Beneficiary')
+    private readonly beneficiaryModel: Model<Beneficiary>,
+    @InjectModel('Insurance') private readonly insuranceModel: Model<Insurance>,
+    @InjectModel('UserBeneficiary')
+    private readonly userBeneficiaryModel: Model<UserBeneficiary>,
     @InjectModel('Role') private readonly roleModel: Model<Role>,
     private flutterwaveService: FlutterwaveService,
     private roleService: RoleService,
     private miscService: MiscCLass,
     private mailerService: Mailer,
     private notificationService: NotificationService,
+    @Inject(forwardRef(() => InsuranceService))
+    private insuranceService: InsuranceService,
   ) {}
 
-  async createUser(body: CreateUserDto) {
-    const { fullname, country, username, email, role, password } = body;
-    const pass = bcrypt.hashSync(password, 10);
+  async createProfile(user: User, body: CreateProfileDto) {
+    const { beneficiaries, insurance, ...rest } = body;
+    const userDetails = await this.userModel.findById(user._id);
 
-    const data: any = {
-      fullname: fullname,
-      username,
-      email,
-      country,
-      password: pass,
-      role,
-    };
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
 
-    const newUser = new this.userModel(data);
+    for (const value in rest) {
+      if (value) {
+        userDetails[value] = rest[value];
+      }
+    }
+    const beneficiariesData: any = [];
+    const insuranceData: any = [];
+    const userBeneficiaryData: any = [];
 
-    const user = await newUser.save();
+    for (const beneficiary of beneficiaries) {
+      const { insurance, ...rest } = beneficiary;
+      const policyExists = await this.insuranceService.verifyExistingInsurance(
+        insurance.policy_number,
+      );
+      if (policyExists) {
+        throw new BadRequestException({
+          status: 'error',
+          message: `Beneficiary with Policy number: ${insurance.policy_number} already exists`,
+        });
+      }
+      const newBeneficiary = new this.beneficiaryModel({
+        ...rest,
+        user: userDetails._id,
+      });
 
-    const credentials = {
-      email: user.email,
-      password,
-    };
+      const newInsurance = new this.insuranceModel({
+        ...insurance,
+        beneficiary: newBeneficiary._id,
+      });
 
-    this.mailerService.send(
-      new AccountCreationMail(email, 'New Account', user, credentials),
+      const newUserBeneficiary = new this.userBeneficiaryModel({
+        user: userDetails._id,
+        beneficiary: newBeneficiary._id,
+      });
+
+      beneficiariesData.push(newBeneficiary.save());
+      insuranceData.push(newInsurance.save());
+      userBeneficiaryData.push(newUserBeneficiary.save());
+    }
+
+    const policyExists = await this.insuranceService.verifyExistingInsurance(
+      insurance.policy_number,
     );
+    if (policyExists) {
+      throw new BadRequestException({
+        status: 'error',
+        message: `Insurance with Policy number: ${insurance.policy_number} already exists`,
+      });
+    }
+
+    const newInsurance = new this.insuranceModel({
+      ...insurance,
+      user: userDetails._id,
+    });
+
+    await Promise.all(beneficiariesData);
+    await Promise.all(insuranceData);
+    await Promise.all(userBeneficiaryData);
+
+    await userDetails.save();
+    await newInsurance.save();
 
     return {
       status: 'success',
-      message: 'User created',
+      message: 'Profile created successfully',
+      data: { user: userDetails },
     };
   }
 
@@ -81,14 +141,13 @@ export class UserService {
   async getUser(user: any) {
     const userDetails: any = await this.userModel
       .findOne({ _id: user._id, isDeleted: false })
-      .populate('roles', ['name'])
-      .populate('wallet', ['balance', 'ledger_balance', '-user'])
+      .populate('role', ['name'])
       .populate({
-        path: 'profile',
+        path: 'beneficiaries',
+        populate: [{ path: 'insurance' }],
       })
       .populate({
-        path: 'service_profile',
-        populate: [{ path: 'types' }, { path: 'categories' }],
+        path: 'insurance',
       })
       .exec();
     if (!userDetails) {
@@ -116,15 +175,15 @@ export class UserService {
       // .select('fullname username phone profile_picture')
       .populate([
         {
-          path: 'roles',
+          path: 'role',
           select: 'name',
         },
         {
-          path: 'profile',
+          path: 'insurance',
         },
         {
-          path: 'service_profile',
-          populate: [{ path: 'types' }, { path: 'categories' }],
+          path: 'beneficiaries',
+          populate: [{ path: 'insurance' }],
         },
       ])
       .skip(pagination.offset)
@@ -157,20 +216,20 @@ export class UserService {
     const role: any = await this.roleModel.findOne({ name: roleName }).exec();
     const populateFields: any = [
       {
-        path: 'categories',
-        select: 'title cover_image',
+        path: 'role',
+        select: 'name',
       },
       {
-        path: 'profile',
+        path: 'insurance',
       },
       {
-        path: 'service_profile',
-        populate: [{ path: 'types' }, { path: 'categories' }],
+        path: 'beneficiaries',
+        populate: [{ path: 'insurance' }],
       },
     ];
 
     const users = await this.userModel
-      .find({ roles: { $in: role._id }, isDeleted: false })
+      .find({ role: role._id, isDeleted: false })
       // .populate('wallet', ['balance', 'ledger_balance'])
       .populate(populateFields)
       .skip(pagination.offset)
@@ -178,7 +237,7 @@ export class UserService {
       .exec();
 
     const count = await this.userModel
-      .countDocuments({ role: { $in: role._id } })
+      .countDocuments({ role: role._id })
       .exec();
 
     if (!users) {
@@ -200,12 +259,8 @@ export class UserService {
     };
   }
 
-  async updateProfile(updateProfileDto: Partial<CreateProfileDto>, user: any) {
+  async updateProfile(updateProfileDto: Partial<UpdateProfileDto>, user: any) {
     const data: any = { ...updateProfileDto };
-
-    if (updateProfileDto.phone) {
-      data.phone = '+234' + updateProfileDto.phone;
-    }
 
     const userDetails = await this.userModel
       .findOne({ _id: user._id, isDeleted: false })
@@ -417,5 +472,48 @@ export class UserService {
       message: `Users by role count feteched successfully`,
       data,
     };
+  }
+
+  async getBeneficariesByUserId(userId: string) {
+    const beneficiaryIds = await Promise.all(
+      (
+        await this.userBeneficiaryModel.find({ user: userId })
+      ).map(async (beneficiary) => beneficiary.beneficiary),
+    );
+    const beneficiaries = await this.beneficiaryModel
+      .find({
+        _id: { $in: beneficiaryIds },
+      })
+      .populate('insurance');
+    return {
+      status: 'success',
+      message: 'Beneficiaries fetched successfully',
+      data: beneficiaries,
+    };
+  }
+
+  async getBeneficaryById(beneficiaryId: string) {
+    const beneficiary = await this.beneficiaryModel
+      .findById(beneficiaryId)
+      .populate('insurance');
+    if (!beneficiary) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Beneficiary not found',
+      });
+    }
+    return {
+      status: 'success',
+      message: 'Beneficiary fetched successfully',
+      data: beneficiary,
+    };
+  }
+
+  async getBeneficaryByEmail(email: string) {
+    const beneficiary = await this.beneficiaryModel.findOne({
+      email: email,
+      is_deleted: false,
+    });
+    return beneficiary;
   }
 }

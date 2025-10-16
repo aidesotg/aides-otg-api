@@ -24,7 +24,7 @@ class PasswordRequestMail implements Imail {
   setBody() {
     this.body = {
       body: {
-        title: `Hi ${this.user.fullname.split(' ')[0]}`,
+        title: `Hi ${this.user.first_name} ${this.user.last_name}`,
         intro: [
           `You recently requested for a password reset, please use the token below to complete this process`,
           `<b>${this.token}</b>`,
