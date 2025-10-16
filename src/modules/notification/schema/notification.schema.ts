@@ -16,6 +16,12 @@ export const NotificationSchema = new mongoose.Schema(
     type: {
       type: String,
     },
+    resource: {
+      type: String,
+    },
+    resource_id: {
+      type: mongoose.Schema.Types.ObjectId,
+    },
     isGeneral: {
       type: Boolean,
       default: false,

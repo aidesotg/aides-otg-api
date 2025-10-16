@@ -8,103 +8,180 @@ import {
   UseGuards,
   UseFilters,
   Query,
+  Headers,
+  Req,
+  Res,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { WalletService } from './wallet.service';
 import { ApiTags } from '@nestjs/swagger';
-import { AuthUser } from 'src/framework/decorators/user.decorator';
+import { CreditDto } from './dto/credit.dto';
+import { WalletService } from './wallet.service';
+import { TransferDto } from './dto/transfer.dto';
+import { FlutterwaveService } from 'src/services/flutterwave.service';
+import { UserService } from '../user/user.service';
+import { StripeAccountDto } from './dto/stripe-account.dto';
+import { WithdrawDto } from './dto/withdrawal.dto';
 import { ExceptionsLoggerFilter } from 'src/framework/exceptions/exceptionLogger.filter';
-import {
-  FundWalletDto,
-  WithdrawWalletDto,
-  TransferWalletDto,
-  TransactionQueryDto,
-} from './dto/wallet.dto';
+import { AuthUser } from 'src/framework/decorators/user.decorator';
 
 @ApiTags('wallet')
 @Controller('wallet')
 export class WalletController {
-  constructor(private readonly walletService: WalletService) {}
+  constructor(
+    private readonly walletService: WalletService,
+    private readonly flutterwaveService: FlutterwaveService,
+    private readonly userService: UserService,
+  ) {}
 
-  @Get('')
+  @Post('/credit')
   @UseGuards(AuthGuard('jwt'))
-  async getWallet(@AuthUser() user: any) {
-    const wallet = await this.walletService.getWallet(user);
-    return {
-      status: 'success',
-      message: 'Wallet details fetched',
-      data: { wallet },
-    };
+  @UseFilters(ExceptionsLoggerFilter)
+  async intiate(
+    @Body() body: CreditDto,
+    @AuthUser() user: any,
+    @Headers('origin') origin: string,
+  ) {
+    console.log('header===>', origin);
+    return this.walletService.initiate(body, user, origin);
   }
 
-  @Get('/transactions')
+  @Post('/credit-mobile')
   @UseGuards(AuthGuard('jwt'))
-  async getTransactions(
-    @Query() params: TransactionQueryDto,
-    @AuthUser() user: any,
-  ) {
-    const transactions = await this.walletService.getTransactions(params, user);
-    return {
-      status: 'success',
-      message: 'Transactions fetched',
-      data: transactions,
-    };
+  @UseFilters(ExceptionsLoggerFilter)
+  async intiateMobile(@Body() body: CreditDto, @AuthUser() user: any) {
+    return this.walletService.initiateMobile(body, user);
+  }
+
+  @Get('/balance/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getUserBalance(@Param('id') id: string) {
+    return this.walletService.getUserBalance({ _id: id });
+  }
+
+  @Get('/banks/list')
+  // @UseGuards(AuthGuard('jwt'))
+  async getBanks(@Query() query: any) {
+    return this.walletService.getBankList(query.country_code);
+  }
+
+  @Get('/withdraw/rate/:currency')
+  // @UseGuards(AuthGuard('jwt'))
+  async getWithdrawalRate(@Param('currency') currency: any) {
+    return this.walletService.getTransferRates(currency);
+  }
+
+  @Get('/balance')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getBalance(@AuthUser() user: any) {
+    return this.walletService.getUserBalance(user);
+  }
+
+  @Get('/transactions/all')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getAllTransactions(@Query() query: any) {
+    return this.walletService.getUserTransactions(query);
   }
 
   @Get('/transactions/:id')
   @UseGuards(AuthGuard('jwt'))
-  async getTransactionById(@Param('id') id: string) {
-    const transaction = await this.walletService.getTransactionById(id);
+  @UseFilters(ExceptionsLoggerFilter)
+  async getUserTransactions(@Param('id') id: string, @Query() query: any) {
+    return this.walletService.getUserTransactions(query, { _id: id });
+  }
+
+  @Get('/transactions')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getTransactions(@AuthUser() user: any, @Query() query: any) {
+    return this.walletService.getUserTransactions(query, user);
+  }
+
+  @Get('/confirmation')
+  @UseFilters(ExceptionsLoggerFilter)
+  async confirmation(@Query() query: any) {
+    // return this.walletService.confirmation(query);
     return {
       status: 'success',
-      message: 'Transaction fetched',
-      data: { transaction },
+      message: 'Transaction processing',
     };
   }
 
-  @Post('/fund')
-  @UseGuards(AuthGuard('jwt'))
+  @Get('/withdraw/supported-countries')
   @UseFilters(ExceptionsLoggerFilter)
-  async fundWallet(@Body() body: FundWalletDto, @AuthUser() user: any) {
-    return this.walletService.fundWallet(body, user);
-  }
-
-  @Post('/withdraw')
-  @UseGuards(AuthGuard('jwt'))
-  @UseFilters(ExceptionsLoggerFilter)
-  async withdrawWallet(@Body() body: WithdrawWalletDto, @AuthUser() user: any) {
-    return this.walletService.withdrawWallet(body, user);
-  }
-
-  @Post('/transfer')
-  @UseGuards(AuthGuard('jwt'))
-  @UseFilters(ExceptionsLoggerFilter)
-  async transferWallet(@Body() body: TransferWalletDto, @AuthUser() user: any) {
-    return this.walletService.transferWallet(body, user);
-  }
-
-  @Get('/admin/transactions')
-  @UseGuards(AuthGuard('jwt'))
-  async getAllTransactions(@Query() params: TransactionQueryDto) {
-    const transactions = await this.walletService.getAllTransactions(params);
+  async withdrawal(@Query() query: any) {
+    const countries = await this.walletService.getSupportedCountries();
     return {
       status: 'success',
-      message: 'All transactions fetched',
-      data: transactions,
+      message: 'Countries fetched',
+      data: countries,
     };
   }
 
-  @Put('/admin/transactions/:id/settle')
+  @Get('/verify-wallet')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async settleTransaction(@Param('id') id: string) {
-    return this.walletService.settleTransaction(id);
+  async getUserWallet(@Query() query: any, @AuthUser() user: any) {
+    return this.walletService.checkWallet(query, user);
   }
 
-  @Put('/admin/transactions/:id/refund')
+  @Post('/stripe/onboard')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async refundTransaction(@Param('id') id: string) {
-    return this.walletService.refundTransaction(id);
+  async createStripeAccount(
+    @AuthUser() user: any,
+    @Body() body: StripeAccountDto,
+  ) {
+    return this.walletService.createStripeAccount(user, body);
+  }
+
+  @Put('/transfer')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async transfer(@Body() body: TransferDto, @AuthUser() user: any) {
+    return this.walletService.transfer(body, user);
+  }
+
+  @Put('/withdraw')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async withdraw(@AuthUser() user: any, @Body() body: WithdrawDto) {
+    return this.walletService.requestWithdraw(body, user);
+  }
+
+  @Put('/withdraw/confirm')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async confirmWithdrawalOtp(@AuthUser() user: any, @Body('otp') otp: string) {
+    return this.walletService.confirmWithdrawOtp(otp, user);
+  }
+
+  // @Post('/banks/verify')
+  // @UseGuards(AuthGuard('jwt'))
+  // @UseFilters(ExceptionsLoggerFilter)
+  // async verifyBank(@Body() body: VerifyBankDto) {
+  //   return this.userService.verifyBankDetails(body);
+  // }
+
+  @Post('/webhook')
+  // @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async webhook(@Body() body: any, @Headers() headers: any) {
+    return this.walletService.webhook(body, headers);
+  }
+
+  @Post('/webhook/stripe')
+  // @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async webhookStripe(
+    @Body() body: any,
+    @Headers() headers: any,
+    @Body() payload,
+    @Req() req,
+    @Res() res,
+  ) {
+    return this.walletService.stripeWebhookSignatureVerification(req, body);
   }
 }

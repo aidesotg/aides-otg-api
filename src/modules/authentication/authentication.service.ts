@@ -5,6 +5,8 @@ import {
   NotFoundException,
   UnauthorizedException,
   ForbiddenException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import moment from 'moment';
 import * as otpGenerator from 'otp-generator';
@@ -27,6 +29,7 @@ import { AdminLogin } from './interface/admin-login.interface';
 import AdminLoginMail from 'src/services/mailers/templates/admin-login-mail';
 import { FirebaseService } from 'src/services/firebase.service';
 import { Role } from '../role/interface/role.interface';
+import { WalletService } from '../wallet/wallet.service';
 
 dotenv.config();
 
@@ -41,6 +44,8 @@ export class AuthenticationService {
     private roleService: RoleService,
     private mailerService: Mailer,
     private firebaseService: FirebaseService,
+    @Inject(forwardRef(() => WalletService))
+    private walletService: WalletService,
   ) {}
 
   async register(body: RegistrationDto) {
@@ -140,6 +145,8 @@ export class AuthenticationService {
       await user.save();
       await this.firebaseService.subscribeToTopic(device_token, 'general');
     }
+
+    await this.walletService.createWallet(user, user.email);
 
     //check if it's an admin trying to login
     if (route && route === 'admin') {

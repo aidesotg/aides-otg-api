@@ -12,6 +12,8 @@ import { UserBeneficiarySchema } from './schema/user-beneficiary.schema';
 import { BeneficiarySchema } from './schema/beneficiary.schema';
 import { InsuranceSchema } from '../insurance/schema/insurance.schema';
 import { InsuranceModule } from '../insurance/insurance.module';
+import { WalletModule } from '../wallet/wallet.module';
+import { WalletSchema } from '../wallet/schema/wallet.schema';
 
 @Module({
   imports: [
@@ -21,11 +23,13 @@ import { InsuranceModule } from '../insurance/insurance.module';
       { name: 'UserBeneficiary', schema: UserBeneficiarySchema },
       { name: 'Beneficiary', schema: BeneficiarySchema },
       { name: 'Insurance', schema: InsuranceSchema },
+      { name: 'Wallet', schema: WalletSchema },
     ]),
     ServicesModule,
     RoleModule,
     forwardRef(() => NotificationModule),
     forwardRef(() => InsuranceModule),
+    forwardRef(() => WalletModule),
   ],
   controllers: [UserController],
   providers: [UserService, VerificationMiddleware],

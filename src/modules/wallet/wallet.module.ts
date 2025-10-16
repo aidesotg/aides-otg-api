@@ -1,25 +1,32 @@
-import { Module, forwardRef } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { WalletSchema } from './schema/wallet.schema';
-import { TransactionSchema } from './schema/transaction.schema';
-import { UserSchema } from 'src/modules/user/schema/user.schema';
-import { ServicesModule } from 'src/services/services.module';
-import { UserModule } from 'src/modules/user/user.module';
-import { WalletController } from './wallet.controller';
+import { forwardRef, Module } from '@nestjs/common';
 import { WalletService } from './wallet.service';
+import { WalletController } from './wallet.controller';
+import { MongooseModule } from '@nestjs/mongoose';
+import { UserSchema } from 'src/modules/user/schema/user.schema';
+import { TransactionSchema } from './schema/transaction.schema';
+import { WalletTransactionSchema } from './schema/wallet-transaction.schema';
+import { UserModule } from 'src/modules/user/user.module';
+import { ServicesModule } from 'src/services/services.module';
+import { WalletSchema } from './schema/wallet.schema';
+import { NotificationModule } from 'src/modules/notification/notification.module';
+import { WithdrawalOtpSchema } from './schema/withdrawal-otp.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: 'Wallet', schema: WalletSchema },
-      { name: 'Transaction', schema: TransactionSchema },
       { name: 'User', schema: UserSchema },
+      { name: 'Transaction', schema: TransactionSchema },
+      { name: 'Wallet', schema: WalletSchema },
+      { name: 'WalletTransaction', schema: WalletTransactionSchema },
+
+      { name: 'WithdrawalOtp', schema: WithdrawalOtpSchema },
     ]),
-    ServicesModule,
     forwardRef(() => UserModule),
+    ServicesModule,
+    NotificationModule,
   ],
-  controllers: [WalletController],
   providers: [WalletService],
-  exports: [WalletService, WalletModule],
+  controllers: [WalletController],
+  exports: [WalletModule, WalletService],
 })
 export class WalletModule {}

@@ -1,88 +1,132 @@
 import * as mongoose from 'mongoose';
-import { Transaction } from '../interface/transaction.interface';
 
-export const TransactionSchema = new mongoose.Schema<Transaction>(
+export const TransactionSchema = new mongoose.Schema(
   {
-    wallet: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Wallet',
-      required: true,
-    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
+    email: {
+      type: String,
+      required: true,
+    },
+    fullname: {
+      type: String,
+      required: true,
+    },
+    phone: {
+      type: String,
+    },
+    trx_id: {
+      type: String,
+    },
+    tx_ref: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    flw_ref: {
+      type: String,
+    },
+    device_fingerprint: {
+      type: String,
+    },
     amount: {
       type: Number,
       required: true,
     },
-    type: {
-      type: String,
-      enum: ['credit', 'debit'],
-      required: true,
+    charged_amount: {
+      type: Number,
     },
-    category: {
-      type: String,
-      enum: [
-        'deposit',
-        'withdrawal',
-        'payment',
-        'refund',
-        'commission',
-        'penalty',
-        'service_fee',
-      ],
-      required: true,
+    app_fee: {
+      type: Number,
     },
-    description: {
+    merchant_fee: {
+      type: Number,
+    },
+    processor_response: {
+      type: String,
+    },
+    auth_model: {
+      type: String,
+    },
+    currency: {
       type: String,
       required: true,
     },
-    reference: {
+    ip: {
       type: String,
-      unique: true,
-      required: true,
+    },
+    narration: {
+      type: String,
     },
     status: {
       type: String,
-      enum: ['pending', 'completed', 'failed', 'cancelled'],
-      default: 'pending',
+      required: true,
+      defaultValue: 'initiated',
     },
-    payment_method: {
-      type: String,
-      enum: ['card', 'bank_transfer', 'wallet', 'flutterwave', 'stripe'],
-    },
-    payment_reference: {
+    auth_url: {
       type: String,
     },
-    booking: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Booking',
+    payment_type: {
+      type: String,
     },
-    insurance: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Insurance',
+    plan: {
+      type: String,
     },
-    metadata: {
-      type: mongoose.Schema.Types.Mixed,
+    fraud_status: {
+      type: String,
     },
-    processed_at: {
+    charge_type: {
+      type: String,
+    },
+    created_at: {
       type: Date,
     },
-    is_deleted: {
+    account_id: {
+      type: String,
+    },
+    customer: {
+      type: String,
+    },
+    card: {
+      type: String,
+    },
+    details: {
+      type: String,
+    },
+    type: {
+      type: String,
+      enum: [
+        'wallet',
+        'subscription',
+        'charity',
+        'token',
+        'group',
+        'focusGroup',
+      ],
+      default: 'wallet',
+    },
+    group: {
       type: Boolean,
       default: false,
     },
+    groupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Charity',
+    },
   },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-  },
+
+  { timestamps: true },
 );
 
 TransactionSchema.method('toJSON', function () {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { __v, ...object } = this.toObject();
-  return object;
+  const newObject = {
+    ...object,
+  };
+
+  return newObject;
 });

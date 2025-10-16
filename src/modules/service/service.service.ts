@@ -111,6 +111,51 @@ export class ServiceService {
     };
   }
 
+  async getActiveServices(params: any, user: User) {
+    const { page = 1, pageSize = 50, ...rest } = params;
+    const pagination = await this.miscService.paginate({ page, pageSize });
+    const query: any = await this.miscService.search(rest);
+    if (user) {
+      query.created_by = user._id;
+    }
+
+    query['$or'] = [
+      { status: 'Pending' },
+      { status: 'Accepted' },
+      { status: 'In Progress' },
+    ];
+    delete query.status;
+
+    const services = await this.serviceModel
+      .find(query)
+      .populate('beneficiary', [
+        'first_name',
+        'last_name',
+        'profile_picture',
+        'label',
+        'relationship',
+      ])
+      .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
+      .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
+      .skip(pagination.offset)
+      .limit(pagination.limit)
+      .sort({ createdAt: -1 })
+      .exec();
+
+    const count = await this.serviceModel.countDocuments(query).exec();
+
+    return {
+      status: 'success',
+      message: 'Active requests fetched',
+
+      pagination: {
+        ...(await this.miscService.pageCount({ count, page, pageSize })),
+        total: count,
+      },
+      data: services,
+    };
+  }
+
   async getServiceById(id: string) {
     const service = await this.serviceModel
       .findOne({ _id: id })

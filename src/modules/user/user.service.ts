@@ -39,6 +39,8 @@ import {
   CreateBeneficiaryDto,
   UpdateBeneficiaryDto,
 } from './dto/beneficiary.dto';
+import { WalletService } from '../wallet/wallet.service';
+import { Wallet } from '../wallet/interface/wallet.interface';
 
 @Injectable()
 export class UserService {
@@ -50,6 +52,7 @@ export class UserService {
     @InjectModel('UserBeneficiary')
     private readonly userBeneficiaryModel: Model<UserBeneficiary>,
     @InjectModel('Role') private readonly roleModel: Model<Role>,
+    @InjectModel('Wallet') private readonly walletModel: Model<Wallet>,
     private flutterwaveService: FlutterwaveService,
     private roleService: RoleService,
     private miscService: MiscCLass,
@@ -57,6 +60,9 @@ export class UserService {
     private notificationService: NotificationService,
     @Inject(forwardRef(() => InsuranceService))
     private insuranceService: InsuranceService,
+
+    @Inject(forwardRef(() => WalletService))
+    private walletService: WalletService,
   ) {}
 
   async createProfile(user: User, body: CreateProfileDto) {
@@ -134,6 +140,8 @@ export class UserService {
 
     await userDetails.save();
     await newInsurance.save();
+
+    await this.walletService.createWallet(userDetails, userDetails.email);
 
     return {
       status: 'success',
@@ -304,7 +312,13 @@ export class UserService {
       new PlainMail(userDetails.email, title, details, userDetails, message),
     );
 
-    await this.notificationService.sendMessage(userDetails, title, message, '');
+    await this.notificationService.sendMessage({
+      user: userDetails,
+      title,
+      message,
+      resource: 'profile',
+      resource_id: userDetails._id.toString(),
+    });
 
     return {
       status: 'success',
@@ -324,6 +338,10 @@ export class UserService {
     userDetails.email = body.email;
     // TODO: Send email verification
     await userDetails.save();
+    await this.walletModel.updateOne(
+      { user: userDetails._id },
+      { email: body.email },
+    );
     return {
       status: 'success',
       message: 'Email updated successfully',
@@ -467,7 +485,13 @@ export class UserService {
       new PlainMail(userDetails.email, title, '', userDetails, message),
     );
 
-    await this.notificationService.sendMessage(userDetails, title, message, '');
+    await this.notificationService.sendMessage({
+      user: userDetails,
+      title,
+      message,
+      resource: 'profile',
+      resource_id: userDetails._id.toString(),
+    });
 
     return {
       status: 'success',

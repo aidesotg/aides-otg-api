@@ -199,12 +199,13 @@ export class LegalService {
 
     // Notify users if document was updated
     if (data.version > document.version) {
-      await this.notificationService.sendMessage(
-        { _id: 'all' }, // This would need to be implemented to notify all users
-        'Legal Document Updated',
-        `The legal document "${document.title}" has been updated. Please review and re-agree to the new version.`,
-        document._id,
-      );
+      await this.notificationService.sendMessage({
+        user: { _id: 'all' }, // This would need to be implemented to notify all users
+        title: 'Legal Document Updated',
+        message: `The legal document "${document.title}" has been updated. Please review and re-agree to the new version.`,
+        resource: 'legal_document',
+        resource_id: document._id.toString(),
+      });
     }
 
     return {

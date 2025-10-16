@@ -39,6 +39,11 @@ export class ServiceController {
   async getMyRequests(@AuthUser() user: any, @Query() params: any) {
     return this.serviceService.getServices(params, user);
   }
+  @Get('/active-requests')
+  @UseGuards(AuthGuard('jwt'))
+  async getActiveRequests(@AuthUser() user: any, @Query() params: any) {
+    return this.serviceService.getActiveServices(params, user);
+  }
 
   @Get('/my-requests/:id')
   @UseGuards(AuthGuard('jwt'))

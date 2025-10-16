@@ -260,12 +260,13 @@ export class SupportService {
     await ticket.save();
 
     // Send notification to ticket creator
-    await this.notificationService.sendMessage(
-      { _id: ticket.created_by },
-      'Ticket Closed',
-      `Your ticket ${ticket.ticket_number} has been closed`,
-      ticket._id,
-    );
+    await this.notificationService.sendMessage({
+      user: { _id: ticket.created_by },
+      title: 'Ticket Closed',
+      message: `Your ticket ${ticket.ticket_number} has been closed`,
+      resource: 'ticket',
+      resource_id: ticket._id.toString(),
+    });
 
     return {
       status: 'success',

@@ -38,6 +38,9 @@ export interface User extends mongoose.Document {
   document_url: string;
   special_requirements: string[];
   health_conditions: string[];
+  firebase_uid: string;
+  docId: string;
+  stripeConnect: { stripeCustomerId: string; active: boolean };
   readonly createdAt: Date;
   updatedAt: Date;
 }

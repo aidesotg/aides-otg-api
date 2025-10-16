@@ -16,6 +16,8 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { ServiceModule } from './modules/service/service.module';
 import { TermsModule } from './modules/terms/terms.module';
 import { SupportModule } from './modules/support/support.module';
+import { WalletModule } from './modules/wallet/wallet.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 dotenv.config();
 
@@ -41,7 +43,9 @@ dotenv.config();
     SupportModule,
     NotificationModule,
     SettingsModule,
+    WalletModule,
     TermsModule,
+    ChatModule,
   ],
   controllers: [],
   providers: [],

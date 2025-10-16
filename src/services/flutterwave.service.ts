@@ -39,20 +39,34 @@ export class FlutterwaveService {
     }
   }
 
-  async getBankList() {
-    const response = await axios.get(`${this.baseUrl}/banks/NG`, this.options);
+  async getBankList(code = 'NG') {
+    const response = await axios.get(
+      `${this.baseUrl}/banks/${code}`,
+      this.options,
+    );
     console.log('verify ', response.data);
     return response.data.data;
   }
 
   async verifyBank(payload: any) {
-    const response = await axios.post(
-      `${this.baseUrl}/accounts/resolve`,
-      payload,
-      this.options,
-    );
-    console.log(`Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`);
-    return response.data.data;
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/accounts/resolve`,
+        payload,
+        this.options,
+      );
+      console.log(`Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`);
+      return response.data.data;
+    } catch (err) {
+      console.log(
+        '🚀 ~ FlutterwaveService ~ verifyBank ~ err:',
+        err.response.data.message,
+      );
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Unable to verify bank details',
+      });
+    }
   }
 
   async verifyBVN(bvn: string) {
@@ -72,5 +86,23 @@ export class FlutterwaveService {
     );
     console.log(`Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`);
     return response.data;
+  }
+
+  async transferRates(payload: {
+    amount: number;
+    destination_currency: string;
+    source_currency: string;
+  }) {
+    const { amount, destination_currency, source_currency } = payload;
+    try {
+      const response = await axios.get(
+        `${this.baseUrl}/transfers/rates?amount=${amount}&destination_currency=${destination_currency}&source_currency=${source_currency}`,
+        this.options,
+      );
+      console.log('rates ', response.data);
+      return response.data;
+    } catch (err) {
+      throw err;
+    }
   }
 }

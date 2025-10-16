@@ -55,6 +55,7 @@
     "nanoid": "^4.0.0",
     "nestjs-command": "^2.0.0",
     "nestjs-seeder": "^0.2.0",
+    "nestjs-stripe": "^1.0.0",
     "nodemailer": "^6.6.3",
     "otp-generator": "^2.0.1",
     "passport": "^0.4.1",
@@ -63,6 +64,7 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^6.6.6",
+    "stripe": "^8.222.0",
     "swagger-ui-express": "^4.1.6",
     "twilio": "^3.77.0",
     "uuid": "^8.3.2"

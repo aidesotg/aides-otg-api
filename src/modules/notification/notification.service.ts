@@ -19,12 +19,21 @@ export class NotificationService {
     private miscService: MiscCLass,
   ) {}
 
-  async sendMessage(user: any, title: string, message: string, imageUrl = '') {
+  async sendMessage(payload: {
+    user: any;
+    title: string;
+    message: string;
+    resource: string;
+    resource_id?: string;
+  }) {
+    const { user, title, message, resource, resource_id } = payload;
     const notification = new this.notificationModel({
       message,
       title,
       user: user._id,
       type: 'individual',
+      resource: resource,
+      resource_id: resource_id,
     });
 
     await notification.save();
@@ -35,7 +44,7 @@ export class NotificationService {
       })
       .exec();
 
-    await this.firebaseService.sendToUser(user, title, message, imageUrl);
+    await this.firebaseService.sendToUser(user, title, message, '');
     return;
   }
 

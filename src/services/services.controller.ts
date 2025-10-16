@@ -20,7 +20,7 @@ import { MiscCLass } from './misc.service';
 export class ServicesController {
   constructor(private awsService: AwsService, private miscService: MiscCLass) {}
 
-  @Post('file/presign-url')
+  @Get('file/presign-url')
   @UseGuards(AuthGuard('jwt'))
   @UsePipes(ValidationPipe)
   async createAnewThread(@Query() file: PresignUrlDto) {

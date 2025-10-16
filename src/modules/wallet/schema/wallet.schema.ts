@@ -1,7 +1,6 @@
 import * as mongoose from 'mongoose';
-import { Wallet } from '../interface/wallet.interface';
 
-export const WalletSchema = new mongoose.Schema<Wallet>(
+export const WalletSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -9,27 +8,26 @@ export const WalletSchema = new mongoose.Schema<Wallet>(
       required: true,
       unique: true,
     },
+    email: {
+      type: String,
+      unique: true,
+    },
     balance: {
       type: Number,
       default: 0,
-      min: 0,
     },
     ledger_balance: {
       type: Number,
       default: 0,
-      min: 0,
     },
-    currency: {
+    tokens: {
+      type: Number,
+      default: 0,
+    },
+    type: {
       type: String,
-      default: 'NGN',
-    },
-    is_active: {
-      type: Boolean,
-      default: true,
-    },
-    is_deleted: {
-      type: Boolean,
-      default: false,
+      enum: ['organization', 'charity', 'individual'],
+      default: 'individual',
     },
   },
   {
@@ -40,12 +38,11 @@ export const WalletSchema = new mongoose.Schema<Wallet>(
 );
 
 WalletSchema.method('toJSON', function () {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { __v, ...object } = this.toObject();
-  return object;
-});
+  const newObject = {
+    ...object,
+  };
 
-WalletSchema.virtual('transactions', {
-  ref: 'Transaction',
-  localField: '_id',
-  foreignField: 'wallet',
+  return newObject;
 });

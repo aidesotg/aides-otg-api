@@ -3,11 +3,11 @@ import * as mongoose from 'mongoose';
 export interface Wallet extends mongoose.Document {
   readonly id: string;
   user: string;
+  email: string;
   balance: number;
   ledger_balance: number;
-  currency: string;
-  is_active: boolean;
-  is_deleted: boolean;
+  tokens: number;
+  type: string;
   readonly createdAt: Date;
-  updatedAt: Date;
+  readonly updatedAt: Date;
 }

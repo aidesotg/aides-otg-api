@@ -113,6 +113,24 @@ export const UserSchema = new mongoose.Schema<User>(
         type: String,
       },
     ],
+    firebase_uid: {
+      type: String,
+      default: null,
+    },
+    docId: {
+      type: String,
+      default: null,
+    },
+    stripeConnect: {
+      stripeCustomerId: {
+        type: String,
+        default: null,
+      },
+      active: {
+        type: Boolean,
+        default: false,
+      },
+    },
   },
   {
     timestamps: true,

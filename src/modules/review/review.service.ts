@@ -46,12 +46,13 @@ export class ReviewService {
     const review = await newReview.save();
 
     // Send notification to caregiver
-    await this.notificationService.sendMessage(
-      { _id: createReviewDto.caregiver },
-      'New Review Received',
-      `You received a ${createReviewDto.rating}-star review`,
-      review._id,
-    );
+    await this.notificationService.sendMessage({
+      user: { _id: createReviewDto.caregiver },
+      title: 'New Review Received',
+      message: `You received a ${createReviewDto.rating}-star review`,
+      resource: 'review',
+      resource_id: review._id.toString(),
+    });
 
     return {
       status: 'success',

@@ -8,6 +8,7 @@ import { UserSchema } from 'src/modules/user/schema/user.schema';
 import { AuthenticationController } from './authentication.controller';
 import { AuthenticationService } from './authentication.service';
 import { AdminLoginSchema } from './schema/admin-login.schema';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AdminLoginSchema } from './schema/admin-login.schema';
     ]),
     forwardRef(() => RoleModule),
     ServicesModule,
+    forwardRef(() => WalletModule),
   ],
   controllers: [AuthenticationController],
   providers: [AuthenticationService],
