@@ -14,6 +14,7 @@ import { InsuranceSchema } from '../insurance/schema/insurance.schema';
 import { InsuranceModule } from '../insurance/insurance.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { WalletSchema } from '../wallet/schema/wallet.schema';
+import { ProfessionalProfileSchema } from './schema/professional-profile.schema';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { WalletSchema } from '../wallet/schema/wallet.schema';
       { name: 'Beneficiary', schema: BeneficiarySchema },
       { name: 'Insurance', schema: InsuranceSchema },
       { name: 'Wallet', schema: WalletSchema },
+      { name: 'ProfessionalProfile', schema: ProfessionalProfileSchema },
     ]),
     ServicesModule,
     RoleModule,

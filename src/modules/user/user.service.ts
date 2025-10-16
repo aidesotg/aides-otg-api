@@ -41,6 +41,8 @@ import {
 } from './dto/beneficiary.dto';
 import { WalletService } from '../wallet/wallet.service';
 import { Wallet } from '../wallet/interface/wallet.interface';
+import { CreateProfessionalProfileDto } from './dto/professional-profile.dto';
+import { ProfessionalProfile } from './interface/professional-profile.interface';
 
 @Injectable()
 export class UserService {
@@ -53,6 +55,8 @@ export class UserService {
     private readonly userBeneficiaryModel: Model<UserBeneficiary>,
     @InjectModel('Role') private readonly roleModel: Model<Role>,
     @InjectModel('Wallet') private readonly walletModel: Model<Wallet>,
+    @InjectModel('ProfessionalProfile')
+    private readonly professionalProfileModel: Model<ProfessionalProfile>,
     private flutterwaveService: FlutterwaveService,
     private roleService: RoleService,
     private miscService: MiscCLass,
@@ -751,6 +755,34 @@ export class UserService {
     return {
       status: 'success',
       message: 'Beneficiary deleted successfully',
+    };
+  }
+
+  //PROFESSIONAL PROFILE
+  async createProfessionalProfile(
+    createProfessionalProfileDto: CreateProfessionalProfileDto,
+    user: User,
+  ) {
+    const profile = await this.professionalProfileModel.findOne({
+      user: user._id,
+    });
+    if (profile && profile.status !== 'pending') {
+      throw new BadRequestException({
+        status: 'error',
+        message:
+          'Yo currently have a pending Caregiver Application, please wait for it to be approved/rejected before creating a new one',
+      });
+    }
+    const professionalProfile = new this.professionalProfileModel({
+      ...createProfessionalProfileDto,
+      status: 'pending',
+      user: user._id,
+    });
+    await professionalProfile.save();
+    return {
+      status: 'success',
+      message: 'Professional profile created successfully',
+      data: professionalProfile,
     };
   }
 }

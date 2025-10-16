@@ -5,5 +5,5 @@ export class RegistrationDto {
   @ApiProperty() @IsString() password: string;
   @ApiProperty() @IsString() phone: string;
   @ApiProperty() @IsEmail() email: string;
-  @ApiProperty() @IsMongoId() roleId: string;
+  // @ApiProperty() @IsMongoId() roleId: string;
 }

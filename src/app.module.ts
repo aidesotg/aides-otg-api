@@ -18,6 +18,7 @@ import { TermsModule } from './modules/terms/terms.module';
 import { SupportModule } from './modules/support/support.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { ServiceCategoryModule } from './modules/service-category/service-category.module';
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ dotenv.config();
     RolePermissionsModule,
     ServiceModule,
     ServicesModule,
+    ServiceCategoryModule,
     SupportModule,
     NotificationModule,
     SettingsModule,

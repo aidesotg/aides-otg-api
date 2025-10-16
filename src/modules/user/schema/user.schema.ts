@@ -159,8 +159,10 @@ UserSchema.virtual('bank', {
   foreignField: 'user',
 });
 
-UserSchema.virtual('service_profile', {
-  ref: 'ServiceProfile',
+UserSchema.virtual('professional_profile', {
+  ref: 'ProfessionalProfile',
   localField: '_id',
   foreignField: 'user',
+  match: { status: 'approved' },
+  justOne: true,
 });

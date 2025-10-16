@@ -32,6 +32,7 @@ import {
   CreateBeneficiaryDto,
   UpdateBeneficiaryDto,
 } from './dto/beneficiary.dto';
+import { CreateProfessionalProfileDto } from './dto/professional-profile.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -194,6 +195,16 @@ export class UserController {
   @UseFilters(ExceptionsLoggerFilter)
   async resetPassword(@Body() body: PasswordResetSelf, @AuthUser() user: any) {
     return this.userService.resetPassword(body, user);
+  }
+
+  @Post('/request/caregiver')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async createProfessionalProfile(
+    @Body() body: CreateProfessionalProfileDto,
+    @AuthUser() user: any,
+  ) {
+    return this.userService.createProfessionalProfile(body, user);
   }
 
   // @Put('/professional-profile/update')

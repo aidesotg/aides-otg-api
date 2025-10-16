@@ -53,11 +53,11 @@ export class AuthenticationService {
       '🚀 ~ AuthenticationService ~ register ~ RegistrationDto:',
       RegistrationDto,
     );
-    const { email, password, phone, roleId } = body;
+    const { email, password, phone } = body;
     const pass = bcrypt.hashSync(password.replaceAll(' ', ''), 11);
     // const phoneNum = `+234${phone}`;
 
-    const role = await this.roleModel.findOne({ _id: roleId });
+    const role = await this.roleModel.findOne({ name: 'Customer' });
     if (!role) {
       throw new NotFoundException({
         status: 'error',
