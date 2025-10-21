@@ -43,7 +43,8 @@ export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
       },
     },
     care_type: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Service',
     },
     notes: {
       type: String,
