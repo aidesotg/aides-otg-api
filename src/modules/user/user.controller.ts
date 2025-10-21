@@ -90,6 +90,12 @@ export class UserController {
     return this.userService.getBeneficariesByUserId(user._id);
   }
 
+  @Get('/beneficiaries/user/:userId')
+  @UseGuards(AuthGuard('jwt'))
+  async getBeneficiariesByUserId(@Param('userId') userId: string) {
+    return this.userService.getBeneficariesByUserId(userId);
+  }
+
   @Get('/beneficiaries/:id')
   @UseGuards(AuthGuard('jwt'))
   async getBeneficiaryById(@Param('id') id: string) {
