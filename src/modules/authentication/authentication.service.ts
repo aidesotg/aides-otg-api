@@ -103,7 +103,7 @@ export class AuthenticationService {
         email: email.toLowerCase(),
         isDeleted: false,
       })
-      .populate('role', ['name'])
+      .populate('roles', ['name'])
       .exec();
     if (!user) {
       throw new HttpException(
@@ -121,7 +121,7 @@ export class AuthenticationService {
       );
     }
 
-    if (!user.is_active) {
+    if (user.status === 'inactive') {
       const { message } = await this.resendVerification(user.email);
       throw new HttpException(
         {
@@ -132,7 +132,7 @@ export class AuthenticationService {
       );
     }
 
-    if (user.isSuspended) {
+    if (user.status === 'suspended') {
       throw new UnauthorizedException({
         status: 'error',
         message:
@@ -150,11 +150,18 @@ export class AuthenticationService {
 
     //check if it's an admin trying to login
     if (route && route === 'admin') {
-      if (user.role.name !== 'Super Admin') {
-        throw new HttpException(
-          { status: 'error', message: 'Unauthorized' },
-          401,
-        );
+      let isSuperAdmin = false;
+      for (const role of user.roles) {
+        if (role.name === 'Super Admin') {
+          isSuperAdmin = true;
+          break;
+        }
+      }
+      if (!isSuperAdmin) {
+        throw new UnauthorizedException({
+          status: 'error',
+          message: 'Unauthorized',
+        });
       }
       let code = null;
 
