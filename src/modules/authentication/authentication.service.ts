@@ -128,7 +128,7 @@ export class AuthenticationService {
           status: 'error',
           message,
         },
-        402,
+        403,
       );
     }
 
