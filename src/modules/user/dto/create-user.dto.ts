@@ -29,6 +29,4 @@ export class CreateUserDto {
   @ApiProperty() @IsMongoId() roleId: string;
 
   @ApiProperty() @IsString() phone: string;
-
-  @ApiProperty() @IsString() role: string;
 }

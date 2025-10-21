@@ -80,14 +80,21 @@ export class UserService {
   }
 
   async createUser(createUserDto: CreateUserDto) {
-    const { first_name, last_name, email, phone, role } = createUserDto;
+    const { first_name, last_name, email, phone, roleId } = createUserDto;
+    const role = await this.roleModel.findById(roleId);
+    if (!role) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Role not found',
+      });
+    }
     const randomPassword = await this.miscService.generateRandomPassword();
     const user = new this.userModel({
       first_name,
       last_name,
       email,
       phone,
-      roles: [role],
+      roles: [role._id],
       password: bcrypt.hashSync(randomPassword, 11),
     });
     await user.save();
