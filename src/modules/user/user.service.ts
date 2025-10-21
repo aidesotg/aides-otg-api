@@ -215,7 +215,7 @@ export class UserService {
   async getUser(user: any) {
     const userDetails: any = await this.userModel
       .findOne({ _id: user._id, isDeleted: false })
-      .populate('role', ['name'])
+      .populate('roles', ['name'])
       .populate({
         path: 'beneficiaries',
         populate: [{ path: 'insurance' }],
@@ -249,7 +249,7 @@ export class UserService {
       // .select('fullname username phone profile_picture')
       .populate([
         {
-          path: 'role',
+          path: 'roles',
           select: 'name',
         },
         {
@@ -617,28 +617,28 @@ export class UserService {
 
     for (const role of roles) {
       const count = await this.userModel
-        .countDocuments({ account_roles: { $in: [role._id] } })
+        .countDocuments({ roles: { $in: [role._id] } })
         .exec();
       const roleName = `${role.name}s`;
-      if (role.name !== 'admin') {
-        data[roleName] = count;
-      }
+      // if (role.name !== 'admin') {
+      data[roleName] = count;
+      // }
     }
 
-    for (const role of roles) {
-      if (role.name == 'admin') {
-        const count = await this.userModel
-          .countDocuments({ role: role._id })
-          .exec();
-        data.admins = count;
-      } else if (role.name == 'user') {
-        const count = await this.userModel
-          .countDocuments({ role: role._id })
-          .exec();
-        const roleName = `${role.name}s`;
-        data[roleName] = count;
-      }
-    }
+    // for (const role of roles) {
+    //   if (role.name == 'admin') {
+    //     const count = await this.userModel
+    //       .countDocuments({ role: role._id })
+    //       .exec();
+    //     data.admins = count;
+    //   } else if (role.name == 'user') {
+    //     const count = await this.userModel
+    //       .countDocuments({ role: role._id })
+    //       .exec();
+    //     const roleName = `${role.name}s`;
+    //     data[roleName] = count;
+    //   }
+    // }
 
     return {
       status: 'success',
@@ -658,14 +658,17 @@ export class UserService {
 
     for (const beneficiary of createBeneficiaryDto) {
       const { insurance, ...rest } = beneficiary;
-      const policyExists = await this.insuranceService.verifyExistingInsurance(
-        insurance.policy_number,
-      );
-      if (policyExists) {
-        throw new BadRequestException({
-          status: 'error',
-          message: `Beneficiary with Policy number: ${insurance.policy_number} already exists`,
-        });
+      if (insurance) {
+        const policyExists =
+          await this.insuranceService.verifyExistingInsurance(
+            insurance.policy_number,
+          );
+        if (policyExists) {
+          throw new BadRequestException({
+            status: 'error',
+            message: `Beneficiary with Policy number: ${insurance.policy_number} already exists`,
+          });
+        }
       }
       const newBeneficiary = new this.beneficiaryModel({
         ...rest,
@@ -675,19 +678,20 @@ export class UserService {
       newBeneficiary.beneficiary_id = await this.generateBeneficiaryId(
         newBeneficiary,
       );
+      beneficiariesData.push(newBeneficiary.save());
 
-      const newInsurance = new this.insuranceModel({
-        ...insurance,
-        beneficiary: newBeneficiary._id,
-      });
+      if (insurance) {
+        const newInsurance = new this.insuranceModel({
+          ...insurance,
+          beneficiary: newBeneficiary._id,
+        });
+        insuranceData.push(newInsurance.save());
+      }
 
       const newUserBeneficiary = new this.userBeneficiaryModel({
         user: user._id,
         beneficiary: newBeneficiary._id,
       });
-
-      beneficiariesData.push(newBeneficiary.save());
-      insuranceData.push(newInsurance.save());
       userBeneficiaryData.push(newUserBeneficiary.save());
     }
 
