@@ -38,6 +38,7 @@ export class InsuranceService {
     const insurances = await this.insuranceModel
       .find(query)
       .populate('user', ['first_name', 'email'])
+      .populate('insurance_company')
       .skip(pagination.offset)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
@@ -58,7 +59,7 @@ export class InsuranceService {
     const insurance = await this.insuranceModel
       .findOne({ _id: id, is_deleted: false })
       .populate('user', ['first_name', 'email'])
-      .populate('transactions')
+      .populate('insurance_company')
       .populate('beneficiary')
       .exec();
 

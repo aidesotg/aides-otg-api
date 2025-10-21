@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as mongoose from 'mongoose';
 import { Beneficiary } from '../interface/beneficiary.interface';
+import { unique } from 'faker';
 
 export const BeneficiarySchema = new mongoose.Schema<Beneficiary>(
   {
+    beneficiary_id: {
+      type: String,
+    },
     first_name: {
       type: String,
     },
@@ -39,6 +43,10 @@ export const BeneficiarySchema = new mongoose.Schema<Beneficiary>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+    },
+    ssn: {
+      type: String,
+      unique: true,
     },
   },
   {

@@ -31,7 +31,7 @@ export class ServiceCategoryService {
     return {
       status: 'success',
       message: 'Service category created',
-      data: { category },
+      data: category,
     };
   }
 
@@ -104,19 +104,22 @@ export class ServiceCategoryService {
     return {
       status: 'success',
       message: 'Service category updated',
-      data: { category },
+      data: category,
     };
   }
 
   async suspendServiceCategory(id: string) {
     const category = await this.getServiceCategoryById(id);
-    category.is_active = !category.is_active;
+    const status = category.status;
+    category.status = status === 'active' ? 'suspended' : 'active';
     await category.save();
 
-    const status = category.is_active ? 'activated' : 'suspended';
     return {
       status: 'success',
-      message: `Service category ${status} successfully`,
+      message: `Service category ${
+        category.status === 'active' ? 'activated' : 'suspended'
+      } successfully`,
+      data: category,
     };
   }
 

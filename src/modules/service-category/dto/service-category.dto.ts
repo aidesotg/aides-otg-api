@@ -13,12 +13,17 @@ export class CreateServiceCategoryDto {
   @ApiProperty()
   @IsString()
   @IsOptional()
-  description?: string;
+  status?: string;
 
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  cover_image?: string;
+  // @ApiProperty()
+  // @IsString()
+  // @IsOptional()
+  // description?: string;
+
+  // @ApiProperty()
+  // @IsString()
+  // @IsOptional()
+  // cover_image?: string;
 }
 
 export class UpdateServiceCategoryDto {
@@ -38,9 +43,14 @@ export class UpdateServiceCategoryDto {
   @ApiProperty()
   @IsString()
   @IsOptional()
-  cover_image?: string;
+  status?: string;
 
-  @ApiProperty()
-  @IsOptional()
-  is_active?: boolean;
+  // @ApiProperty()
+  // @IsString()
+  // @IsOptional()
+  // cover_image?: string;
+
+  // @ApiProperty()
+  // @IsOptional()
+  // is_active?: boolean;
 }

@@ -64,6 +64,10 @@ export class CreateBeneficiaryDto {
   @IsOptional()
   @Type(() => InsuranceInfoDto)
   insurance: InsuranceInfoDto;
+
+  @ApiProperty()
+  @IsString()
+  ssn: string;
 }
 
 export class UpdateBeneficiaryDto {

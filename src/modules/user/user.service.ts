@@ -69,6 +69,46 @@ export class UserService {
     private walletService: WalletService,
   ) {}
 
+  private async generateClientId(user: User): Promise<string> {
+    return `Cli${user._id.toString().toUpperCase().slice(-10)}`;
+  }
+
+  private async generateBeneficiaryId(
+    beneficiary: Beneficiary,
+  ): Promise<string> {
+    return `Bid${beneficiary._id.toString().toUpperCase().slice(-10)}`;
+  }
+
+  async createUser(createUserDto: CreateUserDto) {
+    const { first_name, last_name, email, phone, role } = createUserDto;
+    const randomPassword = await this.miscService.generateRandomPassword();
+    const user = new this.userModel({
+      first_name,
+      last_name,
+      email,
+      phone,
+      roles: [role],
+      password: bcrypt.hashSync(randomPassword, 11),
+    });
+    await user.save();
+
+    this.mailerService.send(
+      new PlainMail(
+        email,
+        'Account Creation',
+        `email: ${email} password: ${randomPassword}`,
+        user,
+        'An account has just been created for you. please use these credentials to login and validate your account',
+      ),
+    );
+
+    return {
+      status: 'success',
+      message: 'User Created',
+      data: user,
+    };
+  }
+
   async createProfile(user: User, body: CreateProfileDto) {
     const { beneficiaries, insurance, emergency_contact, ...rest } = body;
     const userDetails = await this.userModel.findById(user._id);
@@ -85,6 +125,7 @@ export class UserService {
         userDetails[value] = rest[value];
       }
     }
+    userDetails.client_id = await this.generateClientId(userDetails);
     if (emergency_contact) {
       userDetails.emergency_contact = [emergency_contact];
     }
@@ -459,9 +500,7 @@ export class UserService {
   }
 
   async updateRole(roleId: string, user: string) {
-    const userDetails = await this.userModel
-      .findOne({ _id: user, isDeleted: false })
-      .exec();
+    const userDetails = await this.userModel.findOne({ _id: user }).exec();
 
     if (!userDetails) {
       throw new NotFoundException({
@@ -478,7 +517,7 @@ export class UserService {
       });
     }
 
-    userDetails.role = roleId;
+    userDetails.roles.push(roleId);
 
     await userDetails.save();
 
@@ -625,6 +664,10 @@ export class UserService {
         ...rest,
         user: user._id,
       });
+
+      newBeneficiary.beneficiary_id = await this.generateBeneficiaryId(
+        newBeneficiary,
+      );
 
       const newInsurance = new this.insuranceModel({
         ...insurance,

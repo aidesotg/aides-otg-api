@@ -3,92 +3,25 @@ import { Service } from '../interface/service.interface';
 
 export const ServiceSchema = new mongoose.Schema<Service>(
   {
-    booking_id: {
+    name: {
       type: String,
+      required: true,
     },
-    transaction_id: {
-      type: String,
-    },
-    self_care: {
-      type: Boolean,
-    },
-    created_by: {
+    category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'ServiceCategory',
     },
-    beneficiary: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Beneficiary',
+    price: {
+      type: Number,
     },
-    details: {
-      type: String,
-    },
-    location: {
-      street: {
-        type: String,
-        required: false,
-      },
-      city: {
-        type: String,
-      },
-      state: {
-        type: String,
-      },
-      country: {
-        type: String,
-      },
-      zip_code: {
-        type: String,
-        required: false,
-      },
-    },
-    care_type: {
-      type: String,
-    },
-    notes: {
-      type: String,
-    },
-    duration_type: {
-      type: String,
-    },
-    date_list: [
-      {
-        date: {
-          type: Date,
-        },
-        day_of_week: {
-          type: String,
-        },
-        start_time: {
-          type: String,
-        },
-        end_time: {
-          type: String,
-        },
-      },
-    ],
-    care_giver: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      default: null,
+    care_giver_commission: {
+      type: Number,
     },
     status: {
       type: String,
-
-      enum: ['Pending', 'Accepted', 'In Progress', 'Completed', 'Cancelled'],
-      default: 'Pending',
+      enum: ['active', 'suspended'],
+      default: 'active',
     },
-    status_history: [
-      {
-        status: {
-          type: String,
-        },
-        created_at: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
   },
   {
     timestamps: true,
@@ -97,13 +30,7 @@ export const ServiceSchema = new mongoose.Schema<Service>(
   },
 );
 
-ServiceSchema.method('toJSON', function () {
-  const { __v, ...object } = this.toObject();
-  return object;
-});
-
-ServiceSchema.virtual('bookings', {
-  ref: 'Booking',
-  localField: '_id',
-  foreignField: 'service',
-});
+// ServiceRequestSchema.method('toJSON', function () {
+//   const { __v, ...object } = this.toObject();
+//   return object;
+// });

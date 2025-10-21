@@ -13,6 +13,7 @@ import {
   Max,
   IsBoolean,
   IsDateString,
+  IsMongoId,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -33,10 +34,11 @@ export class CoveredServiceDto {
 }
 
 export class InsuranceInfoDto {
+  @ApiProperty() @IsMongoId() insurance_company: string;
   @ApiProperty() @IsString() @IsOptional() gender?: string;
-  @ApiProperty() @IsString() @IsOptional() policy_number?: string;
+  @ApiProperty() @IsString() policy_number?: string;
   @ApiProperty() @IsString() @IsOptional() coverage_plan?: string;
   @ApiProperty() @IsDateString() @IsOptional() coverage_plan_start?: string;
   @ApiProperty() @IsDateString() @IsOptional() coverage_plan_date?: string;
-  @ApiProperty() @IsString() @IsOptional() insurance_document?: string;
+  @ApiProperty() @IsString() insurance_document?: string;
 }

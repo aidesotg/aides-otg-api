@@ -39,6 +39,10 @@ export const InsuranceSchema = new mongoose.Schema<Insurance>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Beneficiary',
     },
+    insurance_company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'InsuranceCompany',
+    },
   },
   {
     timestamps: true,

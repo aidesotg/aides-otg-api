@@ -1,168 +1,79 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import {
   IsString,
   IsOptional,
   IsNotEmpty,
-  MinLength,
-  IsBoolean,
+  IsNumber,
   IsEnum,
-  IsArray,
-  ValidateNested,
+  MinLength,
+  Min,
   IsMongoId,
-  IsDateString,
 } from 'class-validator';
-
-export class LocationDto {
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
-  street?: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  city: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  state: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  country: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
-  zip_code?: string;
-}
-
-export class DateSlotDto {
-  @ApiProperty()
-  @IsDateString()
-  @IsNotEmpty()
-  date: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  start_time: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  end_time: string;
-}
 
 export class CreateServiceDto {
   @ApiProperty()
-  @IsBoolean()
+  @IsString()
   @IsNotEmpty()
-  self_care: boolean;
+  @MinLength(2, {
+    message: 'Service name too short',
+  })
+  name: string;
 
   @ApiProperty()
   @IsMongoId()
-  @IsNotEmpty()
-  beneficiary: string;
+  category: string;
 
   @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(10)
-  details: string;
-
-  @ApiProperty({ type: LocationDto })
-  @ValidateNested()
-  @Type(() => LocationDto)
-  @IsNotEmpty()
-  location: LocationDto;
+  @IsNumber()
+  @Min(0, {
+    message: 'Price must be greater than or equal to 0',
+  })
+  price: number;
 
   @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  care_type: string;
+  @IsNumber()
+  @Min(0, {
+    message: 'Care giver commission must be greater than or equal to 0',
+  })
+  care_giver_commission: number;
 
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  notes: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  duration_type: string;
-
-  @ApiProperty({ type: [DateSlotDto] })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => DateSlotDto)
-  @IsNotEmpty()
-  date_list: DateSlotDto[];
-
-  @ApiProperty({ required: false })
-  @IsMongoId()
-  @IsOptional()
-  care_giver?: string;
+  @ApiProperty({ enum: ['active', 'suspended'] })
+  @IsEnum(['active', 'suspended'])
+  status: 'active' | 'suspended';
 }
 
 export class UpdateServiceDto {
-  @ApiProperty({ required: false })
-  @IsBoolean()
-  @IsOptional()
-  self_care?: boolean;
-
-  @ApiProperty({ required: false })
-  @IsMongoId()
-  @IsOptional()
-  beneficiary?: string;
-
-  @ApiProperty({ required: false })
+  @ApiProperty()
   @IsString()
   @IsOptional()
-  @MinLength(10)
-  details?: string;
-
-  @ApiProperty({ type: LocationDto, required: false })
-  @ValidateNested()
-  @Type(() => LocationDto)
-  @IsOptional()
-  location?: LocationDto;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
-  care_type?: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
-  notes?: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
-  duration_type?: string;
-
-  @ApiProperty({ type: [DateSlotDto], required: false })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => DateSlotDto)
-  @IsOptional()
-  date_list?: DateSlotDto[];
-
-  @ApiProperty({ required: false })
-  @IsMongoId()
-  @IsOptional()
-  care_giver?: string;
-
-  @ApiProperty({
-    enum: ['Pending', 'Accepted', 'In Progress', 'Completed', 'Cancelled'],
-    required: false,
+  @MinLength(2, {
+    message: 'Service name too short',
   })
-  @IsEnum(['Pending', 'Accepted', 'In Progress', 'Completed', 'Cancelled'])
+  name?: string;
+
+  @ApiProperty()
+  @IsString()
   @IsOptional()
-  status?: string;
+  category?: string;
+
+  @ApiProperty()
+  @IsNumber()
+  @Min(0, {
+    message: 'Price must be greater than or equal to 0',
+  })
+  @IsOptional()
+  price?: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @Min(0, {
+    message: 'Care giver commission must be greater than or equal to 0',
+  })
+  @IsOptional()
+  care_giver_commission?: number;
+
+  @ApiProperty({ enum: ['active', 'suspended'] })
+  @IsEnum(['active', 'suspended'])
+  @IsOptional()
+  status?: 'active' | 'suspended';
 }

@@ -57,7 +57,7 @@ export class AuthenticationService {
     const pass = bcrypt.hashSync(password.replaceAll(' ', ''), 11);
     // const phoneNum = `+234${phone}`;
 
-    const role = await this.roleModel.findOne({ name: 'Customer' });
+    const role = await this.roleModel.findOne({ name: 'Client' });
     if (!role) {
       throw new NotFoundException({
         status: 'error',
@@ -76,7 +76,7 @@ export class AuthenticationService {
       email: email.toLowerCase(),
       password: pass,
       phone,
-      role: role._id,
+      roles: [role._id],
       activation_code,
       activation_expires_in: expire,
     };
@@ -301,13 +301,13 @@ export class AuthenticationService {
 
     user.activation_code = null;
     user.activation_expires_in = null;
-    user.is_active = true;
+    user.status = 'active';
 
     await user.save();
 
     const expire = 2592000;
     const jwtToken = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, roles: user.roles },
       process.env.SECRET,
       { expiresIn: expire },
     );

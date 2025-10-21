@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsEmail,
   MaxLength,
+  IsMongoId,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -14,39 +15,20 @@ export class CreateUserDto {
   @MinLength(2, {
     message: 'name too short',
   })
-  fullname: string;
+  first_name: string;
 
-  @ApiProperty() @IsString() username: string;
+  @ApiProperty()
+  @IsString()
+  @MinLength(2, {
+    message: 'name too short',
+  })
+  last_name: string;
 
   @ApiProperty() @IsEmail() email: string;
 
-  @ApiProperty() @IsString() country: string;
+  @ApiProperty() @IsMongoId() roleId: string;
 
-  @ApiProperty()
-  @IsString()
-  @ApiProperty()
-  @IsString()
-  @MinLength(6, {
-    message: 'Password too short',
-  })
-  @IsNotEmpty()
-  password: string;
+  @ApiProperty() @IsString() phone: string;
 
-  @ApiProperty() @IsString() @IsOptional() role: string;
-  @ApiProperty() @IsString() @IsOptional() occupation: string;
-  @ApiProperty() @IsString() @IsOptional() description: string;
-  @ApiProperty() @IsString() @IsOptional() nationality: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  @MinLength(10, {
-    message: 'Phone number too short',
-  })
-  @MaxLength(10, {
-    message: 'Phone number too long',
-  })
-  phone?: string;
-
-  @ApiProperty() @IsString() @IsOptional() profile_picture?: string;
+  @ApiProperty() @IsString() role: string;
 }

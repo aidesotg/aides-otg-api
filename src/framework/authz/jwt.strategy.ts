@@ -20,14 +20,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any): Promise<any> {
     const user = await this.userModel
       .findOne({ _id: payload.id, isDeleted: false })
-      .populate('role');
+      .populate('roles', ['name']);
     if (!user) {
       throw new UnauthorizedException({
         status: 'error',
         message: 'Your current login session has expired',
       });
     }
-    if (user.isSuspended) {
+    if (user.status === 'suspended') {
       throw new UnauthorizedException({
         status: 'error',
         message:

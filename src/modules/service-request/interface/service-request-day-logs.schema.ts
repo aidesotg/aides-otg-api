@@ -1,8 +1,8 @@
 import * as mongoose from 'mongoose';
 
-export interface ServiceDayLogs extends mongoose.Document {
+export interface ServiceRequestDayLogs extends mongoose.Document {
   readonly id: string;
-  service: string;
+  request: string;
   day_id: string;
   log: {
     status: string;

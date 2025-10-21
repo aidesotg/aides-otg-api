@@ -76,9 +76,6 @@ export class UpdatePhoneDto {
   @MinLength(10, {
     message: 'Phone number too short',
   })
-  @MaxLength(10, {
-    message: 'Phone number too long',
-  })
   phone?: string;
 }
 

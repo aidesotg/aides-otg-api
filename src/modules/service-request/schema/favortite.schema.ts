@@ -1,5 +1,4 @@
 import * as mongoose from 'mongoose';
-import { Service } from '../interface/service.interface';
 import { Favorite } from '../interface/favorite.interface';
 
 export const FavoriteSchema = new mongoose.Schema<Favorite>(
@@ -8,9 +7,9 @@ export const FavoriteSchema = new mongoose.Schema<Favorite>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
-    service: {
+    request: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Service',
+      ref: 'ServiceRequest',
     },
     care_giver: {
       type: mongoose.Schema.Types.ObjectId,

@@ -228,4 +228,38 @@ export class MiscCLass {
 
     return momentObj.day(); // Returns day number (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
   }
+
+  async generateRandomPassword(length = 8): Promise<string> {
+    // Generate a random password with letters, numbers, and special characters
+    // const length = 12;
+    const charset =
+      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let password = '';
+
+    // Ensure at least one character from each category
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    const special = '!@#$*';
+
+    password += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+    password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+    password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    password += special.charAt(Math.floor(Math.random() * special.length));
+
+    // Fill the rest with random characters from the full charset
+    for (let i = 4; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+
+    // Shuffle the password to randomize the position of required characters
+    password = password
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('');
+
+    // Hash the password using bcryptjs with salt rounds of 11 (same as used elsewhere in the app)
+
+    return password;
+  }
 }

@@ -4,6 +4,9 @@ import { User } from '../interface/user.interface';
 
 export const UserSchema = new mongoose.Schema<User>(
   {
+    client_id: {
+      type: String,
+    },
     first_name: {
       type: String,
     },
@@ -32,24 +35,18 @@ export const UserSchema = new mongoose.Schema<User>(
         type: String,
       },
     ],
-    role: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Role',
-      required: true,
-    },
+    roles: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Role',
+        required: true,
+      },
+    ],
     activation_code: {
       type: String,
     },
     activation_expires_in: {
       type: Date,
-    },
-    is_active: {
-      type: Boolean,
-      default: false,
-    },
-    isSuspended: {
-      type: Boolean,
-      default: false,
     },
     isDeleted: {
       type: Boolean,
@@ -59,7 +56,9 @@ export const UserSchema = new mongoose.Schema<User>(
       type: Number,
     },
     status: {
-      type: Boolean,
+      type: String,
+      enum: ['active', 'inactive', 'suspended'],
+      default: 'inactive',
     },
     address: {
       street: {
@@ -129,6 +128,10 @@ export const UserSchema = new mongoose.Schema<User>(
       active: {
         type: Boolean,
         default: false,
+      },
+      last_login: {
+        type: Date,
+        default: null,
       },
     },
   },

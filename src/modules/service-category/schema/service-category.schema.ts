@@ -8,15 +8,10 @@ export const ServiceCategorySchema = new mongoose.Schema<ServiceCategory>(
       required: true,
       unique: true,
     },
-    description: {
+    status: {
       type: String,
-    },
-    cover_image: {
-      type: String,
-    },
-    is_active: {
-      type: Boolean,
-      default: true,
+      enum: ['active', 'suspended'],
+      default: 'active',
     },
     is_deleted: {
       type: Boolean,

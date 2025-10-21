@@ -63,7 +63,7 @@ export class ServiceCategoryController {
     return this.serviceCategoryService.createServiceCategory(body, user);
   }
 
-  @Put('/:id/update')
+  @Put('/:id')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
   async updateServiceCategory(
@@ -73,7 +73,7 @@ export class ServiceCategoryController {
     return this.serviceCategoryService.updateServiceCategory(id, body);
   }
 
-  @Put('/:id/suspend')
+  @Put('/:id/toggle-status')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
   async suspendServiceCategory(@Param('id') id: string) {

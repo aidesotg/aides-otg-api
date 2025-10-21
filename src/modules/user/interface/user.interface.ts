@@ -2,6 +2,7 @@ import * as mongoose from 'mongoose';
 
 export interface User extends mongoose.Document {
   readonly id: string;
+  client_id: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -9,14 +10,12 @@ export interface User extends mongoose.Document {
   password: string;
   date_of_birth: string;
   device_token: string[];
-  role: string;
+  roles: string[];
   activation_code: string;
   activation_expires_in: Date;
-  is_active: boolean;
-  isSuspended: boolean;
+  status: 'active' | 'inactive' | 'suspended';
   isDeleted: boolean;
   notification_counter: number;
-  status: boolean;
   address: {
     street?: string;
     city: string;

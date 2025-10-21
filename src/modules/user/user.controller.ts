@@ -60,6 +60,12 @@ export class UserController {
       data: users,
     };
   }
+  @Post('/create')
+  @UseGuards(AuthGuard('jwt'))
+  async createUser(@Body() body: CreateUserDto) {
+    return this.userService.createUser(body);
+  }
+
   @Post('/beneficiaries')
   @UseGuards(AuthGuard('jwt'))
   async createBeneficiaries(
@@ -132,20 +138,11 @@ export class UserController {
     return this.userService.createProfile(user, body);
   }
 
-  @Put('/profile/update/:userId')
-  @UseGuards(AuthGuard('jwt'))
-  @UseFilters(ExceptionsLoggerFilter)
-  async updateProfileUser(
-    @Body() body: UpdateProfileDto,
-    @Param('userId') userId: string,
-  ) {
-    return this.userService.updateProfile(body, { _id: userId });
-  }
-
   @Put('/profile/update')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
   async updateProfile(@Body() body: UpdateProfileDto, @AuthUser() user: any) {
+    console.log('🚀 ~ UserController ~ updateProfile ~ body:', body);
     return this.userService.updateProfile(body, user);
   }
 
@@ -181,6 +178,16 @@ export class UserController {
     @AuthUser() user: any,
   ) {
     return this.userService.updateEmergencyContact(body, user);
+  }
+
+  @Put('/profile/update/:userId')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async updateProfileUser(
+    @Body() body: UpdateProfileDto,
+    @Param('userId') userId: string,
+  ) {
+    return this.userService.updateProfile(body, { _id: userId });
   }
 
   @Delete('/profile/delete/emergency-contact/:id')

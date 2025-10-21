@@ -19,6 +19,9 @@ import { SupportModule } from './modules/support/support.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { ServiceCategoryModule } from './modules/service-category/service-category.module';
+import { InsuranceCompanyModule } from './modules/insurance-company/insurance-company.module';
+import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module';
+import { ServiceRequestModule } from './modules/service-request/service-request.module';
 
 dotenv.config();
 
@@ -48,20 +51,21 @@ dotenv.config();
     WalletModule,
     TermsModule,
     ChatModule,
+    InsuranceCompanyModule,
+    ActivityLogsModule,
+    ServiceRequestModule,
   ],
   controllers: [],
   providers: [],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(VerificationMiddleware)
-      .forRoutes(
-        'auth/register',
-        'user/create',
-        'user/profile/update',
-        'user/profile/update/email',
-        'user/profile/update/phone',
-      );
+    consumer.apply(VerificationMiddleware).forRoutes(
+      'auth/register',
+      'user/create',
+      // 'user/profile/update',
+      'user/profile/update/email',
+      'user/profile/update/phone',
+    );
   }
 }

@@ -2,6 +2,7 @@ import * as mongoose from 'mongoose';
 
 export interface Beneficiary extends mongoose.Document {
   readonly id: string;
+  beneficiary_id: string;
   first_name: string;
   last_name: string;
   label: string;
@@ -12,6 +13,7 @@ export interface Beneficiary extends mongoose.Document {
   health_conditions: string[];
   profile_picture: string;
   user: string;
+  ssn: string;
   readonly createdAt: Date;
   updatedAt: Date;
 }

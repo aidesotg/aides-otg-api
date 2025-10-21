@@ -6,7 +6,7 @@ export class AddFavoriteDto {
   @ApiProperty()
   @IsMongoId()
   @IsNotEmpty()
-  service: string;
+  request: string;
 
   @ApiProperty()
   @IsMongoId()
