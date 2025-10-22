@@ -140,58 +140,66 @@ export class UserService {
     const insuranceData: any = [];
     const userBeneficiaryData: any = [];
 
-    for (const beneficiary of beneficiaries) {
-      const { insurance, ...rest } = beneficiary;
+    if (beneficiaries && beneficiaries.length > 0) {
+      for (const beneficiary of beneficiaries) {
+        const { insurance, ...rest } = beneficiary;
+        if (beneficiary.insurance) {
+          const policyExists =
+            await this.insuranceService.verifyExistingInsurance(
+              insurance.policy_number,
+            );
+          if (policyExists) {
+            throw new BadRequestException({
+              status: 'error',
+              message: `Beneficiary with Policy number: ${insurance.policy_number} already exists`,
+            });
+          }
+        }
+        const newBeneficiary = new this.beneficiaryModel({
+          ...rest,
+          user: userDetails._id,
+        });
+        beneficiariesData.push(newBeneficiary.save());
+
+        if (beneficiary.insurance) {
+          const newInsurance = new this.insuranceModel({
+            ...insurance,
+            beneficiary: newBeneficiary._id,
+          });
+          insuranceData.push(newInsurance.save());
+        }
+
+        const newUserBeneficiary = new this.userBeneficiaryModel({
+          user: userDetails._id,
+          beneficiary: newBeneficiary._id,
+        });
+
+        userBeneficiaryData.push(newUserBeneficiary.save());
+      }
+    }
+    if (insurance) {
       const policyExists = await this.insuranceService.verifyExistingInsurance(
         insurance.policy_number,
       );
       if (policyExists) {
         throw new BadRequestException({
           status: 'error',
-          message: `Beneficiary with Policy number: ${insurance.policy_number} already exists`,
+          message: `Insurance with Policy number: ${insurance.policy_number} already exists`,
         });
       }
-      const newBeneficiary = new this.beneficiaryModel({
-        ...rest,
-        user: userDetails._id,
-      });
 
       const newInsurance = new this.insuranceModel({
         ...insurance,
-        beneficiary: newBeneficiary._id,
-      });
-
-      const newUserBeneficiary = new this.userBeneficiaryModel({
         user: userDetails._id,
-        beneficiary: newBeneficiary._id,
       });
-
-      beneficiariesData.push(newBeneficiary.save());
       insuranceData.push(newInsurance.save());
-      userBeneficiaryData.push(newUserBeneficiary.save());
     }
 
-    const policyExists = await this.insuranceService.verifyExistingInsurance(
-      insurance.policy_number,
-    );
-    if (policyExists) {
-      throw new BadRequestException({
-        status: 'error',
-        message: `Insurance with Policy number: ${insurance.policy_number} already exists`,
-      });
-    }
-
-    const newInsurance = new this.insuranceModel({
-      ...insurance,
-      user: userDetails._id,
-    });
-
-    await Promise.all(beneficiariesData);
-    await Promise.all(insuranceData);
-    await Promise.all(userBeneficiaryData);
+    if (beneficiariesData.length > 0) await Promise.all(beneficiariesData);
+    if (insuranceData.length > 0) await Promise.all(insuranceData);
+    if (userBeneficiaryData.length > 0) await Promise.all(userBeneficiaryData);
 
     await userDetails.save();
-    await newInsurance.save();
 
     await this.walletService.createWallet(userDetails, userDetails.email);
 
@@ -492,17 +500,15 @@ export class UserService {
 
   async suspendUser(user: string) {
     const userDetails = await this.getUser({ _id: user });
-    const status = userDetails.is_suspended;
-    userDetails.is_suspended = !status;
+    const status = userDetails.status;
+    userDetails.status = status === 'suspended' ? 'active' : 'suspended';
     await userDetails.save();
 
-    let value = 'suspended';
-    if (status) {
-      value = 'unsuspended';
-    }
     return {
       status: 'success',
-      message: `User ${value} successfuly`,
+      message: `User ${
+        userDetails.status === 'suspended' ? 'suspended' : 'activated'
+      } successfuly`,
     };
   }
 

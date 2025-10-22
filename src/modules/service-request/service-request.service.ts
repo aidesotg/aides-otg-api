@@ -84,6 +84,7 @@ export class ServiceRequestService {
   }
 
   async getRequests(params: any, user?: User) {
+    console.log('🚀 ~ ServiceRequestService ~ getRequests ~ user:', user);
     const { page = 1, pageSize = 50, ...rest } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
     const query: any = await this.miscService.search(rest);
