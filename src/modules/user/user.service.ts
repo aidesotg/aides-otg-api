@@ -817,7 +817,13 @@ export class UserService {
       .find({
         _id: { $in: beneficiaryIds },
       })
-      .populate('insurance');
+      .populate({
+        path: 'insurance',
+        populate: {
+          path: 'insurance_company',
+          select: '-createdAt -updatedAt',
+        },
+      });
     return {
       status: 'success',
       message: 'Beneficiaries fetched successfully',
@@ -826,11 +832,20 @@ export class UserService {
   }
 
   async getBeneficiaries(params?: any) {
-    const { page = 1, pageSize = 50, role, ...rest } = params;
+    const { page = 1, pageSize = 50, role, ownerId, ...rest } = params;
 
     const pagination = await this.miscService.paginate({ page, pageSize });
 
     const query: any = await this.miscService.search(rest);
+
+    if (ownerId) {
+      const beneficiaryIds = await Promise.all(
+        (
+          await this.userBeneficiaryModel.find({ user: ownerId })
+        ).map(async (beneficiary) => beneficiary.beneficiary),
+      );
+      query._id = { $in: beneficiaryIds };
+    }
 
     const beneficiaries = await this.beneficiaryModel
       .find(query)
@@ -839,6 +854,13 @@ export class UserService {
         populate: {
           path: 'user',
           select: 'first_name last_name email',
+        },
+      })
+      .populate({
+        path: 'insurance',
+        populate: {
+          path: 'insurance_company',
+          select: '-createdAt -updatedAt',
         },
       })
       .skip(pagination.offset)
@@ -870,7 +892,13 @@ export class UserService {
   async getBeneficaryById(beneficiaryId: string) {
     const beneficiary = await this.beneficiaryModel
       .findById(beneficiaryId)
-      .populate('insurance');
+      .populate({
+        path: 'insurance',
+        populate: {
+          path: 'insurance_company',
+          select: '-createdAt -updatedAt',
+        },
+      });
     if (!beneficiary) {
       throw new NotFoundException({
         status: 'error',
