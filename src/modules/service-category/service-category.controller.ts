@@ -68,7 +68,7 @@ export class ServiceCategoryController {
   @UseFilters(ExceptionsLoggerFilter)
   async updateServiceCategory(
     @Param('id') id: string,
-    @Body() body: UpdateServiceCategoryDto,
+    @Body() body: CreateServiceCategoryDto,
   ) {
     return this.serviceCategoryService.updateServiceCategory(id, body);
   }

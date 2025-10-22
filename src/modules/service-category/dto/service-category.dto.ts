@@ -38,11 +38,6 @@ export class UpdateServiceCategoryDto {
   @ApiProperty()
   @IsString()
   @IsOptional()
-  description?: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
   status?: string;
 
   // @ApiProperty()

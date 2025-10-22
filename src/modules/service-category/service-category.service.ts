@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, HttpException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  HttpException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ServiceCategory } from './interface/service-category.interface';
@@ -16,10 +21,26 @@ export class ServiceCategoryService {
     private miscService: MiscCLass,
   ) {}
 
+  private async validateServiceCategory(
+    serviceCategory: CreateServiceCategoryDto,
+  ) {
+    const category = await this.serviceCategoryModel.findOne({
+      title: serviceCategory.title,
+    });
+    if (category) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Service category already exists',
+      });
+    }
+    return category;
+  }
+
   async createServiceCategory(
     createServiceCategoryDto: CreateServiceCategoryDto,
     user: any,
   ) {
+    await this.validateServiceCategory(createServiceCategoryDto);
     const data = {
       ...createServiceCategoryDto,
       created_by: user._id,
@@ -39,11 +60,11 @@ export class ServiceCategoryService {
     const { page = 1, pageSize = 50, ...rest } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
     const query: any = await this.miscService.search(rest);
-    query.is_deleted = false;
+    // query.is_deleted = false;
 
     const categories = await this.serviceCategoryModel
       .find(query)
-      .populate('created_by', ['fullname', 'email'])
+      // .populate('created_by', ['fullname', 'email'])
       .skip(pagination.offset)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
@@ -79,8 +100,9 @@ export class ServiceCategoryService {
 
   async updateServiceCategory(
     id: string,
-    updateServiceCategoryDto: UpdateServiceCategoryDto,
+    updateServiceCategoryDto: CreateServiceCategoryDto,
   ) {
+    await this.validateServiceCategory(updateServiceCategoryDto);
     const category = await this.serviceCategoryModel
       .findOne({ _id: id, is_deleted: false })
       .exec();

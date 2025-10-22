@@ -10,7 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './interface/user.interface';
 import * as bcrypt from 'bcryptjs';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { Role } from 'src/modules/role/interface/role.interface';
 import { NotificationService } from 'src/modules/notification/notification.service';
 import { FlutterwaveService } from 'src/services/flutterwave.service';
@@ -79,6 +79,29 @@ export class UserService {
     return `Bid${beneficiary._id.toString().toUpperCase().slice(-10)}`;
   }
 
+  private async validateUser(user: User, data: UpdateUserDto) {
+    const { email, phone } = data;
+
+    if (email) {
+      const details = await this.userModel.findOne({ email });
+      if (details && details._id.toString() !== user._id.toString()) {
+        throw new BadRequestException({
+          status: 'error',
+          message: 'Email already exists',
+        });
+      }
+    }
+    if (phone) {
+      const details = await this.userModel.findOne({ phone });
+      if (details && details._id.toString() !== user._id.toString()) {
+        throw new BadRequestException({
+          status: 'error',
+          message: 'Phone already exists',
+        });
+      }
+    }
+  }
+
   async createUser(createUserDto: CreateUserDto) {
     const { first_name, last_name, email, phone, roleId } = createUserDto;
     const role = await this.roleModel.findById(roleId);
@@ -113,6 +136,30 @@ export class UserService {
       status: 'success',
       message: 'User Created',
       data: user,
+    };
+  }
+
+  async updateUser(userId: string, body: UpdateUserDto) {
+    const userDetails = await this.userModel.findById(userId);
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+
+    await this.validateUser(userDetails, body);
+
+    for (const value in body) {
+      if (value) {
+        userDetails[value] = body[value];
+      }
+    }
+    await userDetails.save();
+    return {
+      status: 'success',
+      message: 'User updated successfully',
+      data: userDetails,
     };
   }
 
@@ -498,17 +545,28 @@ export class UserService {
     };
   }
 
-  async suspendUser(user: string) {
+  async suspendUser(user: string, reason?: string) {
     const userDetails = await this.getUser({ _id: user });
-    const status = userDetails.status;
-    userDetails.status = status === 'suspended' ? 'active' : 'suspended';
+    userDetails.status = 'suspended';
+    userDetails.suspension_reason = reason ?? '';
     await userDetails.save();
 
     return {
       status: 'success',
-      message: `User ${
-        userDetails.status === 'suspended' ? 'suspended' : 'activated'
-      } successfuly`,
+      message: `User suspended successfuly`,
+      data: userDetails,
+    };
+  }
+
+  async unsuspendUser(user: string) {
+    const userDetails = await this.getUser({ _id: user });
+    userDetails.status = 'active';
+    userDetails.suspension_reason = '';
+    await userDetails.save();
+    return {
+      status: 'success',
+      message: `User unsuspended successfuly`,
+      data: userDetails,
     };
   }
 
@@ -764,6 +822,48 @@ export class UserService {
       status: 'success',
       message: 'Beneficiaries fetched successfully',
       data: beneficiaries,
+    };
+  }
+
+  async getBeneficiaries(params?: any) {
+    const { page = 1, pageSize = 50, role, ...rest } = params;
+
+    const pagination = await this.miscService.paginate({ page, pageSize });
+
+    const query: any = await this.miscService.search(rest);
+
+    const beneficiaries = await this.beneficiaryModel
+      .find(query)
+      .populate({
+        path: 'owner',
+        populate: {
+          path: 'user',
+          select: 'first_name last_name email',
+        },
+      })
+      .skip(pagination.offset)
+      .limit(pagination.limit)
+      .sort({ createdAt: -1 })
+      .exec();
+
+    const count = await this.beneficiaryModel.countDocuments(query).exec();
+
+    if (!beneficiaries) {
+      throw new HttpException(
+        { status: 'error', message: 'User not found' },
+        404,
+      );
+    }
+    return {
+      status: 'success',
+      message: 'Beneficiaries fetched successfully',
+      data: {
+        pagination: {
+          ...(await this.miscService.pageCount({ count, page, pageSize })),
+          total: count,
+        },
+        data: beneficiaries,
+      },
     };
   }
 

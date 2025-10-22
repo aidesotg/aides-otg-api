@@ -134,6 +134,9 @@ export const UserSchema = new mongoose.Schema<User>(
         default: null,
       },
     },
+    suspension_reason: {
+      type: String,
+    },
   },
   {
     timestamps: true,
@@ -143,7 +146,16 @@ export const UserSchema = new mongoose.Schema<User>(
 );
 
 UserSchema.method('toJSON', function () {
-  const { __v, password, device_token, ...object } = this.toObject();
+  const {
+    __v,
+    password,
+    device_token,
+    firebase_uid,
+    stripeConnect,
+    docId,
+    ssn,
+    ...object
+  } = this.toObject();
   const newObject = {
     ...object,
   };

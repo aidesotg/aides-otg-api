@@ -15,7 +15,7 @@ import { UserService } from './user.service';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthUser } from 'src/framework/decorators/user.decorator';
 import { ExceptionsLoggerFilter } from 'src/framework/exceptions/exceptionLogger.filter';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import {
   PasswordResetAdmin,
   PasswordResetSelf,
@@ -82,6 +82,12 @@ export class UserController {
     @AuthUser() user: any,
   ) {
     return this.userService.updateBeneficiary(id, body, user);
+  }
+
+  @Get('/beneficiaries/all')
+  @UseGuards(AuthGuard('jwt'))
+  async getAllBeneficiaries(@AuthUser() user: any, @Query() params: any) {
+    return this.userService.getBeneficiaries(params);
   }
 
   @Get('/beneficiaries')
@@ -186,14 +192,14 @@ export class UserController {
     return this.userService.updateEmergencyContact(body, user);
   }
 
-  @Put('/profile/update/:userId')
+  @Put('/update/:userId')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async updateProfileUser(
-    @Body() body: UpdateProfileDto,
+  async updateUser(
+    @Body() body: UpdateUserDto,
     @Param('userId') userId: string,
   ) {
-    return this.userService.updateProfile(body, { _id: userId });
+    return this.userService.updateUser(userId, body);
   }
 
   @Delete('/profile/delete/emergency-contact/:id')
@@ -250,8 +256,18 @@ export class UserController {
   @Put('/:user/suspend')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async suspendUser(@Param('user') user: string) {
-    return this.userService.suspendUser(user);
+  async suspendUser(
+    @Param('user') user: string,
+    @Body('reason') reason: string,
+  ) {
+    return this.userService.suspendUser(user, reason);
+  }
+
+  @Put('/:user/unsuspend')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async unsuspendUser(@Param('user') user: string) {
+    return this.userService.unsuspendUser(user);
   }
 
   @Delete('/')

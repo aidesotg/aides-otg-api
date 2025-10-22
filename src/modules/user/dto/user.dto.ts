@@ -30,3 +30,27 @@ export class CreateUserDto {
 
   @ApiProperty() @IsString() phone: string;
 }
+
+export class UpdateUserDto {
+  @ApiProperty()
+  @IsString()
+  @MinLength(2, {
+    message: 'name too short',
+  })
+  @IsOptional()
+  first_name: string;
+
+  @ApiProperty()
+  @IsString()
+  @MinLength(2, {
+    message: 'name too short',
+  })
+  @IsOptional()
+  last_name: string;
+
+  @ApiProperty() @IsEmail() @IsOptional() email: string;
+
+  @ApiProperty() @IsMongoId() @IsOptional() roleId: string;
+
+  @ApiProperty() @IsString() @IsOptional() phone: string;
+}

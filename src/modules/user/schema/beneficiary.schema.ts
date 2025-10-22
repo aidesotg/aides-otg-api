@@ -70,3 +70,10 @@ BeneficiarySchema.virtual('insurance', {
   foreignField: 'beneficiary',
   justOne: true,
 });
+
+BeneficiarySchema.virtual('owner', {
+  ref: 'UserBeneficiary',
+  localField: '_id',
+  foreignField: 'beneficiary',
+  justOne: true,
+});
