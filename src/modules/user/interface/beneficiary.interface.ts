@@ -14,6 +14,11 @@ export interface Beneficiary extends mongoose.Document {
   profile_picture: string;
   user: string;
   ssn: string;
+  emergency_contact: {
+    name: string;
+    phone: string;
+    relationship: string;
+  }[];
   readonly createdAt: Date;
   updatedAt: Date;
 }

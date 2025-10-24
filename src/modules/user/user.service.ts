@@ -946,6 +946,23 @@ export class UserService {
     };
   }
 
+  async deleteBeneficiaryAdmin(id: string) {
+    const beneficiary = await this.beneficiaryModel.findOne({
+      _id: id,
+    });
+    if (!beneficiary) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Beneficiary not found',
+      });
+    }
+    await beneficiary.deleteOne();
+    return {
+      status: 'success',
+      message: 'Beneficiary deleted successfully',
+    };
+  }
+
   //PROFESSIONAL PROFILE
   async createProfessionalProfile(
     createProfessionalProfileDto: CreateProfessionalProfileDto,

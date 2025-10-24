@@ -48,6 +48,19 @@ export const BeneficiarySchema = new mongoose.Schema<Beneficiary>(
       type: String,
       unique: true,
     },
+    emergency_contact: [
+      {
+        name: {
+          type: String,
+        },
+        phone: {
+          type: String,
+        },
+        relationship: {
+          type: String,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

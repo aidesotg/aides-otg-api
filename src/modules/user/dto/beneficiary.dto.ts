@@ -11,6 +11,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { InsuranceInfoDto } from 'src/modules/insurance/dto/insurance.dto';
+import { EmergencyContactDto } from './profile.dto';
 
 export class CreateBeneficiaryDto {
   @ApiProperty()
@@ -123,4 +124,9 @@ export class UpdateBeneficiaryDto {
   @IsOptional()
   @Type(() => InsuranceInfoDto)
   insurance: InsuranceInfoDto;
+
+  @ValidateNested({ each: true })
+  @IsOptional()
+  @Type(() => EmergencyContactDto)
+  emergency_contact: EmergencyContactDto;
 }
