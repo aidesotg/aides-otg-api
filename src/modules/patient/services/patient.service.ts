@@ -31,16 +31,16 @@ export class PatientService {
     };
 
     // If insurance is provided, verify it
-    if (createPatientDto.insurance) {
-      const insurance = await this.insuranceService.getInsuranceById(
-        createPatientDto.insurance,
-      );
-      if (insurance.integration_type === 'api') {
-        // Auto-verify if API integration
-        data.insurance_details.is_verified = true;
-        // data.insurance_details.verification_date = new Date();
-      }
-    }
+    // if (createPatientDto.insurance) {
+    //   const insurance = await this.insuranceService.getInsuranceById(
+    //     createPatientDto.insurance,
+    //   );
+    //   if (insurance.integration_type === 'api') {
+    //     // Auto-verify if API integration
+    //     data.insurance_details.is_verified = true;
+    //     // data.insurance_details.verification_date = new Date();
+    //   }
+    // }
 
     const newPatient = new this.patientModel(data);
     const patient = await newPatient.save();
@@ -155,14 +155,14 @@ export class PatientService {
       const insurance = await this.insuranceService.getInsuranceById(
         updatePatientDto.insurance,
       );
-      if (insurance.integration_type === 'api') {
-        data.insurance_details = {
-          ...patient.insurance_details,
-          ...updatePatientDto.insurance_details,
-          is_verified: true,
-          verification_date: new Date(),
-        };
-      }
+      // if (insurance.integration_type === 'api') {
+      //   data.insurance_details = {
+      //     ...patient.insurance_details,
+      //     ...updatePatientDto.insurance_details,
+      //     is_verified: true,
+      //     verification_date: new Date(),
+      //   };
+      // }
     }
 
     for (const value in data) {

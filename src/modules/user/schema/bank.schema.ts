@@ -20,6 +20,9 @@ export const BankSchema = new mongoose.Schema<Bank>(
     routing_number: {
       type: String,
     },
+    account_type: {
+      type: String,
+    },
     default: {
       type: Boolean,
       default: false,

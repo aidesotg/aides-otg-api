@@ -7,6 +7,7 @@ export interface Bank extends mongoose.Document {
   account_number: string;
   account_name: string;
   routing_number: string;
+  account_type: string;
   default: boolean;
   readonly createdAt: Date;
   readonly updatedAt: Date;

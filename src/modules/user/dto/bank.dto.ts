@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class BankDto {
   @ApiProperty()
@@ -23,4 +23,11 @@ export class BankDto {
   @IsBoolean()
   @IsOptional()
   default: boolean;
+
+  @ApiProperty()
+  @IsEnum(['checking', 'savings'], {
+    message: 'Allowed account types are: checking, savings',
+  })
+  @IsString()
+  account_type: 'checking' | 'savings';
 }

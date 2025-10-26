@@ -52,7 +52,7 @@ export const InsuranceSchema = new mongoose.Schema<Insurance>(
 );
 
 InsuranceSchema.method('toJSON', function () {
-  const { __v, api_config, ...object } = this.toObject();
+  const { __v, ...object } = this.toObject();
   return object;
 });
 

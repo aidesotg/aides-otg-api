@@ -123,30 +123,24 @@ export class InsuranceService {
     user: User,
     updateInsuranceDto: Partial<InsuranceInfoDto>,
   ) {
-    const insurance = await this.insuranceModel
-      .findOne({ user: user._id })
-      .exec();
+    const insurance = await this.insuranceModel.findOneAndUpdate(
+      { user: user._id },
+      {
+        $set: {
+          ...updateInsuranceDto,
+          coverage_plan_start: new Date(updateInsuranceDto.coverage_plan_start),
+          coverage_plan_date: new Date(updateInsuranceDto.coverage_plan_date),
+        },
+      },
+      { new: true, upsert: true },
+    );
 
-    if (!insurance) {
-      throw new NotFoundException({
-        status: 'error',
-        message: 'Insurance not found',
-      });
-    }
-
-    const data: any = { ...updateInsuranceDto };
-    for (const value in data) {
-      if (data[value] !== undefined) {
-        insurance[value] = data[value];
-      }
-    }
-
-    await insurance.save();
+    // return insurance;
 
     return {
       status: 'success',
       message: 'Insurance updated',
-      data: { insurance },
+      data: insurance,
     };
   }
 
