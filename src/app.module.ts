@@ -22,6 +22,7 @@ import { ServiceCategoryModule } from './modules/service-category/service-catego
 import { InsuranceCompanyModule } from './modules/insurance-company/insurance-company.module';
 import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module';
 import { ServiceRequestModule } from './modules/service-request/service-request.module';
+import { FaqModule } from './modules/faq/faq.module';
 
 dotenv.config();
 
@@ -54,6 +55,7 @@ dotenv.config();
     InsuranceCompanyModule,
     ActivityLogsModule,
     ServiceRequestModule,
+    FaqModule,
   ],
   controllers: [],
   providers: [],
