@@ -12,6 +12,9 @@ export const ProfessionalProfileSchema =
       profile_id: {
         type: String,
       },
+      caregiver_type: {
+        type: String,
+      },
       bio: {
         type: String,
       },
@@ -61,6 +64,53 @@ export const ProfessionalProfileSchema =
       },
       documents: {
         type: [String],
+      },
+      areas_covered: [
+        {
+          street: {
+            type: String,
+          },
+          city: {
+            type: String,
+          },
+          state: {
+            type: String,
+          },
+          country: {
+            type: String,
+          },
+          zip_code: {
+            type: String,
+          },
+        },
+      ],
+      kyc: {
+        government_id: {
+          type: String,
+        },
+        selfie_with_id: {
+          type: String,
+        },
+        status: {
+          type: String,
+        },
+        reason: {
+          type: String,
+        },
+      },
+      payout: {
+        bank_name: {
+          type: String,
+        },
+        account_number: {
+          type: String,
+        },
+        account_name: {
+          type: String,
+        },
+        routing_number: {
+          type: String,
+        },
       },
     },
     {

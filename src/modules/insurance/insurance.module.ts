@@ -4,8 +4,8 @@ import { InsuranceSchema } from './schema/insurance.schema';
 import { UserSchema } from 'src/modules/user/schema/user.schema';
 import { ServicesModule } from 'src/services/services.module';
 import { UserModule } from 'src/modules/user/user.module';
-import { InsuranceController } from './insurance.controller';
-import { InsuranceService } from './insurance.service';
+import { InsuranceController } from 'src/modules/insurance/controllers/insurance.controller';
+import { InsuranceService } from './services/insurance.service';
 
 @Module({
   imports: [

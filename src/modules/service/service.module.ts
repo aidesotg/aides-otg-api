@@ -3,8 +3,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ServiceSchema } from './schema/service.schema';
 import { ServiceCategorySchema } from 'src/modules/service-category/schema/service-category.schema';
 import { ServicesModule } from 'src/services/services.module';
-import { ServiceController } from './service.controller';
-import { ServiceService } from './service.service';
+import { ServiceController } from './controllers/service.controller';
+import { ServiceService } from './services/service.service';
 import { UserBeneficiarySchema } from '../user/schema/user-beneficiary.schema';
 import { FavoriteSchema } from '../service-request/schema/favortite.schema';
 

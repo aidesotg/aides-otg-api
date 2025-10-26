@@ -5,8 +5,8 @@ import { UserSchema } from 'src/modules/user/schema/user.schema';
 import { ServicesModule } from 'src/services/services.module';
 import { NotificationModule } from 'src/modules/notification/notification.module';
 import { SupportModule } from 'src/modules/support/support.module';
-import { ReviewController } from './review.controller';
-import { ReviewService } from './review.service';
+import { ReviewController } from './controllers/review.controller';
+import { ReviewService } from './services/review.service';
 
 @Module({
   imports: [

@@ -1,6 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
-import { NotificationController } from './notification.controller';
-import { NotificationService } from './notification.service';
+import { NotificationController } from './controllers/notification.controller';
+import { NotificationService } from './services/notification.service';
 import { UserModule } from 'src/modules/user/user.module';
 import { ServicesModule } from 'src/services/services.module';
 import { RoleModule } from 'src/modules/role/role.module';

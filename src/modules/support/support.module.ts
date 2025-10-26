@@ -5,8 +5,8 @@ import { TicketMessageSchema } from './schema/ticket-message.schema';
 import { UserSchema } from 'src/modules/user/schema/user.schema';
 import { ServicesModule } from 'src/services/services.module';
 import { NotificationModule } from 'src/modules/notification/notification.module';
-import { SupportController } from './support.controller';
-import { SupportService } from './support.service';
+import { SupportController } from './controllers/support.controller';
+import { SupportService } from './services/support.service';
 
 @Module({
   imports: [

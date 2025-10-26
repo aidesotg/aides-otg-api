@@ -5,8 +5,8 @@ import { LegalAgreementSchema } from './schema/legal-agreement.schema';
 import { UserSchema } from 'src/modules/user/schema/user.schema';
 import { ServicesModule } from 'src/services/services.module';
 import { NotificationModule } from 'src/modules/notification/notification.module';
-import { LegalController } from './legal.controller';
-import { LegalService } from './legal.service';
+import { LegalController } from './controllers/legal.controller';
+import { LegalService } from './services/legal.service';
 
 @Module({
   imports: [

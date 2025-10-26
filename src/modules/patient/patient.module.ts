@@ -5,8 +5,8 @@ import { InsuranceSchema } from 'src/modules/insurance/schema/insurance.schema';
 import { UserSchema } from 'src/modules/user/schema/user.schema';
 import { ServicesModule } from 'src/services/services.module';
 import { InsuranceModule } from 'src/modules/insurance/insurance.module';
-import { PatientController } from './patient.controller';
-import { PatientService } from './patient.service';
+import { PatientController } from './controllers/patient.controller';
+import { PatientService } from './services/patient.service';
 
 @Module({
   imports: [

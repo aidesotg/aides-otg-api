@@ -67,6 +67,7 @@ export class UpdateProfileDto {
   @ApiProperty() @IsString() @IsOptional() type_of_care?: string;
   @ApiProperty() @IsArray() @IsOptional() special_requirements?: string[];
   @ApiProperty() @IsArray() @IsOptional() health_conditions?: string[];
+  @ApiProperty() @IsString() @IsOptional() ssn?: string;
 }
 
 export class UpdatePhoneDto {

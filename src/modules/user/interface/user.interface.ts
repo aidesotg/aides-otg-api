@@ -34,7 +34,6 @@ export interface User extends mongoose.Document {
     phone: string;
     relationship: string;
   }[];
-
   document_url: string;
   special_requirements: string[];
   health_conditions: string[];

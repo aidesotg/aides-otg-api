@@ -4,6 +4,7 @@ export interface ProfessionalProfile extends mongoose.Document {
   readonly id: string;
   profile_id: string;
   user: string;
+  caregiver_type: 'companion' | 'unlicensed' | 'licensed';
   bio: string;
   license_url: string;
   id_url: string;
@@ -19,6 +20,25 @@ export interface ProfessionalProfile extends mongoose.Document {
   reason: string;
   rating: number;
   suspended: boolean;
+  areas_covered: {
+    street?: string;
+    city: string;
+    state: string;
+    country: string;
+    zip_code?: string;
+  }[];
+  kyc: {
+    government_id: string;
+    selfie_with_id: string;
+    status: string;
+    reason: string;
+  };
+  payout: {
+    bank_name: string;
+    account_number: string;
+    account_name: string;
+    routing_number: string;
+  };
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
