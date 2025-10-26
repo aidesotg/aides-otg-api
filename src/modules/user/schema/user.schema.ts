@@ -137,6 +137,27 @@ export const UserSchema = new mongoose.Schema<User>(
     suspension_reason: {
       type: String,
     },
+    twoFactorEnabled: {
+      sms: {
+        type: Boolean,
+        default: false,
+      },
+      google_authenticator: {
+        type: Boolean,
+        default: false,
+      },
+    },
+    twoFactorSecret: {
+      type: String,
+    },
+    twoFactorSmsToken: {
+      type: String,
+      default: null,
+    },
+    twoFactorPhone: {
+      type: String,
+      default: null,
+    },
     notification_settings: {
       email: {
         type: Boolean,
@@ -184,6 +205,8 @@ UserSchema.method('toJSON', function () {
     stripeConnect,
     docId,
     ssn,
+    twoFactorSecret,
+    twoFactorSmsToken,
     ...object
   } = this.toObject();
   const newObject = {

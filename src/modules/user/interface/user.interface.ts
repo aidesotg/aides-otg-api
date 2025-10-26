@@ -39,6 +39,13 @@ export interface User extends mongoose.Document {
   firebase_uid: string;
   docId: string;
   stripeConnect: { stripeCustomerId: string; active: boolean };
+  twoFactorEnabled: {
+    sms: boolean;
+    google_authenticator: boolean;
+  };
+  twoFactorSecret: string;
+  twoFactorPhone: string;
+  twoFactorSmsToken: string;
   notification_settings: {
     email: {
       type: Boolean;

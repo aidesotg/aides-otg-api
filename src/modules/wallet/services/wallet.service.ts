@@ -10,7 +10,6 @@ import {
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model } from 'mongoose';
 import { NotificationService } from 'src/modules/notification/services/notification.service';
-import { FlutterwaveService } from 'src/services/flutterwave.service';
 import { Mailer } from 'src/services/mailer.service';
 import PlainMail from 'src/services/mailers/templates/plain-mail';
 import { MiscCLass } from 'src/services/misc.service';
@@ -34,10 +33,6 @@ import { StripeAccountDto } from 'src/modules/wallet/dto/stripe-account.dto';
 import { WithdrawalOtp } from 'src/modules/wallet/interface/withdrawal-otp.interface';
 import moment from 'moment';
 import { WithdrawDto } from 'src/modules/wallet/dto/withdrawal.dto';
-// import WithdrawalOtpMail from 'src/services/mailers/templates/withdrawal-otp.mail';
-import { response } from 'express';
-import { isFullWidth } from 'class-validator';
-import { PaystackService } from 'src/services/paystack.service';
 import { StripeService } from 'src/services/stripe.service';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config();
@@ -56,10 +51,8 @@ export class WalletService {
     private readonly withdrawalOtpModel: Model<WithdrawalOtp>,
     @Inject(forwardRef(() => UserService)) private userService: UserService,
     private miscService: MiscCLass,
-    private flutterwaveService: FlutterwaveService,
     private mailerService: Mailer,
     private notificationService: NotificationService,
-    private paystackService: PaystackService,
     private stripeService: StripeService,
     @InjectConnection() private readonly connection: Connection,
     @InjectStripe() private readonly stripe: Stripe,
@@ -282,14 +275,6 @@ export class WalletService {
     const ref = await this.miscService.referenceGenerator();
     let response;
 
-    const stripe_currencies = constants.STRIPE_SUPPORTED_COUNTRIES.map(
-      (country) => country.currency,
-    );
-    const flutterwave_currencies =
-      constants.FLUTTERWAVE_SUPPORTED_COUNTRIES.map(
-        (country) => country.currency,
-      );
-
     if (payment_method == 'stripe') {
       const orderPayload = {
         reference: ref,
@@ -325,31 +310,6 @@ export class WalletService {
       response = await this.stripeService.stripeCreateCheckoutSession(
         orderPayload,
       );
-    } else {
-      const payload = {
-        tx_ref: ref,
-        amount,
-        currency,
-        redirect_url: origin
-          ? `${origin}${body.path}`
-          : `${process.env.APP_URL}/wallet/confirmation`,
-        payment_methods: 'card',
-        meta: {
-          customer_id: user._id,
-        },
-        customer: {
-          email: user.email,
-          phonenumber: user.phone,
-          name: `${user.full_name ?? user.name}`,
-        },
-        customizations: {
-          title: 'The Confidant Payments',
-          // description: 'Wallet credit with card',
-          logo: '#',
-        },
-      };
-
-      response = await this.flutterwaveService.initiateTransaction(payload);
     }
 
     await this.userService.getUser(user._id);
@@ -390,85 +350,6 @@ export class WalletService {
         checkoutUrl: response,
       },
     };
-  }
-
-  async confirmation(query: any) {
-    const { tx_ref, transaction_id } = query;
-    const transaction = await this.transactionModel.findOne({
-      tx_ref,
-      // status: 'initiated',
-    });
-
-    if (!transaction) {
-      throw new ForbiddenException({
-        status: 'success',
-        message: 'Invalid Transaction',
-      });
-    }
-    if (transaction.status == 'successful') {
-      return {
-        status: 'success',
-        message: 'Transaction successful',
-      };
-    }
-
-    if (
-      transaction.status != 'successful' &&
-      transaction.status != 'initiated'
-    ) {
-      throw new ForbiddenException({
-        status: 'success',
-        message: 'Failed or Invalid Transaction',
-      });
-    }
-    const verify = await this.flutterwaveService.verifyTransaction(
-      transaction_id,
-    );
-    // console.log(verify)
-    if (verify.status === 'success') {
-      const { data } = verify;
-      let response = null;
-      if (data.status === 'successful' && data.amount >= transaction.amount) {
-        if (transaction.type == 'wallet') {
-          await this.credit({
-            id: transaction.user,
-            amount: transaction.amount,
-            genus: constants.transactionGenus.DEPOSIT,
-            description: 'wallet deposit',
-            ref: tx_ref,
-          });
-        }
-
-        transaction.status = data.status;
-        transaction.narration = data.narration;
-        transaction.payment_type = data.payment_methods;
-        transaction.trx_id = data.id;
-        transaction.charged_amount = data.charged_amount;
-        transaction.flw_ref = data.flw_ref;
-        transaction.app_fee = data.app_fee;
-        transaction.customer = JSON.stringify(data.customer);
-        transaction.card = JSON.stringify(data.card);
-
-        await transaction.save();
-
-        return {
-          status: 'success',
-          message: 'Transaction successful',
-          data: response,
-        };
-      }
-      throw new InternalServerErrorException({
-        status: 'success',
-        message: data.processor_response,
-      });
-    } else {
-      transaction.status = 'failed';
-      await transaction.save();
-      return {
-        status: 'error',
-        message: verify.message,
-      };
-    }
   }
 
   async checkWallet(query: any, user: any) {
@@ -724,31 +605,6 @@ export class WalletService {
 
     const ref = await this.miscService.referenceGenerator();
 
-    if (processor == 'flutterwave') {
-      const transferRate = await this.flutterwaveService.transferRates({
-        amount: 1,
-        destination_currency: 'USD',
-        source_currency: currency.toUpperCase(),
-      });
-      const amount = _.multiply(body.amount, transferRate.data.rate);
-      const payload = {
-        account_number,
-        account_bank: bank_code,
-        amount,
-        currenct: currency,
-        narration: 'Withdrawal from your Confidant wallet',
-        reference: ref,
-        meta: {
-          first_name: user.first_name,
-          last_name: user.last_name,
-          email: user.email,
-          mobile_number: user.phone,
-        },
-      };
-
-      response = await this.flutterwaveService.createTransfer(payload);
-    }
-
     if (processor == 'stripe') {
       await this.stripe.transfers.create({
         amount: _.multiply(body.amount, 100),
@@ -878,28 +734,6 @@ export class WalletService {
     });
   }
 
-  async webhook(body: any, headers: any) {
-    console.log(
-      '🚀 ~ file: transaction.service.ts:335 ~ TransactionService ~ webhook ~ body:',
-      body,
-    );
-    try {
-      const secretHash = process.env.FLUTTERWAVE_SECRET_HASH;
-      const signature = headers['verif-hash'];
-      if (!signature || signature !== secretHash) {
-        // This request isn't from Flutterwave; discard
-        throw new ForbiddenException();
-      }
-
-      const tx_ref = body.txRef ?? body.data.tx_ref;
-      const transaction_id = body.id ?? body.data.id;
-      return this.confirmation({ tx_ref, transaction_id });
-    } catch (e) {
-      console.log(e.message);
-      throw new ForbiddenException();
-    }
-  }
-
   public async stripeWebhookSignatureVerification(req: any, body: any) {
     let data;
     let eventType;
@@ -1023,23 +857,5 @@ export class WalletService {
 
   async getSupportedCountries() {
     return [...STRIPE_SUPPORTED_COUNTRIES, ...FLUTTERWAVE_SUPPORTED_COUNTRIES];
-  }
-
-  public async getTransferRates(currency: any) {
-    const transferRate = await this.flutterwaveService.transferRates({
-      amount: 1,
-      destination_currency: 'USD',
-      source_currency: currency.toUpperCase(),
-    });
-
-    return { rate: transferRate };
-  }
-
-  public async getBankList(code: string) {
-    return {
-      status: 'success',
-      message: 'Bank list fetched',
-      data: await this.flutterwaveService.getBankList(code),
-    };
   }
 }

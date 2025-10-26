@@ -13,7 +13,6 @@ import * as bcrypt from 'bcryptjs';
 import { CreateUserDto, UpdateUserDto } from '../dto/user.dto';
 import { Role } from 'src/modules/role/interface/role.interface';
 import { NotificationService } from 'src/modules/notification/services/notification.service';
-import { FlutterwaveService } from 'src/services/flutterwave.service';
 import { MiscCLass } from 'src/services/misc.service';
 import {
   PasswordResetAdmin,
@@ -46,6 +45,16 @@ import { ProfessionalProfile } from '../interface/professional-profile.interface
 import { BankDto } from '../dto/bank.dto';
 import { Bank } from '../interface/bank.interface';
 import { NotificationSettingsDto } from '../dto/notification.dto';
+import { GoogleService } from 'src/services/google.service';
+import {
+  VerifyTwoFactorDto,
+  EnableTwoFactorDto,
+  DisableTwoFactorDto,
+  VerifyTwoFactorSmsDto,
+  EnableTwoFactorSmsDto,
+  SetupTwoFactorSmsDto,
+  DisableTwoFactorSmsDto,
+} from '../dto/two-factor-auth.dto';
 
 @Injectable()
 export class UserService {
@@ -61,11 +70,11 @@ export class UserService {
     @InjectModel('Bank') private readonly bankModel: Model<Bank>,
     @InjectModel('ProfessionalProfile')
     private readonly professionalProfileModel: Model<ProfessionalProfile>,
-    private flutterwaveService: FlutterwaveService,
     private roleService: RoleService,
     private miscService: MiscCLass,
     private mailerService: Mailer,
     private notificationService: NotificationService,
+    private googleService: GoogleService,
     @Inject(forwardRef(() => InsuranceService))
     private insuranceService: InsuranceService,
 
@@ -872,6 +881,291 @@ export class UserService {
     return {
       status: 'success',
       message: 'Logout successful',
+    };
+  }
+
+  /**
+   * Generate 2FA setup with QR code
+   */
+  async generateTwoFactorSecret(user: User) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+
+    if (userDetails.twoFactorEnabled.google_authenticator) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Two-factor authentication is already enabled',
+      });
+    }
+
+    const secret = this.googleService.generateSecret(
+      userDetails.email,
+      'Aides on The Go',
+    );
+
+    // Save the secret temporarily for verification
+    userDetails.twoFactorSecret = secret;
+    await userDetails.save();
+
+    const qrCode = await this.googleService.generateQRCode(
+      userDetails.email,
+      secret,
+      'Aides on The Go',
+    );
+
+    return {
+      status: 'success',
+      message: 'Two-factor secret generated',
+      data: {
+        // secret,
+        qrCode,
+      },
+    };
+  }
+
+  /**
+   * Enable 2FA after verification
+   */
+  async enableGoogleTwoFactor(user: User, body: EnableTwoFactorDto) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+
+    if (userDetails.twoFactorEnabled.google_authenticator) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Two-factor authentication is already enabled',
+      });
+    }
+
+    if (!userDetails.twoFactorSecret) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Please generate a secret first',
+      });
+    }
+
+    const isValid = this.googleService.verifyToken(
+      userDetails.twoFactorSecret,
+      body.token,
+    );
+
+    if (!isValid) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Invalid token',
+      });
+    }
+
+    userDetails.twoFactorEnabled.google_authenticator = true;
+    await userDetails.save();
+
+    return {
+      status: 'success',
+      message: 'Two-factor authentication enabled successfully',
+    };
+  }
+
+  /**
+   * Disable 2FA
+   */
+  async disableGoogleTwoFactor(user: User, body: DisableTwoFactorDto) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+
+    if (!userDetails.twoFactorEnabled) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Two-factor authentication is not enabled',
+      });
+    }
+
+    const passwordIsValid = bcrypt.compareSync(
+      body.password,
+      userDetails.password,
+    );
+
+    if (!passwordIsValid) {
+      throw new HttpException(
+        { status: 'error', message: 'Incorrect Password' },
+        401,
+      );
+    }
+
+    userDetails.twoFactorEnabled.google_authenticator = false;
+    userDetails.twoFactorSecret = null;
+    await userDetails.save();
+
+    return {
+      status: 'success',
+      message: 'Two-factor authentication disabled successfully',
+    };
+  }
+
+  /**
+   * Verify 2FA token
+   */
+  async verifyGoogleTwoFactorToken(
+    user: User,
+    body: VerifyTwoFactorDto,
+  ): Promise<boolean> {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails || !userDetails.twoFactorSecret) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Two-factor authentication is not set up',
+      });
+    }
+
+    const isValid = this.googleService.verifyToken(
+      userDetails.twoFactorSecret,
+      body.token,
+    );
+
+    if (!isValid) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Invalid token',
+      });
+    }
+
+    return true;
+  }
+
+  async sendTwoFactorSmsToken(user: User) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+  }
+
+  async verifyTwoFactorSms(user: User, body: VerifyTwoFactorSmsDto) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+  }
+
+  async setupTwoFactorSms(user: User, body: SetupTwoFactorSmsDto) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+    if (userDetails.twoFactorEnabled.sms) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Two-factor authentication is already enabled',
+      });
+    }
+    const token = this.miscService.generateRandomNumber(6);
+    userDetails.twoFactorSmsToken = token;
+    await userDetails.save();
+
+    // TODO: Send SMS with token
+    return {
+      status: 'success',
+      message:
+        'Enter the token sent to your phone to enable two-factor authentication via sms',
+      data: {
+        token,
+      },
+    };
+  }
+
+  async enableTwoFactorSms(user: User, body: EnableTwoFactorSmsDto) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+    if (userDetails.twoFactorEnabled.sms) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Two-factor authentication is already enabled',
+      });
+    }
+    if (!userDetails.twoFactorSmsToken) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Please generate a token first',
+      });
+    }
+    if (userDetails.twoFactorSmsToken !== body.token) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Invalid token',
+      });
+    }
+    userDetails.twoFactorEnabled.sms = true;
+    userDetails.twoFactorSmsToken = null;
+    await userDetails.save();
+    return {
+      status: 'success',
+      message: 'Two-factor authentication via sms enabled successfully',
+    };
+  }
+
+  async disableTwoFactorSms(user: User, body: DisableTwoFactorSmsDto) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+    if (!userDetails.twoFactorEnabled.sms) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Two-factor authentication via sms is not enabled',
+      });
+    }
+    if (!userDetails.twoFactorSmsToken) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Please generate a token first',
+      });
+    }
+    const passwordIsValid = bcrypt.compareSync(
+      body.password,
+      userDetails.password,
+    );
+    if (!passwordIsValid) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Incorrect password',
+      });
+    }
+    userDetails.twoFactorEnabled.sms = false;
+    userDetails.twoFactorSmsToken = null;
+    await userDetails.save();
+    return {
+      status: 'success',
+      message: 'Two-factor authentication via sms disabled successfully',
     };
   }
 }

@@ -11,7 +11,6 @@ import { Model } from 'mongoose';
 import { User } from '../interface/user.interface';
 import { Role } from 'src/modules/role/interface/role.interface';
 import { NotificationService } from 'src/modules/notification/services/notification.service';
-import { FlutterwaveService } from 'src/services/flutterwave.service';
 import { MiscCLass } from 'src/services/misc.service';
 import { RoleService } from 'src/modules/role/services/role.service';
 import { Mailer } from 'src/services/mailer.service';
@@ -41,7 +40,6 @@ export class BeneficiaryService {
     @InjectModel('Wallet') private readonly walletModel: Model<Wallet>,
     @InjectModel('ProfessionalProfile')
     private readonly professionalProfileModel: Model<ProfessionalProfile>,
-    private flutterwaveService: FlutterwaveService,
     private roleService: RoleService,
     private miscService: MiscCLass,
     private mailerService: Mailer,

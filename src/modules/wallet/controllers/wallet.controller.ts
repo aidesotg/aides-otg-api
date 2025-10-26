@@ -17,7 +17,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { CreditDto } from 'src/modules/wallet/dto/credit.dto';
 import { WalletService } from 'src/modules/wallet/services/wallet.service';
 import { TransferDto } from 'src/modules/wallet/dto/transfer.dto';
-import { FlutterwaveService } from 'src/services/flutterwave.service';
 import { UserService } from 'src/modules/user/services/user.service';
 import { StripeAccountDto } from 'src/modules/wallet/dto/stripe-account.dto';
 import { WithdrawDto } from 'src/modules/wallet/dto/withdrawal.dto';
@@ -29,7 +28,6 @@ import { AuthUser } from 'src/framework/decorators/user.decorator';
 export class WalletController {
   constructor(
     private readonly walletService: WalletService,
-    private readonly flutterwaveService: FlutterwaveService,
     private readonly userService: UserService,
   ) {}
 
@@ -57,18 +55,6 @@ export class WalletController {
   @UseFilters(ExceptionsLoggerFilter)
   async getUserBalance(@Param('id') id: string) {
     return this.walletService.getUserBalance({ _id: id });
-  }
-
-  @Get('/banks/list')
-  // @UseGuards(AuthGuard('jwt'))
-  async getBanks(@Query() query: any) {
-    return this.walletService.getBankList(query.country_code);
-  }
-
-  @Get('/withdraw/rate/:currency')
-  // @UseGuards(AuthGuard('jwt'))
-  async getWithdrawalRate(@Param('currency') currency: any) {
-    return this.walletService.getTransferRates(currency);
   }
 
   @Get('/balance')
@@ -164,13 +150,6 @@ export class WalletController {
   // async verifyBank(@Body() body: VerifyBankDto) {
   //   return this.userService.verifyBankDetails(body);
   // }
-
-  @Post('/webhook')
-  // @UseGuards(AuthGuard('jwt'))
-  @UseFilters(ExceptionsLoggerFilter)
-  async webhook(@Body() body: any, @Headers() headers: any) {
-    return this.walletService.webhook(body, headers);
-  }
 
   @Post('/webhook/stripe')
   // @UseGuards(AuthGuard('jwt'))

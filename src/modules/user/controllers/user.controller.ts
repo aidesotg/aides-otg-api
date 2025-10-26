@@ -35,6 +35,14 @@ import {
 import { CreateProfessionalProfileDto } from '../dto/professional-profile.dto';
 import { BankDto } from '../dto/bank.dto';
 import { NotificationSettingsDto } from '../dto/notification.dto';
+import {
+  VerifyTwoFactorDto,
+  EnableTwoFactorDto,
+  DisableTwoFactorDto,
+  DisableTwoFactorSmsDto,
+  EnableTwoFactorSmsDto,
+  SetupTwoFactorSmsDto,
+} from '../dto/two-factor-auth.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -295,6 +303,81 @@ export class UserController {
   @UseFilters(ExceptionsLoggerFilter)
   async deleteBank(@Param('id') id: string, @AuthUser() user: any) {
     return this.userService.deleteBank(id, user);
+  }
+
+  @Get('/two-factor/google-authenticator/setup')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async generateTwoFactorSecret(@AuthUser() user: any) {
+    return this.userService.generateTwoFactorSecret(user);
+  }
+
+  @Post('/two-factor/google-authenticator/enable')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async enableTwoFactor(
+    @Body() body: EnableTwoFactorDto,
+    @AuthUser() user: any,
+  ) {
+    return this.userService.enableGoogleTwoFactor(user, body);
+  }
+
+  @Put('/two-factor/google-authenticator/disable')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async disableTwoFactor(
+    @Body() body: DisableTwoFactorDto,
+    @AuthUser() user: any,
+  ) {
+    return this.userService.disableGoogleTwoFactor(user, body);
+  }
+
+  @Post('/two-factor/google-authenticator/verify')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async verifyTwoFactor(
+    @Body() body: VerifyTwoFactorDto,
+    @AuthUser() user: any,
+  ) {
+    const isValid = await this.userService.verifyGoogleTwoFactorToken(
+      user,
+      body,
+    );
+    return {
+      status: 'success',
+      message: 'Token verified successfully',
+      data: { isValid },
+    };
+  }
+
+  @Post('/two-factor/sms/setup')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async setupTwoFactorSms(
+    @AuthUser() user: any,
+    @Body() body: SetupTwoFactorSmsDto,
+  ) {
+    return this.userService.setupTwoFactorSms(user, body);
+  }
+
+  @Put('/two-factor/sms/enable')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async enableTwoFactorSms(
+    @AuthUser() user: any,
+    @Body() body: EnableTwoFactorSmsDto,
+  ) {
+    return this.userService.enableTwoFactorSms(user, body);
+  }
+
+  @Put('/two-factor/sms/disable')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async disableTwoFactorSms(
+    @AuthUser() user: any,
+    @Body() body: DisableTwoFactorSmsDto,
+  ) {
+    return this.userService.disableTwoFactorSms(user, body);
   }
 
   @Delete('/')
