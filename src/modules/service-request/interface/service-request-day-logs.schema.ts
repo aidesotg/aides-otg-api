@@ -4,12 +4,16 @@ export interface ServiceRequestDayLogs extends mongoose.Document {
   readonly id: string;
   request: string;
   day_id: string;
-  log: {
+  status_history: {
     status: string;
-    description: string;
-    completed: boolean;
     created_at: Date;
   }[];
+  activity_trail: {
+    on_my_way: boolean;
+    arrived: boolean;
+    in_progress: boolean;
+    completed: boolean;
+  };
   readonly createdAt: Date;
   updatedAt: Date;
 }

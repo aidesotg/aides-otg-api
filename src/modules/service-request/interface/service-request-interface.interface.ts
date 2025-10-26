@@ -5,8 +5,8 @@ export interface ServiceRequest extends mongoose.Document {
   booking_id: string;
   transaction_id: string;
   self_care: boolean;
-  created_by: string;
-  beneficiary: string;
+  created_by: mongoose.Schema.Types.ObjectId;
+  beneficiary: mongoose.Schema.Types.ObjectId;
   details: string;
   location: {
     street?: string;
@@ -24,12 +24,14 @@ export interface ServiceRequest extends mongoose.Document {
     start_time: string;
     end_time: string;
   }[];
-  care_giver: string;
+  care_giver: mongoose.Schema.Types.ObjectId;
   status: string;
   status_history: {
     status: string;
     created_at: Date;
   }[];
+  cancellation_reason: string;
+  cancellation_note: string;
   readonly createdAt: Date;
   updatedAt: Date;
 }

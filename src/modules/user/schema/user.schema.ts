@@ -137,6 +137,36 @@ export const UserSchema = new mongoose.Schema<User>(
     suspension_reason: {
       type: String,
     },
+    notification_settings: {
+      email: {
+        type: Boolean,
+        default: true,
+      },
+      sms: {
+        type: Boolean,
+        default: true,
+      },
+      push: {
+        type: Boolean,
+        default: true,
+      },
+      session_updates: {
+        type: Boolean,
+        default: true,
+      },
+      payment_updates: {
+        type: Boolean,
+        default: true,
+      },
+      messages: {
+        type: Boolean,
+        default: true,
+      },
+      reminders: {
+        type: Boolean,
+        default: true,
+      },
+    },
   },
   {
     timestamps: true,

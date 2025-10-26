@@ -20,6 +20,10 @@ import {
   UpdateServiceRequestDto,
 } from '../dto/service-request.dto';
 import { AddFavoriteDto } from '../dto/favorite.dto';
+import { AcceptRequestDto } from '../dto/accept-request.dto';
+import { UpdateActivityTrailDto } from '../dto/activity-trail.dto';
+import { CancelRequestDto } from '../dto/cancel-request.dto';
+import { AddReviewDto } from '../dto/add-review.dto';
 
 @ApiTags('service-request')
 @Controller('service-request')
@@ -35,6 +39,21 @@ export class ServiceRequestController {
       message: 'Requests fetched',
       data: requests,
     };
+  }
+
+  @Get('/caregiver/pending')
+  @UseGuards(AuthGuard('jwt'))
+  async getPendingRequests(@AuthUser() user: any, @Query() params: any) {
+    return this.serviceService.getCaregiverSchedule(
+      { ...params, status: 'Pending' },
+      user,
+    );
+  }
+
+  @Get('/schedule')
+  @UseGuards(AuthGuard('jwt'))
+  async getSchedule(@AuthUser() user: any, @Query() params: any) {
+    return this.serviceService.getCaregiverSchedule(params, user);
   }
 
   @Get('/my-requests')
@@ -73,6 +92,20 @@ export class ServiceRequestController {
     return this.serviceService.getFavoriteById(id);
   }
 
+  @Get('/reviews')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getReviews(@Query() params: any, @AuthUser() user: any) {
+    return this.serviceService.getReviews(params, user);
+  }
+
+  @Get('/reviews/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getReviewById(@Param('id') id: string) {
+    return this.serviceService.getReviewById(id);
+  }
+
   @Get('/:id')
   @UseGuards(AuthGuard('jwt'))
   async getServiceById(@Param('id') id: string) {
@@ -82,6 +115,13 @@ export class ServiceRequestController {
       message: 'Request fetched',
       data: request,
     };
+  }
+
+  @Post('/reviews')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async addReview(@Body() body: AddReviewDto, @AuthUser() user: any) {
+    return this.serviceService.addReview(body, user);
   }
 
   @Post('')
@@ -99,6 +139,39 @@ export class ServiceRequestController {
   @UseFilters(ExceptionsLoggerFilter)
   async addFavorite(@Body() body: AddFavoriteDto, @AuthUser() user: any) {
     return this.serviceService.addFavorite(body, user);
+  }
+
+  @Put('/caregiver/request/:id/respond')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async acceptServiceRequest(
+    @Param('id') id: string,
+    @Body() body: AcceptRequestDto,
+    @AuthUser() user: any,
+  ) {
+    return this.serviceService.acceptServiceRequest(id, body, user);
+  }
+
+  @Put('/schedule/:id/activity-trail')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async updateActivityTrail(
+    @Param('id') id: string,
+    @Body() body: UpdateActivityTrailDto,
+    @AuthUser() user: any,
+  ) {
+    return this.serviceService.updateActivityTrail(id, body, user);
+  }
+
+  @Put('/schedule/:id/cancel')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async cancelServiceRequest(
+    @Param('id') id: string,
+    @Body() body: CancelRequestDto,
+    @AuthUser() user: any,
+  ) {
+    return this.serviceService.cancelServiceRequest(id, body, user);
   }
 
   @Put('/:id')
@@ -124,5 +197,12 @@ export class ServiceRequestController {
   @UseFilters(ExceptionsLoggerFilter)
   async removeFavorite(@Param('id') id: string, @AuthUser() user: any) {
     return this.serviceService.removeFavorite(id, user);
+  }
+
+  @Delete('/reviews/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async deleteReview(@Param('id') id: string, @AuthUser() user: any) {
+    return this.serviceService.deleteReview(id, user);
   }
 }

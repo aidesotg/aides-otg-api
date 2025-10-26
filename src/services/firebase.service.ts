@@ -3,6 +3,7 @@
 import { Injectable } from '@nestjs/common';
 import firebaseadmin from './config/firebase.config';
 import moment from 'moment';
+import { User } from 'src/modules/user/interface/user.interface';
 
 @Injectable()
 export class FirebaseService {
@@ -46,7 +47,7 @@ export class FirebaseService {
   }
 
   async sendToUser(
-    user: any,
+    user: User,
     title: string,
     message: string,
     imageUrl: string,
@@ -61,7 +62,7 @@ export class FirebaseService {
 
     if (imageUrl) androidNotification.imageUrl = imageUrl;
 
-    if (registrationToken.length) {
+    if (registrationToken?.length) {
       for (let token of registrationToken) {
         var messageData = {
           notification: {

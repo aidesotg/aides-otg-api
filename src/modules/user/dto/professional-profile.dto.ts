@@ -12,6 +12,7 @@ import {
   Max,
 } from 'class-validator';
 import { AddressDto } from './address.dto';
+import { BankDto } from './bank.dto';
 
 export class KycDto {
   @ApiProperty()
@@ -21,32 +22,6 @@ export class KycDto {
   @ApiProperty()
   @IsString()
   selfie_with_id: string;
-
-  @ApiProperty()
-  @IsString()
-  status: string;
-
-  @ApiProperty()
-  @IsString()
-  reason: string;
-}
-
-export class PayoutDto {
-  @ApiProperty()
-  @IsString()
-  bank_name: string;
-
-  @ApiProperty()
-  @IsString()
-  account_number: string;
-
-  @ApiProperty()
-  @IsString()
-  account_name: string;
-
-  @ApiProperty()
-  @IsString()
-  routing_number: string;
 }
 
 export class ProfessionalProfileDto {
@@ -111,10 +86,10 @@ export class ProfessionalProfileDto {
   @Type(() => KycDto)
   kyc: KycDto;
 
-  @ApiProperty({ type: PayoutDto })
+  @ApiProperty({ type: BankDto })
   @ValidateNested()
-  @Type(() => PayoutDto)
-  payout: PayoutDto;
+  @Type(() => BankDto)
+  payout: BankDto;
 }
 
 export class CreateProfessionalProfileDto {
@@ -213,9 +188,9 @@ export class UpdateProfessionalProfileDto {
   @IsOptional()
   kyc?: KycDto;
 
-  @ApiProperty({ type: PayoutDto, required: false })
+  @ApiProperty({ type: BankDto, required: false })
   @ValidateNested()
-  @Type(() => PayoutDto)
+  @Type(() => BankDto)
   @IsOptional()
-  payout?: PayoutDto;
+  payout?: BankDto;
 }

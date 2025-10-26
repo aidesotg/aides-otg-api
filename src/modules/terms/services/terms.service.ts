@@ -32,7 +32,7 @@ export class TermsService {
   async getAllTerms(type?: string) {
     const query: any = {};
     if (type) query.type = type;
-    const terms = await this.termsModel.find().exec();
+    const terms = await this.termsModel.find(query).exec();
 
     return terms;
   }
@@ -43,7 +43,7 @@ export class TermsService {
     const terms = await this.termsModel.findOne(query).exec();
     if (!terms) {
       throw new HttpException(
-        { status: 'error', message: 'Terms and Agreement not found' },
+        { status: 'error', message: `${type} not found` },
         404,
       );
     }

@@ -187,6 +187,14 @@ export class MiscCLass {
     return word.charAt(0).toUpperCase() + word.slice(1);
   }
 
+  async capitalizeEachWord(sentence: string): Promise<string> {
+    if (!sentence) return '';
+    return sentence
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
   async getDayOfWeek(dateString: string): Promise<string> {
     if (!dateString) {
       throw new Error('Date string is required');

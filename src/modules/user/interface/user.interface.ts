@@ -24,7 +24,6 @@ export interface User extends mongoose.Document {
     country: string;
     zip_code?: string;
   };
-
   profile_picture: string;
   gender: string;
   occupation: string;
@@ -40,6 +39,36 @@ export interface User extends mongoose.Document {
   firebase_uid: string;
   docId: string;
   stripeConnect: { stripeCustomerId: string; active: boolean };
+  notification_settings: {
+    email: {
+      type: Boolean;
+      default: true;
+    };
+    sms: {
+      type: Boolean;
+      default: true;
+    };
+    push: {
+      type: Boolean;
+      default: true;
+    };
+    session_updates: {
+      type: Boolean;
+      default: true;
+    };
+    payment_updates: {
+      type: Boolean;
+      default: true;
+    };
+    messages: {
+      type: Boolean;
+      default: true;
+    };
+    reminders: {
+      type: Boolean;
+      default: true;
+    };
+  };
   readonly createdAt: Date;
   updatedAt: Date;
 }

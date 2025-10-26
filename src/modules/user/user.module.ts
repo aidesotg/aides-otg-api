@@ -15,6 +15,13 @@ import { InsuranceModule } from '../insurance/insurance.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { WalletSchema } from '../wallet/schema/wallet.schema';
 import { ProfessionalProfileSchema } from './schema/professional-profile.schema';
+import { CaregiverService } from './services/caregiver.service';
+import { CaregiverController } from './controllers/caregiver.controller';
+import { BeneficiaryController } from './controllers/beneficiary.controller';
+import { BeneficiaryService } from './services/beneficiary.service';
+import { BankSchema } from './schema/bank.schema';
+import { ReviewSchema } from '../service-request/schema/review.schema';
+import { ServiceRequestSchema } from '../service-request/schema/service-request.schema';
 
 @Module({
   imports: [
@@ -26,6 +33,9 @@ import { ProfessionalProfileSchema } from './schema/professional-profile.schema'
       { name: 'Insurance', schema: InsuranceSchema },
       { name: 'Wallet', schema: WalletSchema },
       { name: 'ProfessionalProfile', schema: ProfessionalProfileSchema },
+      { name: 'Bank', schema: BankSchema },
+      { name: 'Review', schema: ReviewSchema },
+      { name: 'ServiceRequest', schema: ServiceRequestSchema },
     ]),
     ServicesModule,
     RoleModule,
@@ -33,8 +43,13 @@ import { ProfessionalProfileSchema } from './schema/professional-profile.schema'
     forwardRef(() => InsuranceModule),
     forwardRef(() => WalletModule),
   ],
-  controllers: [UserController],
-  providers: [UserService, VerificationMiddleware],
-  exports: [UserService, UserModule, VerificationMiddleware],
+  controllers: [BeneficiaryController, CaregiverController, UserController],
+  providers: [
+    BeneficiaryService,
+    CaregiverService,
+    UserService,
+    VerificationMiddleware,
+  ],
+  exports: [CaregiverService, UserService, UserModule, VerificationMiddleware],
 })
 export class UserModule {}

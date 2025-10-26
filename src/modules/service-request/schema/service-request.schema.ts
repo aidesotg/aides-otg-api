@@ -75,9 +75,23 @@ export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
     },
     status: {
       type: String,
-
-      enum: ['Pending', 'Accepted', 'In Progress', 'Completed', 'Cancelled'],
+      enum: [
+        'Pending',
+        'Accepted',
+        'In Progress',
+        'Completed',
+        'Cancelled',
+        'Rejected',
+      ],
       default: 'Pending',
+    },
+    cancellation_reason: {
+      type: String,
+      required: false,
+    },
+    cancellation_note: {
+      type: String,
+      required: false,
     },
     status_history: [
       {

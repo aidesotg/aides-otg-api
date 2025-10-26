@@ -34,7 +34,7 @@ export class TermsController {
     const terms = await this.termsService.getTerms(type);
     return {
       status: 'success',
-      message: 'Terms fetched',
+      message: `${type} fetched`,
       data: terms,
     };
   }

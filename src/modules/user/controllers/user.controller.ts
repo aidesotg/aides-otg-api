@@ -33,6 +33,8 @@ import {
   UpdateBeneficiaryDto,
 } from '../dto/beneficiary.dto';
 import { CreateProfessionalProfileDto } from '../dto/professional-profile.dto';
+import { BankDto } from '../dto/bank.dto';
+import { NotificationSettingsDto } from '../dto/notification.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -48,6 +50,13 @@ export class UserController {
       message: 'User details fetched',
       data: { user: userDetails },
     };
+  }
+
+  @Get('/bank')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getBanks(@AuthUser() user: any) {
+    return this.userService.getBanks(user);
   }
 
   @Get('/list')
@@ -82,48 +91,6 @@ export class UserController {
   @UseGuards(AuthGuard('jwt'))
   async createUser(@Body() body: CreateUserDto) {
     return this.userService.createUser(body);
-  }
-
-  @Post('/beneficiaries')
-  @UseGuards(AuthGuard('jwt'))
-  async createBeneficiaries(
-    @Body() body: CreateBeneficiaryDto[],
-    @AuthUser() user: any,
-  ) {
-    return this.userService.createBeneficiary(body, user);
-  }
-  @Put('/beneficiaries/:id')
-  @UseGuards(AuthGuard('jwt'))
-  async updateBeneficiary(
-    @Body() body: UpdateBeneficiaryDto,
-    @Param('id') id: string,
-    @AuthUser() user: any,
-  ) {
-    return this.userService.updateBeneficiary(id, body, user);
-  }
-
-  @Get('/beneficiaries/all')
-  @UseGuards(AuthGuard('jwt'))
-  async getAllBeneficiaries(@AuthUser() user: any, @Query() params: any) {
-    return this.userService.getBeneficiaries(params);
-  }
-
-  @Get('/beneficiaries')
-  @UseGuards(AuthGuard('jwt'))
-  async getBeneficiaries(@AuthUser() user: any) {
-    return this.userService.getBeneficariesByUserId(user._id);
-  }
-
-  @Get('/beneficiaries/user/:userId')
-  @UseGuards(AuthGuard('jwt'))
-  async getBeneficiariesByUserId(@Param('userId') userId: string) {
-    return this.userService.getBeneficariesByUserId(userId);
-  }
-
-  @Get('/beneficiaries/:id')
-  @UseGuards(AuthGuard('jwt'))
-  async getBeneficiaryById(@Param('id') id: string) {
-    return this.userService.getBeneficaryById(id);
   }
 
   @Get('/role-count')
@@ -168,6 +135,34 @@ export class UserController {
     return this.userService.createProfile(user, body);
   }
 
+  @Put('/profile/notification-settings')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async updateNotificationSettings(
+    @Body() body: NotificationSettingsDto,
+    @AuthUser() user: any,
+  ) {
+    return this.userService.updateNotificationSettings(body, user);
+  }
+
+  @Post('/bank')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async addBank(@Body() body: BankDto, @AuthUser() user: any) {
+    return this.userService.addBank(body, user);
+  }
+
+  @Put('/bank/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async updateBank(
+    @Param('id') id: string,
+    @Body() body: Partial<BankDto>,
+    @AuthUser() user: any,
+  ) {
+    return this.userService.updateBank(id, body, user);
+  }
+
   @Put('/profile/update')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
@@ -200,14 +195,24 @@ export class UserController {
     return this.userService.updatePreference(body, user);
   }
 
-  @Put('/profile/update/emergency-contact')
+  @Post('/profile/add/emergency-contact')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async updateEmergencyContact(
+  async addEmergencyContact(
     @Body() body: EmergencyContactDto[],
     @AuthUser() user: any,
   ) {
-    return this.userService.updateEmergencyContact(body, user);
+    return this.userService.addEmergencyContact(body, user);
+  }
+  @Put('/profile/update/emergency-contact/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async updateEmergencyContact(
+    @Param('id') id: string,
+    @Body() body: Partial<EmergencyContactDto>,
+    @AuthUser() user: any,
+  ) {
+    return this.userService.editEmergencyContact(id, body, user);
   }
 
   @Put('/update/:userId')
@@ -234,16 +239,6 @@ export class UserController {
     return this.userService.resetPassword(body, user);
   }
 
-  @Post('/request/caregiver')
-  @UseGuards(AuthGuard('jwt'))
-  @UseFilters(ExceptionsLoggerFilter)
-  async createProfessionalProfile(
-    @Body() body: CreateProfessionalProfileDto,
-    @AuthUser() user: any,
-  ) {
-    return this.userService.createProfessionalProfile(body, user);
-  }
-
   // @Put('/professional-profile/update')
   // @UseGuards(AuthGuard('jwt'))
   // @UseFilters(ExceptionsLoggerFilter)
@@ -259,6 +254,13 @@ export class UserController {
   @UseFilters(ExceptionsLoggerFilter)
   async passwordUpdateAdmin(@Body() body: PasswordResetAdmin) {
     return this.userService.resetPasswordAdmin(body);
+  }
+
+  @Put('/logout')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async logout(@Body() body: { device_token: string }, @AuthUser() user: any) {
+    return this.userService.logout(user, body.device_token);
   }
 
   @Put('/:userId/update-role')
@@ -288,18 +290,18 @@ export class UserController {
     return this.userService.unsuspendUser(user);
   }
 
+  @Delete('/bank/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async deleteBank(@Param('id') id: string, @AuthUser() user: any) {
+    return this.userService.deleteBank(id, user);
+  }
+
   @Delete('/')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
   async deleteUser(@AuthUser() user: any) {
     return this.userService.deleteUser(user);
-  }
-
-  @Delete('/beneficiaries/:id')
-  @UseGuards(AuthGuard('jwt'))
-  @UseFilters(ExceptionsLoggerFilter)
-  async deleteBeneficiary(@Param('id') id: string, @AuthUser() user: any) {
-    return this.userService.deleteBeneficiary(id, user);
   }
 
   @Delete('/:userId')

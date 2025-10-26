@@ -17,6 +17,13 @@ import { UserBeneficiary } from 'src/modules/user/interface/user-beneficiary.int
 import { ServiceRequestDayLogs } from 'src/modules/service-request/interface/service-request-day-logs.schema';
 import { Favorite } from 'src/modules/service-request/interface/favorite.interface';
 import { AddFavoriteDto } from 'src/modules/service-request/dto/favorite.dto';
+import { NotificationService } from 'src/modules/notification/services/notification.service';
+import { Service } from 'src/modules/service/interface/service.interface';
+import { CancelRequestDto } from '../dto/cancel-request.dto';
+import { UpdateActivityTrailDto } from '../dto/activity-trail.dto';
+import { AcceptRequestDto } from '../dto/accept-request.dto';
+import { Review } from '../interface/review.interface';
+import { AddReviewDto } from '../dto/add-review.dto';
 
 @Injectable()
 export class ServiceRequestService {
@@ -25,10 +32,12 @@ export class ServiceRequestService {
     private readonly serviceRequestModel: Model<ServiceRequest>,
     @InjectModel('ServiceRequestDayLogs')
     private readonly serviceRequestDayLogsModel: Model<ServiceRequestDayLogs>,
+    @InjectModel('Review') private readonly reviewModel: Model<Review>,
     @InjectModel('UserBeneficiary')
     private readonly userBeneficiaryModel: Model<UserBeneficiary>,
     @InjectModel('Favorite') private readonly favoriteModel: Model<Favorite>,
     private miscService: MiscCLass,
+    private notificationService: NotificationService,
   ) {}
 
   private generateBookingId() {
@@ -103,6 +112,14 @@ export class ServiceRequestService {
       ])
       .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
       .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
+      .populate({
+        path: 'care_type',
+        select: 'name category price',
+        populate: {
+          path: 'category',
+          select: 'title',
+        },
+      })
       .skip(pagination.offset)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
@@ -147,6 +164,69 @@ export class ServiceRequestService {
       ])
       .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
       .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
+      .populate({
+        path: 'care_type',
+        select: 'name category price',
+        populate: {
+          path: 'category',
+          select: 'title',
+        },
+      })
+      .skip(pagination.offset)
+      .limit(pagination.limit)
+      .sort({ createdAt: -1 })
+      .exec();
+
+    const count = await this.serviceRequestModel.countDocuments(query).exec();
+
+    return {
+      status: 'success',
+      message: 'Active requests fetched',
+
+      pagination: {
+        ...(await this.miscService.pageCount({ count, page, pageSize })),
+        total: count,
+      },
+      data: requests,
+    };
+  }
+
+  async getCaregiverSchedule(params: any, user: User) {
+    const { page = 1, pageSize = 50, ...rest } = params;
+    const pagination = await this.miscService.paginate({ page, pageSize });
+    const query: any = await this.miscService.search(rest);
+    if (user) {
+      query.care_giver = user._id;
+    }
+
+    if (!query.status) {
+      query['$or'] = [
+        { status: 'Completed' },
+        { status: 'Accepted' },
+        { status: 'In Progress' },
+      ];
+      delete query.status;
+    }
+
+    const requests = await this.serviceRequestModel
+      .find(query)
+      .populate('beneficiary', [
+        'first_name',
+        'last_name',
+        'profile_picture',
+        'label',
+        'relationship',
+      ])
+      .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
+      .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
+      .populate({
+        path: 'care_type',
+        select: 'name category price',
+        populate: {
+          path: 'category',
+          select: 'title',
+        },
+      })
       .skip(pagination.offset)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
@@ -187,23 +267,25 @@ export class ServiceRequestService {
         message: 'Service not found',
       });
     }
-    const dateList = request.date_list as any;
-    for (const date of dateList) {
-      const dayLogs = await this.serviceRequestDayLogsModel
-        .findOne({
-          service: request._id,
-          day_id: date._id,
-        })
-        .select('log')
-        .lean()
-        .exec();
+    // const dateList = request.date_list as any;
+    const dayLogs = await Promise.all(
+      request.date_list.map(async (date: any) => {
+        const activityTrail = await this.serviceRequestDayLogsModel
+          .findOne({
+            day_id: date._id,
+          })
+          .lean()
+          .exec();
 
-      date.day_logs = dayLogs?.log || [];
-    }
+        date.activity_trail = activityTrail?.activity_trail || {};
+        date.history = activityTrail?.status_history || [];
+        return date;
+      }),
+    );
 
     return {
       ...request,
-      date_list: dateList,
+      date_list: dayLogs,
     };
   }
 
@@ -292,6 +374,202 @@ export class ServiceRequestService {
     };
   }
 
+  async acceptServiceRequest(id: string, body: AcceptRequestDto, user: User) {
+    const { status } = body;
+    const request = await this.serviceRequestModel
+      .findOne({
+        _id: id,
+        care_giver: user._id,
+        status: 'Pending',
+      })
+      .populate('created_by')
+      .populate('care_type');
+
+    if (!request) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Request not found',
+      });
+    }
+    request.status = status;
+    request.status_history.push({
+      status: status,
+      created_at: new Date(),
+    });
+    await request.save();
+
+    const days: any[] = [];
+    for (const date of request.date_list) {
+      days.push({
+        day_id: (date as any)._id,
+        request: request._id,
+        activity_trail: {
+          on_my_way: false,
+          arrived: false,
+          in_progress: false,
+          completed: false,
+        },
+      });
+    }
+
+    await this.serviceRequestDayLogsModel.insertMany(days);
+    await this.serviceRequestDayLogsModel.insertMany(days);
+
+    //send notification to Caregiver and Client
+
+    await this.notificationService.sendMessage({
+      user: request.created_by,
+      title: 'Request accepted',
+      message: `Your request for the following service: ${
+        (request.care_type as unknown as Service)?.name
+      } has been ${status.toLowerCase()} by the care giver`,
+      resource: 'service_request',
+      resource_id: request._id.toString(),
+    });
+
+    await this.notificationService.sendMessage({
+      user: request.care_giver,
+      title: `Request ${status.toLowerCase()}`,
+      message: `You ${status.toLowerCase()} a request for the following service: ${
+        (request.care_type as unknown as Service)?.name
+      } has been ${status.toLowerCase()}`,
+      resource: 'service_request',
+      resource_id: request._id.toString(),
+    });
+
+    return {
+      status: 'success',
+      message: `Request ${status.toLowerCase()} successfully`,
+      data: request,
+    };
+  }
+
+  async updateActivityTrail(
+    id: string,
+    body: UpdateActivityTrailDto,
+    user: User,
+  ) {
+    const { status, day_id } = body;
+    const request = await this.serviceRequestModel.findOne({
+      _id: id,
+      care_giver: user._id,
+    });
+    if (!request) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Request not found',
+      });
+    }
+    const dayLogs = await this.serviceRequestDayLogsModel.findOne({
+      request: request._id,
+      day_id: day_id,
+    });
+
+    if (!dayLogs) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'This request has no scheduled service for this day',
+      });
+    }
+    dayLogs.status_history.push({
+      status: await this.miscService.capitalizeEachWord(
+        status.replaceAll('_', ' '),
+      ),
+      created_at: new Date(),
+    });
+    dayLogs.activity_trail[status.toLowerCase()] = true;
+    await dayLogs.save();
+
+    if (status == 'on_my_way' && request.status == 'Accepted') {
+      request.status = 'In Progress';
+      request.status_history.push({
+        status: 'In Progress',
+        created_at: new Date(),
+      });
+      await request.save();
+    }
+
+    //send notificartion to client
+    let message = `Caregiver is on the way to service location`;
+
+    if (status == 'arrived') {
+      message = `Caregiver has arrived at the service location`;
+    }
+    if (status == 'in_progress') {
+      message = `Caregiver is providing service`;
+    }
+    if (status == 'completed') {
+      message = `Care session has ended successfully`;
+    }
+    await this.notificationService.sendMessage({
+      user: request.created_by,
+      title: `Service Update: ${
+        (request.care_type as unknown as Service)?.name
+      }`,
+      message,
+      resource: 'service_request',
+      resource_id: request._id.toString(),
+    });
+
+    return {
+      status: 'success',
+      message: 'Activity trail updated successfully',
+      data: await this.getRequestById(id),
+    };
+  }
+
+  async cancelServiceRequest(id: string, body: CancelRequestDto, user: User) {
+    const { cancellation_reason, cancellation_note } = body;
+    const request = await this.serviceRequestModel
+      .findOne({
+        _id: id,
+        care_giver: user._id,
+      })
+      .populate('created_by');
+    if (!request) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Request not found',
+      });
+    }
+    request.cancellation_reason = cancellation_reason;
+    request.cancellation_note = cancellation_note ?? '';
+    request.status = 'Cancelled';
+    request.status_history.push({
+      status: 'Cancelled',
+      created_at: new Date(),
+    });
+    await request.save();
+
+    //send notificartion to client
+    await this.notificationService.sendMessage({
+      user: request.created_by,
+      title: 'Request cancelled',
+      message: `Your request for the following service: ${
+        (request.care_type as unknown as Service)?.name
+      } has been cancelled by the caregiver`,
+      resource: 'service_request',
+      resource_id: request._id.toString(),
+    });
+
+    //send notificartion to care giver
+    await this.notificationService.sendMessage({
+      user: user,
+      title: 'Request cancelled',
+      message: `You cancelled the following service: ${
+        (request.care_type as unknown as Service)?.name
+      }`,
+      resource: 'service_request',
+      resource_id: request._id.toString(),
+    });
+
+    return {
+      status: 'success',
+      message: 'Request cancelled successfully',
+      data: request,
+    };
+  }
+
   async addFavorite(addFavoriteDto: AddFavoriteDto, user: User) {
     const favorite = new this.favoriteModel({
       request: addFavoriteDto.request,
@@ -323,6 +601,7 @@ export class ServiceRequestService {
       message: 'Favorite removed successfully',
     };
   }
+
   async getFavorites(user: any) {
     const favorites = await this.favoriteModel
       .find({ user: user._id })
@@ -335,6 +614,7 @@ export class ServiceRequestService {
       data: favorites,
     };
   }
+
   async getFavoriteById(id: string) {
     const favorite = await this.favoriteModel
       .findOne({ _id: id })
@@ -351,6 +631,99 @@ export class ServiceRequestService {
       status: 'success',
       message: 'Favorite retrieved successfully',
       data: favorite,
+    };
+  }
+
+  async addReview(addReviewDto: AddReviewDto, user: User) {
+    const request = await this.serviceRequestModel.findOne({
+      _id: addReviewDto.request,
+      created_by: user._id,
+    });
+    if (!request) {
+      throw new NotFoundException({
+        status: 'error',
+        message:
+          'Ypu cannot post a review for this service. Service not fouond',
+      });
+    }
+
+    const review = await this.reviewModel.findOneAndUpdate(
+      {
+        request: addReviewDto.request as any,
+        user: user._id as any,
+      },
+      {
+        request: addReviewDto.request as any,
+        care_giver: request.care_giver as any,
+        user: user._id as any,
+        rating: addReviewDto.rating,
+        review: addReviewDto.review,
+      },
+      {
+        new: true,
+        upsert: true,
+      },
+    );
+    return {
+      status: 'success',
+      message: 'Review posted successfully',
+      data: review,
+    };
+  }
+
+  async deleteReview(id: string, user: User) {
+    const review = await this.reviewModel.findOne({ _id: id, user: user._id });
+    if (!review) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Review not found',
+      });
+    }
+    await review.deleteOne();
+    return {
+      status: 'success',
+      message: 'Review deleted successfully',
+    };
+  }
+
+  async getReviews(params: any, user?: User) {
+    const { page = 1, pageSize = 50, ...rest } = params;
+    const pagination = await this.miscService.paginate({ page, pageSize });
+    const query: any = await this.miscService.search(rest);
+
+    const reviews = await this.reviewModel
+      .find(query)
+      .populate('request')
+      .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
+      .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
+      .skip(pagination.offset)
+      .limit(pagination.limit)
+      .sort({ createdAt: -1 });
+    const count = await this.reviewModel.countDocuments(query).exec();
+
+    return {
+      status: 'success',
+      message: 'Reviews retrieved successfully',
+      pagination: {
+        ...(await this.miscService.pageCount({ count, page, pageSize })),
+        total: count,
+      },
+      data: reviews,
+    };
+  }
+
+  async getReviewById(id: string) {
+    const review = await this.reviewModel.findOne({ _id: id });
+    if (!review) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Review not found',
+      });
+    }
+    return {
+      status: 'success',
+      message: 'Review retrieved successfully',
+      data: review,
     };
   }
 }

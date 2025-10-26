@@ -11,20 +11,32 @@ export const ServiceRequestDayLogsSchema =
       day_id: {
         type: mongoose.Schema.Types.ObjectId,
       },
-      log: [
+      activity_trail: {
+        on_my_way: {
+          type: Boolean,
+          default: false,
+        },
+        arrived: {
+          type: Boolean,
+          default: false,
+        },
+        in_progress: {
+          type: Boolean,
+          default: false,
+        },
+        completed: {
+          type: Boolean,
+          default: false,
+        },
+      },
+      status_history: [
         {
           status: {
             type: String,
           },
-          description: {
-            type: String,
-          },
-          completed: {
-            type: Boolean,
-            default: false,
-          },
           created_at: {
             type: Date,
+            default: Date.now,
           },
         },
       ],
