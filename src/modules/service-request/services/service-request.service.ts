@@ -10,6 +10,7 @@ import { ServiceRequest } from '../interface/service-request-interface.interface
 import {
   CreateServiceRequestDto,
   UpdateServiceRequestDto,
+  UpdateLocationDto,
 } from 'src/modules/service-request/dto/service-request.dto';
 import { MiscCLass } from 'src/services/misc.service';
 import { User } from 'src/modules/user/interface/user.interface';
@@ -24,6 +25,7 @@ import { UpdateActivityTrailDto } from '../dto/activity-trail.dto';
 import { AcceptRequestDto } from '../dto/accept-request.dto';
 import { Review } from '../interface/review.interface';
 import { AddReviewDto } from '../dto/add-review.dto';
+import { RedisService } from 'src/services/redis.service';
 
 @Injectable()
 export class ServiceRequestService {
@@ -38,6 +40,7 @@ export class ServiceRequestService {
     @InjectModel('Favorite') private readonly favoriteModel: Model<Favorite>,
     private miscService: MiscCLass,
     private notificationService: NotificationService,
+    private redisService: RedisService,
   ) {}
 
   private generateBookingId() {
@@ -89,6 +92,189 @@ export class ServiceRequestService {
       status: 'success',
       message: 'Request created',
       data: request,
+    };
+  }
+
+  async updateCaregiverLocation(
+    userId: string,
+    updateLocationDto: UpdateLocationDto,
+  ) {
+    const { latitude, longitude } = updateLocationDto;
+
+    await this.redisService.updateCaregiverLocation({
+      userId,
+      latitude,
+      longitude,
+      timestamp: Date.now(),
+    });
+
+    return {
+      status: 'success',
+      message: 'Location updated successfully',
+    };
+  }
+
+  async findNearbyCaregivers(
+    latitude: number,
+    longitude: number,
+    radius: number = 10,
+  ) {
+    const nearbyCaregivers = await this.redisService.findNearbyCaregivers(
+      latitude,
+      longitude,
+      radius,
+    );
+
+    return {
+      status: 'success',
+      message: 'Nearby caregivers retrieved',
+      data: nearbyCaregivers,
+    };
+  }
+
+  async findCaregiversNearRequest(requestId: string, radius: number = 10) {
+    const nearbyCaregivers = await this.redisService.findCaregiversNearRequest(
+      requestId,
+      radius,
+    );
+
+    return {
+      status: 'success',
+      message: 'Nearby caregivers retrieved',
+      data: nearbyCaregivers,
+    };
+  }
+
+  async updateRequestLocation(
+    requestId: string,
+    updateLocationDto: UpdateLocationDto,
+  ) {
+    const { latitude, longitude } = updateLocationDto;
+
+    await this.redisService.updateClientLocationForRequest(
+      requestId,
+      latitude,
+      longitude,
+    );
+
+    return {
+      status: 'success',
+      message: 'Request location updated',
+    };
+  }
+
+  async getCaregiverDistance(requestId: string, caregiverId: string) {
+    const distance = await this.redisService.calculateDistanceToRequest(
+      caregiverId,
+      requestId,
+    );
+
+    if (distance === null) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Could not calculate distance. Location data missing.',
+      });
+    }
+
+    return {
+      status: 'success',
+      message: 'Distance calculated',
+      data: {
+        distance: Math.round(distance * 100) / 100, // Round to 2 decimal places
+        unit: 'km',
+      },
+    };
+  }
+
+  async updateActivityTrail(
+    id: string,
+    body: UpdateActivityTrailDto,
+    user: User,
+  ) {
+    const { status, day_id } = body;
+    const request = await this.serviceRequestModel.findOne({
+      _id: id,
+      care_giver: user._id,
+    });
+    if (!request) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Request not found',
+      });
+    }
+
+    // Update caregiver location on "on my way" status
+    if (status === 'on_my_way') {
+      const clientLocation =
+        await this.redisService.getClientLocationForRequest(id);
+      if (clientLocation) {
+        await this.redisService.updateCaregiverLocation({
+          userId: user._id.toString(),
+          latitude: clientLocation.latitude,
+          longitude: clientLocation.longitude,
+          timestamp: Date.now(),
+        });
+      }
+    }
+
+    const dayLogs = await this.serviceRequestDayLogsModel.findOne({
+      request: request._id,
+      day_id: day_id,
+    });
+
+    if (!dayLogs) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'This request has no scheduled service for this day',
+      });
+    }
+    dayLogs.status_history.push({
+      status: await this.miscService.capitalizeEachWord(
+        status.replaceAll('_', ' '),
+      ),
+      created_at: new Date(),
+    });
+    dayLogs.activity_trail[status.toLowerCase()] = true;
+    await dayLogs.save();
+
+    if (status == 'on_my_way' && request.status == 'Accepted') {
+      request.status = 'In Progress';
+      request.status_history.push({
+        status: 'In Progress',
+        created_at: new Date(),
+      });
+      await request.save();
+    }
+
+    //send notificartion to client
+    let message = `Caregiver is on the way to service location`;
+
+    if (status == 'arrived') {
+      message = `Caregiver has arrived at the service location`;
+    }
+    if (status == 'in_progress') {
+      message = `Caregiver is providing service`;
+    }
+    if (status == 'completed') {
+      message = `Care session has ended successfully`;
+
+      // Clean up location data when service is completed
+      await this.redisService.removeRequestLocation(id);
+    }
+    await this.notificationService.sendMessage({
+      user: request.created_by,
+      title: `Service Update: ${
+        (request.care_type as unknown as Service)?.name
+      }`,
+      message,
+      resource: 'service_request',
+      resource_id: request._id.toString(),
+    });
+
+    return {
+      status: 'success',
+      message: 'Activity trail updated successfully',
+      data: await this.getRequestById(id),
     };
   }
 
@@ -444,79 +630,79 @@ export class ServiceRequestService {
     };
   }
 
-  async updateActivityTrail(
-    id: string,
-    body: UpdateActivityTrailDto,
-    user: User,
-  ) {
-    const { status, day_id } = body;
-    const request = await this.serviceRequestModel.findOne({
-      _id: id,
-      care_giver: user._id,
-    });
-    if (!request) {
-      throw new NotFoundException({
-        status: 'error',
-        message: 'Request not found',
-      });
-    }
-    const dayLogs = await this.serviceRequestDayLogsModel.findOne({
-      request: request._id,
-      day_id: day_id,
-    });
+  // async updateActivityTrail(
+  //   id: string,
+  //   body: UpdateActivityTrailDto,
+  //   user: User,
+  // ) {
+  //   const { status, day_id } = body;
+  //   const request = await this.serviceRequestModel.findOne({
+  //     _id: id,
+  //     care_giver: user._id,
+  //   });
+  //   if (!request) {
+  //     throw new NotFoundException({
+  //       status: 'error',
+  //       message: 'Request not found',
+  //     });
+  //   }
+  //   const dayLogs = await this.serviceRequestDayLogsModel.findOne({
+  //     request: request._id,
+  //     day_id: day_id,
+  //   });
 
-    if (!dayLogs) {
-      throw new NotFoundException({
-        status: 'error',
-        message: 'This request has no scheduled service for this day',
-      });
-    }
-    dayLogs.status_history.push({
-      status: await this.miscService.capitalizeEachWord(
-        status.replaceAll('_', ' '),
-      ),
-      created_at: new Date(),
-    });
-    dayLogs.activity_trail[status.toLowerCase()] = true;
-    await dayLogs.save();
+  //   if (!dayLogs) {
+  //     throw new NotFoundException({
+  //       status: 'error',
+  //       message: 'This request has no scheduled service for this day',
+  //     });
+  //   }
+  //   dayLogs.status_history.push({
+  //     status: await this.miscService.capitalizeEachWord(
+  //       status.replaceAll('_', ' '),
+  //     ),
+  //     created_at: new Date(),
+  //   });
+  //   dayLogs.activity_trail[status.toLowerCase()] = true;
+  //   await dayLogs.save();
 
-    if (status == 'on_my_way' && request.status == 'Accepted') {
-      request.status = 'In Progress';
-      request.status_history.push({
-        status: 'In Progress',
-        created_at: new Date(),
-      });
-      await request.save();
-    }
+  //   if (status == 'on_my_way' && request.status == 'Accepted') {
+  //     request.status = 'In Progress';
+  //     request.status_history.push({
+  //       status: 'In Progress',
+  //       created_at: new Date(),
+  //     });
+  //     await request.save();
+  //   }
 
-    //send notificartion to client
-    let message = `Caregiver is on the way to service location`;
+  //   //send notificartion to client
+  //   let message = `Caregiver is on the way to service location`;
 
-    if (status == 'arrived') {
-      message = `Caregiver has arrived at the service location`;
-    }
-    if (status == 'in_progress') {
-      message = `Caregiver is providing service`;
-    }
-    if (status == 'completed') {
-      message = `Care session has ended successfully`;
-    }
-    await this.notificationService.sendMessage({
-      user: request.created_by,
-      title: `Service Update: ${
-        (request.care_type as unknown as Service)?.name
-      }`,
-      message,
-      resource: 'service_request',
-      resource_id: request._id.toString(),
-    });
+  //   if (status == 'arrived') {
+  //     message = `Caregiver has arrived at the service location`;
+  //   }
+  //   if (status == 'in_progress') {
+  //     message = `Caregiver is providing service`;
+  //   }
+  //   if (status == 'completed') {
+  //     message = `Care session has ended successfully`;
+  //   }
+  //   await this.notificationService.sendMessage({
+  //     user: request.created_by,
+  //     title: `Service Update: ${
+  //       (request.care_type as unknown as Service)?.name
+  //     }`,
+  //     message,
+  //     resource: 'service_request',
+  //     resource_id: request._id.toString(),
+  //   });
 
-    return {
-      status: 'success',
-      message: 'Activity trail updated successfully',
-      data: await this.getRequestById(id),
-    };
-  }
+  //   return {
+  //     status: 'success',
+  //     message: 'Activity trail updated successfully',
+  //     data: await this.getRequestById(id),
+  //   };
+  // }
 
   async cancelServiceRequest(id: string, body: CancelRequestDto, user: User) {
     const { cancellation_reason, cancellation_note } = body;

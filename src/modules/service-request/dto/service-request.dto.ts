@@ -11,6 +11,7 @@ import {
   ValidateNested,
   IsMongoId,
   IsDateString,
+  IsNumber,
 } from 'class-validator';
 
 export class LocationDto {
@@ -165,4 +166,28 @@ export class UpdateServiceRequestDto {
   @IsEnum(['Pending', 'Accepted', 'In Progress', 'Completed', 'Cancelled'])
   @IsOptional()
   status?: string;
+}
+
+export class UpdateLocationDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  latitude: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  longitude: number;
+}
+
+export class NearbyCaregiversQueryDto {
+  @ApiProperty({ required: false, default: 5 })
+  @IsOptional()
+  radius?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  latitude?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  longitude?: number;
 }

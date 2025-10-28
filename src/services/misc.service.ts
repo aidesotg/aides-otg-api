@@ -281,4 +281,136 @@ export class MiscCLass {
     }
     return randomNumber;
   }
+
+  /**
+   * Format a date string and return only the date part
+   * @param dateInput - Date string or Date object
+   * @param outputFormat - Output format (default: 'YYYY-MM-DD')
+   * @returns Formatted date string with date only
+   */
+  async formatDateOnly(
+    dateInput: string | Date,
+    outputFormat: string = 'YYYY-MM-DD',
+  ): Promise<string> {
+    if (!dateInput) {
+      throw new Error('Date input is required');
+    }
+
+    const momentObj = moment(dateInput);
+
+    if (!momentObj.isValid()) {
+      throw new Error('Invalid date input');
+    }
+
+    return momentObj.format(outputFormat);
+  }
+
+  /**
+   * Format a date string and return only the date part (US format)
+   * @param dateInput - Date string or Date object
+   * @returns Formatted date string in MM/DD/YYYY format
+   */
+  async formatDateUS(dateInput: string | Date): Promise<string> {
+    return this.formatDateOnly(dateInput, 'MM/DD/YYYY');
+  }
+
+  /**
+   * Format a date string and return only the date part (ISO format)
+   * @param dateInput - Date string or Date object
+   * @returns Formatted date string in ISO format (YYYY-MM-DD)
+   */
+  async formatDateISO(dateInput: string | Date): Promise<string> {
+    return this.formatDateOnly(dateInput, 'YYYY-MM-DD');
+  }
+
+  /**
+   * Format a date and return date with custom format
+   * @param dateInput - Date string or Date object
+   * @param format - Custom format (e.g., 'DD/MM/YYYY', 'YYYY/MM/DD')
+   * @returns Formatted date string
+   */
+  async formatCustomDate(
+    dateInput: string | Date,
+    format: string,
+  ): Promise<string> {
+    return this.formatDateOnly(dateInput, format);
+  }
+
+  /**
+   * Get time only from a date string
+   * @param dateInput - Date string or Date object
+   * @param outputFormat - Output format (default: 'HH:mm:ss')
+   * @returns Formatted time string
+   */
+  async formatTimeOnly(
+    dateInput: string | Date,
+    outputFormat: string = 'HH:mm:ss',
+  ): Promise<string> {
+    if (!dateInput) {
+      throw new Error('Date input is required');
+    }
+
+    const momentObj = moment(dateInput);
+
+    if (!momentObj.isValid()) {
+      throw new Error('Invalid date input');
+    }
+
+    return momentObj.format(outputFormat);
+  }
+
+  /**
+   * Get time in 12-hour format (AM/PM)
+   * @param dateInput - Date string or Date object
+   * @returns Time in 12-hour format (e.g., "02:30 PM")
+   */
+  async formatTime12Hour(dateInput: string | Date): Promise<string> {
+    return this.formatTimeOnly(dateInput, 'hh:mm A');
+  }
+
+  /**
+   * Get time in 24-hour format
+   * @param dateInput - Date string or Date object
+   * @returns Time in 24-hour format (e.g., "14:30:00")
+   */
+  async formatTime24Hour(dateInput: string | Date): Promise<string> {
+    return this.formatTimeOnly(dateInput, 'HH:mm:ss');
+  }
+
+  /**
+   * Get time without seconds
+   * @param dateInput - Date string or Date object
+   * @returns Time without seconds (e.g., "14:30")
+   */
+  async formatTimeNoSeconds(dateInput: string | Date): Promise<string> {
+    return this.formatTimeOnly(dateInput, 'HH:mm');
+  }
+
+  /**
+   * Get custom time format
+   * @param dateInput - Date string or Date object
+   * @param format - Custom format (e.g., 'h:mm A', 'HH:mm')
+   * @returns Formatted time string
+   */
+  async formatCustomTime(
+    dateInput: string | Date,
+    format: string,
+  ): Promise<string> {
+    return this.formatTimeOnly(dateInput, format);
+  }
 }
+
+// 'YYYY-MM-DD' - ISO format (2024-03-15)
+// 'MM/DD/YYYY' - US format (03/15/2024)
+// 'DD/MM/YYYY' - European format (15/03/2024)
+// 'YYYY/MM/DD' - International format (2024/03/15)
+// 'MMMM Do YYYY' - Full date (March 15th 2024)
+// 'DD-MMM-YYYY' - Short format (15-Mar-2024)
+
+// Common Time Formats:
+// 'HH:mm:ss' - Full 24-hour format (14:30:45)
+// 'HH:mm' - 24-hour without seconds (14:30)
+// 'hh:mm A' - 12-hour format with AM/PM (02:30 PM)
+// 'h:mm A' - 12-hour format without leading zero (2:30 PM)
+// 'HH:mm:ss.SSS' - With milliseconds (14:30:45.123)
+// 'h:mm:ss A' - 12-hour with seconds (2:30:45 PM)

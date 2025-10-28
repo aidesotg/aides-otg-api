@@ -922,7 +922,7 @@ export class UserService {
       status: 'success',
       message: 'Two-factor secret generated',
       data: {
-        // secret,
+        secret,
         qrCode,
       },
     };

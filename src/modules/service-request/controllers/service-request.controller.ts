@@ -18,6 +18,8 @@ import { ExceptionsLoggerFilter } from 'src/framework/exceptions/exceptionLogger
 import {
   CreateServiceRequestDto,
   UpdateServiceRequestDto,
+  UpdateLocationDto,
+  NearbyCaregiversQueryDto,
 } from '../dto/service-request.dto';
 import { AddFavoriteDto } from '../dto/favorite.dto';
 import { AcceptRequestDto } from '../dto/accept-request.dto';
@@ -204,5 +206,68 @@ export class ServiceRequestController {
   @UseFilters(ExceptionsLoggerFilter)
   async deleteReview(@Param('id') id: string, @AuthUser() user: any) {
     return this.serviceService.deleteReview(id, user);
+  }
+
+  // Location tracking endpoints
+
+  @Post('/caregiver/location')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async updateCaregiverLocation(
+    @Body() body: UpdateLocationDto,
+    @AuthUser() user: any,
+  ) {
+    return this.serviceService.updateCaregiverLocation(user._id, body);
+  }
+
+  @Get('/nearby-caregivers')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async findNearbyCaregivers(@Query() query: NearbyCaregiversQueryDto) {
+    const { latitude, longitude, radius } = query;
+
+    if (!latitude || !longitude) {
+      return {
+        status: 'error',
+        message: 'latitude and longitude are required',
+      };
+    }
+
+    return this.serviceService.findNearbyCaregivers(
+      latitude,
+      longitude,
+      radius || 10,
+    );
+  }
+
+  @Get('/request/:id/nearby-caregivers')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async findCaregiversNearRequest(
+    @Param('id') id: string,
+    @Query('radius') radius?: number,
+  ) {
+    return this.serviceService.findCaregiversNearRequest(id, radius || 10);
+  }
+
+  @Get('/request/:id/distance/:caregiverId')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getCaregiverDistance(
+    @Param('id') id: string,
+    @Param('caregiverId') caregiverId: string,
+  ) {
+    return this.serviceService.getCaregiverDistance(id, caregiverId);
+  }
+
+  @Post('/request/:id/location')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async updateRequestLocation(
+    @Param('id') id: string,
+    @Body() body: UpdateLocationDto,
+    @AuthUser() user: any,
+  ) {
+    return this.serviceService.updateRequestLocation(id, body);
   }
 }
