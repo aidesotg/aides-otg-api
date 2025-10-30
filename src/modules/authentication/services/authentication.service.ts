@@ -113,6 +113,7 @@ export class AuthenticationService {
         isDeleted: false,
       })
       .populate('roles', ['name'])
+      .populate('has_applied')
       .exec();
     if (!user) {
       throw new HttpException(
@@ -290,6 +291,7 @@ export class AuthenticationService {
     const user = await this.userModel
       .findOne({ _id: body.userId })
       .populate('roles', ['name'])
+      .populate('has_applied')
       .exec();
     if (!user) {
       throw new NotFoundException({

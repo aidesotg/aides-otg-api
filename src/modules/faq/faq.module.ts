@@ -8,6 +8,7 @@ import { RoleSchema } from 'src/modules/role/schema/role.schema';
 import { UserSchema } from 'src/modules/user/schema/user.schema';
 import { FaqSchema } from './schema/faq.schema';
 import { ServicesModule } from 'src/services/services.module';
+import { FaqCategorySchema } from './schema/faq-category.schema';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ServicesModule } from 'src/services/services.module';
       { name: 'User', schema: UserSchema },
       { name: 'Role', schema: RoleSchema },
       { name: 'Faq', schema: FaqSchema },
+      { name: 'FaqCategory', schema: FaqCategorySchema },
     ]),
     forwardRef(() => UserModule),
     forwardRef(() => ServicesModule),

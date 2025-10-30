@@ -304,6 +304,7 @@ export class UserService {
     const userDetails: any = await this.userModel
       .findOne({ _id: user._id, isDeleted: false })
       .populate('roles', ['name'])
+      .populate('has_applied')
       .populate({
         path: 'beneficiaries',
         populate: [{ path: 'insurance' }],

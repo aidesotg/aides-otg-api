@@ -8,6 +8,10 @@ export const FaqSchema = new mongoose.Schema(
     answer: {
       type: String,
     },
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'FaqCategory',
+    },
   },
   { timestamps: true },
 );

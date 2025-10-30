@@ -45,6 +45,13 @@ export class FaqController {
     return this.faqService.getFaqs(query);
   }
 
+  @Get('/categories')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getFaqCategories() {
+    return this.faqService.getFaqCategories();
+  }
+
   /*
   Get faq
   Method: GET
@@ -71,6 +78,23 @@ export class FaqController {
   ) {
     return this.faqService.update(faqId, createFaqDto);
   }
+
+  @Post('/categories')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async createFaqCategory(@Body('name') name: string) {
+    return this.faqService.createFaqCategory(name);
+  }
+  @Put('/categories/:categoryId')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async updateFaqCategory(
+    @Param('categoryId') categoryId: string,
+    @Body('name') name: string,
+  ) {
+    return this.faqService.updateFaqCategory(categoryId, name);
+  }
+
   @Delete('/:faqId')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
