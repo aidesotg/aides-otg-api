@@ -57,7 +57,7 @@ export const UserSchema = new mongoose.Schema<User>(
     },
     status: {
       type: String,
-      enum: ['active', 'inactive', 'suspended'],
+      enum: ['active', 'inactive', 'suspended', 'deactivated'],
       default: 'inactive',
     },
     address: {
@@ -99,9 +99,7 @@ export const UserSchema = new mongoose.Schema<User>(
         },
       },
     ],
-    document_url: {
-      type: String,
-    },
+
     special_requirements: [
       {
         type: String,
@@ -207,6 +205,8 @@ UserSchema.method('toJSON', function () {
     ssn,
     twoFactorSecret,
     twoFactorSmsToken,
+    activation_code,
+    activation_expires_in,
     ...object
   } = this.toObject();
   const newObject = {
@@ -233,4 +233,11 @@ UserSchema.virtual('professional_profile', {
   foreignField: 'user',
   match: { status: 'approved' },
   justOne: true,
+});
+
+UserSchema.virtual('has_applied', {
+  ref: 'ProfessionalProfile',
+  localField: '_id',
+  foreignField: 'user',
+  count: true,
 });

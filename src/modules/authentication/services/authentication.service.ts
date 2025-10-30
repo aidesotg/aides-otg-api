@@ -30,6 +30,12 @@ import AdminLoginMail from 'src/services/mailers/templates/admin-login-mail';
 import { FirebaseService } from 'src/services/firebase.service';
 import { Role } from 'src/modules/role/interface/role.interface';
 import { WalletService } from 'src/modules/wallet/services/wallet.service';
+import { MiscCLass } from 'src/services/misc.service';
+import { UserService } from 'src/modules/user/services/user.service';
+import {
+  TwoFactorLoginRequestDto,
+  TwoFactorLoginVerificationDto,
+} from '../dto/2fa-auth.dto';
 
 dotenv.config();
 
@@ -46,6 +52,9 @@ export class AuthenticationService {
     private firebaseService: FirebaseService,
     @Inject(forwardRef(() => WalletService))
     private walletService: WalletService,
+    @Inject(forwardRef(() => UserService))
+    private userService: UserService,
+    private miscService: MiscCLass,
   ) {}
 
   async register(body: RegistrationDto) {
@@ -210,9 +219,24 @@ export class AuthenticationService {
           'A token has been sent to your email to complete your login attempt, token expires in 4 hours',
       };
     } else {
+      //check if 2FA is setup
+      if (
+        user.twoFactorEnabled.sms ||
+        user.twoFactorEnabled.google_authenticator
+      ) {
+        return {
+          status: 'success',
+          message:
+            'You have 2FA setup on your account, please select a method to login',
+          data: {
+            user: { _id: user._id, twoFactorEnabled: user.twoFactorEnabled },
+          },
+        };
+      }
+
       const expire = 2592000;
       const token = jwt.sign(
-        { id: user.id, email: user.email, username: user.username },
+        { id: user.id, email: user.email, roles: user.roles },
         process.env.SECRET,
         { expiresIn: expire },
       );
@@ -228,6 +252,84 @@ export class AuthenticationService {
         data,
       };
     }
+  }
+
+  async twoFactorLogin(body: TwoFactorLoginRequestDto) {
+    if (body.method === 'sms') {
+      const userDetails = await this.userModel.findOne({ _id: body.userId });
+      if (!userDetails) {
+        throw new NotFoundException({
+          status: 'error',
+          message: 'user not found',
+        });
+      }
+      const token = this.miscService.generateRandomNumber(6);
+      userDetails.twoFactorSmsToken = token;
+      await userDetails.save();
+
+      // TODO: Send SMS with token
+      return {
+        status: 'success',
+        message: 'Enter the token sent to your phone to complete your login',
+        data: {
+          token,
+        },
+      };
+    }
+    if (body.method === 'google_authenticator') {
+      return {
+        status: 'success',
+        message:
+          'Enter the code from your authenticator app to complete your login',
+        data: {},
+      };
+    }
+  }
+
+  async twoFactorLoginVerification(body: TwoFactorLoginVerificationDto) {
+    const user = await this.userModel
+      .findOne({ _id: body.userId })
+      .populate('roles', ['name'])
+      .exec();
+    if (!user) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+    if (body.method === 'sms') {
+      if (user.twoFactorSmsToken !== body.token) {
+        throw new BadRequestException({
+          status: 'error',
+          message: 'Invalid token',
+        });
+      }
+      user.twoFactorSmsToken = null;
+      await user.save();
+    }
+    if (body.method === 'google_authenticator') {
+      await this.userService.verifyGoogleTwoFactorToken(user, {
+        token: body.token,
+      });
+    }
+
+    const expire = 2592000;
+    const token = jwt.sign(
+      { id: user.id, email: user.email, roles: user.roles },
+      process.env.SECRET,
+      { expiresIn: expire },
+    );
+
+    const data = {
+      user,
+      token: `Bearer ${token}`,
+      expires_in: expire,
+    };
+    return {
+      status: 'success',
+      message: 'Login successful',
+      data,
+    };
   }
 
   async verifyAdmin(token: string) {

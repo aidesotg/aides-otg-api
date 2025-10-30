@@ -20,11 +20,18 @@ import {
   UpdateProfessionalProfileDto,
 } from '../dto/professional-profile.dto';
 import { CaregiverService } from '../services/caregiver.service';
+import { UpdateApplicationStatusDto } from '../dto/update-application-status.dto';
 
 @ApiTags('user/caregiver')
 @Controller('user/caregiver')
 export class CaregiverController {
   constructor(private readonly caregiverService: CaregiverService) {}
+  @Get('/list')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getCaregivers(@Query() params: any) {
+    return this.caregiverService.getCaregivers(params);
+  }
 
   @Get('/profile')
   @UseGuards(AuthGuard('jwt'))
@@ -47,6 +54,29 @@ export class CaregiverController {
     return this.caregiverService.getPerformanceMetrics(user);
   }
 
+  @Get('/applications/pending')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getPendingCaregiverApplications(
+    @Query() params: any,
+    @AuthUser() user: any,
+  ) {
+    return this.caregiverService.getPendingCaregiverApplications(params);
+  }
+
+  @Get('/applications/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getSingleCaregiverApplication(@Param('id') id: string) {
+    const application =
+      await this.caregiverService.getSingleCaregiverApplication(id);
+    return {
+      status: 'success',
+      message: 'Caregiver application fetched',
+      data: application,
+    };
+  }
+
   @Post('/')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
@@ -65,5 +95,32 @@ export class CaregiverController {
     @AuthUser() user: any,
   ) {
     return this.caregiverService.updateProfessionalProfile(body, user);
+  }
+  @Put('/profile/:id/suspend')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async suspendCaregiver(
+    @Param('id') id: string,
+    @Body() body: { reason: string },
+  ) {
+    return this.caregiverService.suspendCaregiver(id, body.reason);
+  }
+
+  @Put('/profile/:id/unsuspend')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async unsuspendCaregiver(@Param('id') id: string) {
+    return this.caregiverService.unsuspendCaregiver(id);
+  }
+
+  @Put('/application/:id/status')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async updateCaregiverApplicationStatus(
+    @Param('id') id: string,
+    @Body() body: UpdateApplicationStatusDto,
+    @AuthUser() user: any,
+  ) {
+    return this.caregiverService.updateCaregiverApplicationStatus(id, body);
   }
 }

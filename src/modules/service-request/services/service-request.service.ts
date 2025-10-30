@@ -35,6 +35,7 @@ export class ServiceRequestService {
     @InjectModel('ServiceRequestDayLogs')
     private readonly serviceRequestDayLogsModel: Model<ServiceRequestDayLogs>,
     @InjectModel('Review') private readonly reviewModel: Model<Review>,
+    @InjectModel('User') private readonly userModel: Model<User>,
     @InjectModel('UserBeneficiary')
     private readonly userBeneficiaryModel: Model<UserBeneficiary>,
     @InjectModel('Favorite') private readonly favoriteModel: Model<Favorite>,
@@ -630,6 +631,71 @@ export class ServiceRequestService {
     };
   }
 
+  async assignCaregiverToRequest(id: string, caregiverId: string) {
+    const request = await this.serviceRequestModel
+      .findOne({
+        _id: id,
+      })
+      .populate('created_by');
+
+    if (!request) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Request not found',
+      });
+    }
+
+    if (String(request.care_giver) === String(caregiverId)) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Caregiver already assigned to this request',
+      });
+    }
+
+    const caregiver = await this.userModel.findOne({
+      _id: caregiverId,
+    });
+    if (!caregiver) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Caregiver not found',
+      });
+    }
+
+    request.care_giver = caregiver._id;
+    request.status = 'Pending';
+    request.status_history.push({
+      status: 'Pending',
+      created_at: new Date(),
+    });
+    await request.save();
+
+    //send notification to caregiver
+    await this.notificationService.sendMessage({
+      user: caregiver,
+      title: 'Request assigned',
+      message: `You have been assigned to the following request: ${request.care_type}, please repond to the request within 24 hours`,
+      resource: 'service_request',
+      resource_id: request._id.toString(),
+    });
+
+    //send notification to client
+    await this.notificationService.sendMessage({
+      user: request.created_by,
+      title: 'Request assigned',
+      message: `Your request for the following service: ${request.care_type} has been assigned to a caregiver`,
+      resource: 'service_request',
+      resource_id: request._id.toString(),
+    });
+
+    const data = request.toObject();
+    delete data.created_by;
+    return {
+      status: 'success',
+      message: 'Caregiver assigned to request successfully',
+      data,
+    };
+  }
   // async updateActivityTrail(
   //   id: string,
   //   body: UpdateActivityTrailDto,
@@ -734,6 +800,62 @@ export class ServiceRequestService {
       message: `Your request for the following service: ${
         (request.care_type as unknown as Service)?.name
       } has been cancelled by the caregiver`,
+      resource: 'service_request',
+      resource_id: request._id.toString(),
+    });
+
+    //send notificartion to care giver
+    await this.notificationService.sendMessage({
+      user: user,
+      title: 'Request cancelled',
+      message: `You cancelled the following service: ${
+        (request.care_type as unknown as Service)?.name
+      }`,
+      resource: 'service_request',
+      resource_id: request._id.toString(),
+    });
+
+    return {
+      status: 'success',
+      message: 'Request cancelled successfully',
+      data: request,
+    };
+  }
+
+  async cancelServiceRequestAdmin(
+    id: string,
+    body: CancelRequestDto,
+    user: User,
+  ) {
+    const { cancellation_reason, cancellation_note } = body;
+    const request = await this.serviceRequestModel
+      .findOne({
+        _id: id,
+      })
+      .populate('created_by');
+    if (!request) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Request not found',
+      });
+    }
+    request.cancellation_reason = cancellation_reason;
+    request.cancellation_note = cancellation_note ?? '';
+    request.status = 'Cancelled';
+    request.care_giver = null;
+    request.status_history.push({
+      status: 'Cancelled',
+      created_at: new Date(),
+    });
+    await request.save();
+
+    //send notificartion to client
+    await this.notificationService.sendMessage({
+      user: request.created_by,
+      title: 'Request cancelled',
+      message: `Your request for the following service: ${
+        (request.care_type as unknown as Service)?.name
+      } has been cancelled`,
       resource: 'service_request',
       resource_id: request._id.toString(),
     });

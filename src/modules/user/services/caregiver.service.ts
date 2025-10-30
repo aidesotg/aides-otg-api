@@ -27,6 +27,7 @@ import { UserService } from './user.service';
 import { Bank } from '../interface/bank.interface';
 import { Review } from 'src/modules/service-request/interface/review.interface';
 import { ServiceRequest } from 'src/modules/service-request/interface/service-request-interface.interface';
+import constants from 'src/framework/constants';
 
 @Injectable()
 export class CaregiverService {
@@ -61,6 +62,55 @@ export class CaregiverService {
     return `Pid${professionalProfile._id.toString().toUpperCase().slice(-10)}`;
   }
 
+  private async updateUserRole(user: string, role: string) {
+    const userDetails = await this.userModel.findById(user);
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+    if (!userDetails.roles.includes(role)) {
+      userDetails.roles.push(role);
+      await userDetails.save();
+    }
+    return;
+  }
+
+  async getCaregivers(params) {
+    const { page = 1, pageSize = 50, ...rest } = params;
+    const pagination = await this.miscService.paginate({ page, pageSize });
+    const query: any = await this.miscService.search(rest);
+    query.status = 'approved';
+
+    if (!query.suspended) {
+      query.suspended = false;
+    }
+
+    const profiles = await this.professionalProfileModel.find(query);
+    const userIds = await Promise.all(profiles.map((profile) => profile.user));
+
+    const caregivers = await this.userModel
+      .find({ _id: { $in: userIds } })
+      .populate('professional_profile')
+      .skip(pagination.offset)
+      .limit(pagination.limit)
+      .sort({ createdAt: -1 })
+      .exec();
+    const count = await this.userModel
+      .countDocuments({ _id: { $in: userIds } })
+      .exec();
+    return {
+      status: 'success',
+      message: 'Caregivers fetched',
+      pagination: {
+        ...(await this.miscService.pageCount({ count, page, pageSize })),
+        total: count,
+      },
+      data: caregivers,
+    };
+  }
+
   //PROFESSIONAL PROFILE
   async createProfessionalProfile(
     createProfessionalProfileDto: CreateProfessionalProfileDto,
@@ -70,11 +120,17 @@ export class CaregiverService {
     const profile = await this.professionalProfileModel.findOne({
       user: user._id,
     });
-    if (profile && profile.status !== 'pending') {
+    if (profile && profile.status === 'pending') {
       throw new BadRequestException({
         status: 'error',
         message:
           'You currently have a pending Caregiver Application pending review',
+      });
+    }
+    if (profile && profile.status === 'approved') {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'You already have a Caregiver Profile',
       });
     }
 
@@ -254,6 +310,137 @@ export class CaregiverService {
           completed: completedRequests,
         },
       },
+    };
+  }
+
+  async getPendingCaregiverApplications(params) {
+    const { page = 1, pageSize = 50, ...rest } = params;
+    const pagination = await this.miscService.paginate({ page, pageSize });
+    const query: any = await this.miscService.search(rest);
+    query.status = 'pending';
+    const applications = await this.professionalProfileModel
+      .find(query)
+      .populate('user')
+      .skip(pagination.offset)
+      .limit(pagination.limit)
+      .sort({ createdAt: -1 })
+      .exec();
+    const count = await this.professionalProfileModel
+      .countDocuments(query)
+      .exec();
+    return {
+      status: 'success',
+      message: 'Pending caregiver applications fetched',
+      pagination: {
+        ...(await this.miscService.pageCount({ count, page, pageSize })),
+        total: count,
+      },
+      data: applications,
+    };
+  }
+
+  async updateCaregiverApplicationStatus(
+    id: string,
+    body: { status: string; reason: string },
+  ) {
+    const { status, reason } = body;
+    if (status !== 'approved' && !reason) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Reason is required when rejecting an application',
+      });
+    }
+    const application = await this.professionalProfileModel.findByIdAndUpdate(
+      id,
+      {
+        status: status,
+        reason: reason,
+      },
+      { new: true },
+    );
+    if (status === 'approved') {
+      const careGiverRole = await this.roleModel.findOne({
+        name: constants.roles.CARE_GIVER,
+      });
+      await this.updateUserRole(application.user, careGiverRole._id);
+      await this.notificationService.sendMessage({
+        user: application.user,
+        title: 'Caregiver application approved',
+        message: 'Your caregiver application has been approved',
+        resource: 'professional-profile',
+        resource_id: application._id.toString(),
+      });
+    }
+    if (status === 'rejected') {
+      await this.notificationService.sendMessage({
+        user: application.user,
+        title: 'Caregiver application rejected',
+        message: 'Your caregiver application has been rejected',
+        resource: 'professional-profile',
+        resource_id: application._id.toString(),
+      });
+    }
+    return {
+      status: 'success',
+      message: `Caregiver application ${status} successfully`,
+      data: application,
+    };
+  }
+
+  async getSingleCaregiverApplication(id: string) {
+    const application = await this.professionalProfileModel.findById(id);
+    if (!application) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Caregiver application not found',
+      });
+    }
+    return application;
+  }
+
+  async suspendCaregiver(id: string, reason: string) {
+    const profile = await this.professionalProfileModel.findById(id);
+
+    profile.suspended = true;
+    profile.suspension_reason = reason;
+    await profile.save();
+
+    await this.userModel.findByIdAndUpdate(profile.user, {
+      $pull: { roles: constants.roles.CARE_GIVER },
+    });
+
+    await this.notificationService.sendMessage({
+      user: profile.user,
+      title: 'Caregiver profile suspended',
+      message: `Your caregiver profile has been suspended: ${reason}`,
+      resource: 'professional-profile',
+      resource_id: profile._id.toString(),
+    });
+    return {
+      status: 'success',
+      message: 'Caregiver profile suspended',
+      data: profile,
+    };
+  }
+
+  async unsuspendCaregiver(id: string) {
+    const profile = await this.professionalProfileModel.findById(id);
+
+    profile.suspended = false;
+    profile.suspension_reason = undefined;
+    await profile.save();
+
+    await this.notificationService.sendMessage({
+      user: profile.user,
+      title: 'Caregiver profile unsuspended',
+      message: 'Your caregiver profile has been unsuspended',
+      resource: 'professional-profile',
+      resource_id: profile._id.toString(),
+    });
+    return {
+      status: 'success',
+      message: 'Caregiver unsuspended',
+      data: profile,
     };
   }
 }

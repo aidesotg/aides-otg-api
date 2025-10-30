@@ -22,6 +22,7 @@ import { BeneficiaryService } from './services/beneficiary.service';
 import { BankSchema } from './schema/bank.schema';
 import { ReviewSchema } from '../service-request/schema/review.schema';
 import { ServiceRequestSchema } from '../service-request/schema/service-request.schema';
+import { KycSchema } from './schema/kyc.schema';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ServiceRequestSchema } from '../service-request/schema/service-request.
       { name: 'Bank', schema: BankSchema },
       { name: 'Review', schema: ReviewSchema },
       { name: 'ServiceRequest', schema: ServiceRequestSchema },
+      { name: 'Kyc', schema: KycSchema },
     ]),
     ServicesModule,
     RoleModule,

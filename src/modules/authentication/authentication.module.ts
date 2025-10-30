@@ -9,6 +9,7 @@ import { AuthenticationController } from './controllers/authentication.controlle
 import { AuthenticationService } from './services/authentication.service';
 import { AdminLoginSchema } from './schema/admin-login.schema';
 import { WalletModule } from '../wallet/wallet.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { WalletModule } from '../wallet/wallet.module';
     forwardRef(() => RoleModule),
     ServicesModule,
     forwardRef(() => WalletModule),
+    forwardRef(() => UserModule),
   ],
   controllers: [AuthenticationController],
   providers: [AuthenticationService],

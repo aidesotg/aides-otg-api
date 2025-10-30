@@ -43,9 +43,24 @@ export class ServiceRequestController {
     };
   }
 
-  @Get('/caregiver/pending')
+  @Get('/pool')
+  @UseGuards(AuthGuard('jwt'))
+  async getPoolRequests(@AuthUser() user: any, @Query() params: any) {
+    return this.serviceService.getRequests({ ...params, status: 'Pending' });
+  }
+
+  @Get('/pending')
   @UseGuards(AuthGuard('jwt'))
   async getPendingRequests(@AuthUser() user: any, @Query() params: any) {
+    return this.serviceService.getRequests(params);
+  }
+
+  @Get('/caregiver/pending')
+  @UseGuards(AuthGuard('jwt'))
+  async getCaregiverPendingRequests(
+    @AuthUser() user: any,
+    @Query() params: any,
+  ) {
     return this.serviceService.getCaregiverSchedule(
       { ...params, status: 'Pending' },
       user,
@@ -143,6 +158,17 @@ export class ServiceRequestController {
     return this.serviceService.addFavorite(body, user);
   }
 
+  @Post('/:id/assign')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async assignCaregiverToRequest(
+    @Param('id') id: string,
+    @Body('caregiverId') caregiverId: string,
+    @AuthUser() user: any,
+  ) {
+    return this.serviceService.assignCaregiverToRequest(id, caregiverId);
+  }
+
   @Put('/caregiver/request/:id/respond')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
@@ -174,6 +200,17 @@ export class ServiceRequestController {
     @AuthUser() user: any,
   ) {
     return this.serviceService.cancelServiceRequest(id, body, user);
+  }
+
+  @Put('/:id/cancel')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async unassignCaregiverToRequest(
+    @Param('id') id: string,
+    @AuthUser() user: any,
+    @Body() body: CancelRequestDto,
+  ) {
+    return this.serviceService.cancelServiceRequestAdmin(id, body, user);
   }
 
   @Put('/:id')

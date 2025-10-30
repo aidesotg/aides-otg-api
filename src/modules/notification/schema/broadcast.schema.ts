@@ -13,6 +13,28 @@ export const BroadcastSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    scheduled_at: {
+      type: Date,
+    },
+    status: {
+      type: String,
+      enum: ['draft', 'sent', 'failed', 'cancelled', 'scheduled'],
+      default: 'draft',
+    },
+    channels: [
+      {
+        type: [String],
+        enum: ['email', 'in-app', 'push'],
+        default: ['in-app'],
+      },
+    ],
+    audience: [
+      {
+        type: String,
+        enum: ['all', 'clients', 'caregivers'],
+        default: 'all',
+      },
+    ],
   },
   { timestamps: true },
 );

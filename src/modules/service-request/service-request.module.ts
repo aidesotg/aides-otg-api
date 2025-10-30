@@ -10,6 +10,8 @@ import { ServiceRequestDayLogsSchema } from './schema/service-request-day-logs.s
 import { FavoriteSchema } from './schema/favortite.schema';
 import { NotificationModule } from '../notification/notification.module';
 import { ReviewSchema } from './schema/review.schema';
+import { UserModule } from '../user/user.module';
+import { UserSchema } from '../user/schema/user.schema';
 
 @Module({
   imports: [
@@ -20,9 +22,11 @@ import { ReviewSchema } from './schema/review.schema';
       { name: 'ServiceRequestDayLogs', schema: ServiceRequestDayLogsSchema },
       { name: 'Favorite', schema: FavoriteSchema },
       { name: 'Review', schema: ReviewSchema },
+      { name: 'User', schema: UserSchema },
     ]),
     ServicesModule,
     NotificationModule,
+    UserModule,
   ],
   controllers: [ServiceRequestController],
   providers: [ServiceRequestService],

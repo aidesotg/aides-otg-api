@@ -20,6 +20,7 @@ export interface ProfessionalProfile extends mongoose.Document {
   reason: string;
   rating: number;
   suspended: boolean;
+  suspension_reason: string;
   areas_covered: {
     street?: string;
     city: string;

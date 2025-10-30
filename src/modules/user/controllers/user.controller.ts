@@ -43,6 +43,8 @@ import {
   EnableTwoFactorSmsDto,
   SetupTwoFactorSmsDto,
 } from '../dto/two-factor-auth.dto';
+import { DeleteAccountDto } from '../dto/delete-account.dto';
+import { SubmitKycDto } from '../dto/submit-kyc.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -77,6 +79,14 @@ export class UserController {
       data: users,
     };
   }
+
+  @Get('/kyc')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getKycVerifications(@AuthUser() user: any) {
+    return this.userService.getKycVerifications(user);
+  }
+
   @Post('/check/ssn')
   @UseGuards(AuthGuard('jwt'))
   async checkDuplicateSSN(
@@ -141,6 +151,24 @@ export class UserController {
   @UseFilters(ExceptionsLoggerFilter)
   async passwordRequest(@Body() body: CreateProfileDto, @AuthUser() user: any) {
     return this.userService.createProfile(user, body);
+  }
+
+  @Post('/kyc')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async submitKyc(@Body() body: SubmitKycDto, @AuthUser() user: any) {
+    return this.userService.submitKyc(user, body);
+  }
+
+  @Put('/kyc/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async editKyc(
+    @Param('id') id: string,
+    @Body() body: Partial<SubmitKycDto>,
+    @AuthUser() user: any,
+  ) {
+    return this.userService.editKyc(id, body, user);
   }
 
   @Put('/profile/notification-settings')
@@ -380,17 +408,27 @@ export class UserController {
     return this.userService.disableTwoFactorSms(user, body);
   }
 
-  @Delete('/')
+  @Put('/deactivate')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async deleteUser(@AuthUser() user: any) {
-    return this.userService.deleteUser(user);
+  async deactivateUser(@AuthUser() user: any) {
+    return this.userService.deactivateUser(user);
   }
 
-  @Delete('/:userId')
+  @Put('/')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async deleteUserAdmin(@Param('userId') userId: string) {
-    return this.userService.deleteUser({ _id: userId });
+  async deleteUser(@AuthUser() user: any, @Body() body: DeleteAccountDto) {
+    return this.userService.deleteUser(user, body);
+  }
+
+  @Put('/:userId')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async deleteUserAdmin(
+    @Param('userId') userId: string,
+    @Body() body: DeleteAccountDto,
+  ) {
+    // return this.userService.deleteUser({ _id: userId }, body);
   }
 }

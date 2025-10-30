@@ -16,6 +16,10 @@ import { AuthenticationService } from '../services/authentication.service';
 import { LoginDto } from '../dto/login.dto';
 import { RegistrationDto } from '../dto/registration.dto';
 import { AuthUser } from 'src/framework/decorators/user.decorator';
+import {
+  TwoFactorLoginRequestDto,
+  TwoFactorLoginVerificationDto,
+} from '../dto/2fa-auth.dto';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthenticationController {
@@ -31,6 +35,19 @@ export class AuthenticationController {
   @UseFilters(ExceptionsLoggerFilter)
   async login(@Body() loginDto: LoginDto) {
     return this.authenticationService.login(loginDto);
+  }
+  @Post('/login/two-factor')
+  @UseFilters(ExceptionsLoggerFilter)
+  async twoFactorLogin(@Body() body: TwoFactorLoginRequestDto) {
+    return this.authenticationService.twoFactorLogin(body);
+  }
+
+  @Post('/login/two-factor/verify')
+  @UseFilters(ExceptionsLoggerFilter)
+  async twoFactorLoginVerification(
+    @Body() body: TwoFactorLoginVerificationDto,
+  ) {
+    return this.authenticationService.twoFactorLoginVerification(body);
   }
 
   @Get('/roles')

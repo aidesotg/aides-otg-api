@@ -62,6 +62,9 @@ export const ProfessionalProfileSchema =
         type: Boolean,
         default: false,
       },
+      suspension_reason: {
+        type: String,
+      },
       documents: {
         type: [String],
       },

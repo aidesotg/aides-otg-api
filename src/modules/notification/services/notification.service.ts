@@ -83,7 +83,10 @@ export class NotificationService {
 
     await this.firebaseService.sendToGeneral(title, body, '');
 
+    //TODO: Send Push notification to specific users
+
     const notification = new this.notificationModel({
+      ...broadcastDto,
       message: body,
       title,
       type: 'broadcast',
@@ -92,9 +95,26 @@ export class NotificationService {
 
     await notification.save();
 
-    await this.userModel
-      .updateMany({}, { $inc: { notification_counter: 1 } })
-      .exec();
+    if (broadcastDto.audience.includes('clients')) {
+      await this.userModel
+        .updateMany({
+          $inc: { notification_counter: 1 },
+        })
+        .exec();
+    }
+    if (broadcastDto.audience.includes('caregivers')) {
+      await this.userModel
+        .updateMany({
+          $inc: { notification_counter: 1 },
+        })
+        .exec();
+    }
+    //Send notification to all users
+    if (broadcastDto.audience.includes('all')) {
+      await this.userModel
+        .updateMany({}, { $inc: { notification_counter: 1 } })
+        .exec();
+    }
 
     return;
   }
@@ -104,12 +124,12 @@ export class NotificationService {
     const newBroadcast = new this.broadcastModel({
       ...broadcastDto,
     });
-    await newBroadcast.save();
 
-    if (!isDraft) {
+    if (!isDraft && !broadcastDto.scheduled_at) {
       await this.sendNotification(broadcastDto);
+      newBroadcast.status = 'sent';
     }
-
+    await newBroadcast.save();
     return {
       status: 'success',
       message: 'Broadcast created',

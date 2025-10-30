@@ -13,7 +13,7 @@ export interface User extends mongoose.Document {
   roles: string[];
   activation_code: string;
   activation_expires_in: Date;
-  status: 'active' | 'inactive' | 'suspended';
+  status: 'active' | 'inactive' | 'suspended' | 'deactivated';
   suspension_reason: string;
   isDeleted: boolean;
   notification_counter: number;

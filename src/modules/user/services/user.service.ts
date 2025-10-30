@@ -55,6 +55,9 @@ import {
   SetupTwoFactorSmsDto,
   DisableTwoFactorSmsDto,
 } from '../dto/two-factor-auth.dto';
+import { DeleteAccountDto } from '../dto/delete-account.dto';
+import { Kyc } from '../interface/kyc.interface';
+import { SubmitKycDto } from '../dto/submit-kyc.dto';
 
 @Injectable()
 export class UserService {
@@ -68,6 +71,7 @@ export class UserService {
     @InjectModel('Role') private readonly roleModel: Model<Role>,
     @InjectModel('Wallet') private readonly walletModel: Model<Wallet>,
     @InjectModel('Bank') private readonly bankModel: Model<Bank>,
+    @InjectModel('Kyc') private readonly kycModel: Model<Kyc>,
     @InjectModel('ProfessionalProfile')
     private readonly professionalProfileModel: Model<ProfessionalProfile>,
     private roleService: RoleService,
@@ -669,22 +673,101 @@ export class UserService {
     };
   }
 
-  async deleteUser(user: any) {
+  async deleteUser(user: any, body: DeleteAccountDto) {
     const userDetails = await this.getUser({ _id: user._id, isDeleted: false });
 
     if (!userDetails) {
-      throw new HttpException(
-        { status: 'error', message: 'User not found' },
-        404,
-      );
+      throw new NotFoundException({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+    const passwordIsValid = await bcrypt.compareSync(
+      body.password,
+      userDetails.password,
+    );
+    if (!passwordIsValid) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Incorrect Password',
+      });
     }
 
     userDetails.isDeleted = true;
+    userDetails.reason = body.reason;
+    userDetails.comment = body.comment;
     await userDetails.save();
+
+    //TODO handle delete properly
 
     return {
       status: 'success',
       message: `Acccount deleted successfuly`,
+    };
+  }
+
+  async deactivateUser(user: User) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+    // userDetails.isDeleted = true;
+    userDetails.status = 'deactivated';
+    await this.logout(userDetails);
+    await userDetails.save();
+    return {
+      status: 'success',
+      message: 'Account deactivated successfully',
+    };
+  }
+
+  async submitKyc(user: User, body: SubmitKycDto) {
+    const kyc = new this.kycModel({
+      ...body,
+      user: user._id,
+    });
+    await kyc.save();
+    return {
+      status: 'success',
+      message: 'KYC submitted successfully',
+      data: kyc,
+    };
+  }
+
+  async getKycVerifications(user: User) {
+    const kyc = await this.kycModel
+      .find({ user: user._id })
+      .populate('user', ['first_name', 'last_name', 'profile_picture']);
+
+    return {
+      status: 'success',
+      message: 'KYC verifications fetched successfully',
+      data: kyc,
+    };
+  }
+
+  async editKyc(id: string, body: Partial<SubmitKycDto>, user: User) {
+    const kyc = await this.kycModel.findOne({ _id: id, user: user._id });
+    if (!kyc) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'KYC not found',
+      });
+    }
+    for (const value in body) {
+      if (value) {
+        kyc[value] = body[value];
+      }
+    }
+    kyc.status = 'pending';
+    await kyc.save();
+    return {
+      status: 'success',
+      message: 'KYC resubmitted for verification',
+      data: kyc,
     };
   }
 
@@ -872,6 +955,8 @@ export class UserService {
         message: 'user not found',
       });
     }
+
+    //TODO unregister from firebase
     if (device_token) {
       userDetails.device_token = userDetails.device_token.filter(
         (token) => token !== device_token,
