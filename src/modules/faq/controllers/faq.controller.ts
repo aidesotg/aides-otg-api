@@ -8,12 +8,15 @@ import {
   Query,
   Put,
   Get,
+  Delete,
 } from '@nestjs/common';
 import { FaqService } from '../services/faq.service';
 import { CreateFaqDto } from '../dto/faq.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { ExceptionsLoggerFilter } from 'src/framework/exceptions/exceptionLogger.filter';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('faq')
 @Controller('faq')
 export class FaqController {
   constructor(private readonly faqService: FaqService) {}
@@ -67,5 +70,11 @@ export class FaqController {
     @Body() createFaqDto: Partial<CreateFaqDto>,
   ) {
     return this.faqService.update(faqId, createFaqDto);
+  }
+  @Delete('/:faqId')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async deleteFaq(@Param('faqId') faqId: string) {
+    return this.faqService.deleteFaq(faqId);
   }
 }

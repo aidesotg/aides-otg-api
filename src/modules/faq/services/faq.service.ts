@@ -84,4 +84,21 @@ export class FaqService {
 
     return faq;
   }
+
+  async deleteFaq(id: string) {
+    const faq = await this.faqModel.findOne({ _id: id });
+    if (!faq) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'FAQ not found',
+      });
+    }
+
+    await faq.deleteOne();
+    return {
+      status: 'success',
+      message: 'FAQ deleted successfully',
+      // data: faq,
+    };
+  }
 }
