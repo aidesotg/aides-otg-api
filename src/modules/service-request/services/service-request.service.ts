@@ -822,6 +822,62 @@ export class ServiceRequestService {
     };
   }
 
+  async cancelServiceRequestByClient(
+    id: string,
+    body: CancelRequestDto,
+    user: User,
+  ) {
+    const { cancellation_reason, cancellation_note } = body;
+    const request = await this.serviceRequestModel
+      .findOne({
+        _id: id,
+        created_by: user._id,
+      })
+      .populate('care_giver');
+    if (!request) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Request not found',
+      });
+    }
+    request.cancellation_reason = cancellation_reason;
+    request.cancellation_note = cancellation_note ?? '';
+    request.status = 'Cancelled';
+    request.status_history.push({
+      status: 'Cancelled',
+      created_at: new Date(),
+    });
+    await request.save();
+
+    //send notificartion to user
+    await this.notificationService.sendMessage({
+      user: user,
+      title: 'Request cancelled',
+      message: `Your request for the following service: ${
+        (request.care_type as unknown as Service)?.name
+      } has been cancelled r`,
+      resource: 'service_request',
+      resource_id: request._id.toString(),
+    });
+
+    //send notificartion to care giver
+    await this.notificationService.sendMessage({
+      user: request.care_giver,
+      title: 'Request cancelled',
+      message: `The client cancelled the following service: ${
+        (request.care_type as unknown as Service)?.name
+      }`,
+      resource: 'service_request',
+      resource_id: request._id.toString(),
+    });
+
+    return {
+      status: 'success',
+      message: 'Request cancelled successfully',
+      data: request,
+    };
+  }
+
   async cancelServiceRequestAdmin(
     id: string,
     body: CancelRequestDto,

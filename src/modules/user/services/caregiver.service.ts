@@ -388,7 +388,12 @@ export class CaregiverService {
   }
 
   async getSingleCaregiverApplication(id: string) {
-    const application = await this.professionalProfileModel.findById(id);
+    const application = await this.professionalProfileModel
+      .findById(id)
+      .populate({
+        path: 'user',
+        select: constants.userPopulateFields,
+      });
     if (!application) {
       throw new NotFoundException({
         status: 'error',

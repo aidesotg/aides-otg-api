@@ -223,7 +223,7 @@ export const STRIPE_SUPPORTED_COUNTRIES = [
 ];
 
 const userPopulateFields =
-  'first_name last_name email phone role notification_counter status address profile_picture gender ';
+  ' __v -password -device_token -firebase_uid -stripeConnect -docId -ssn -twoFactorSecret -twoFactorSmsToken -activation_code -activation_expires_in';
 
 const constants = {
   transactionTypes,

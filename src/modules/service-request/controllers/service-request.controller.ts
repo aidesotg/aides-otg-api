@@ -202,6 +202,17 @@ export class ServiceRequestController {
     return this.serviceService.cancelServiceRequest(id, body, user);
   }
 
+  @Put('/:id/cancel/client')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async cancelServiceRequestByClient(
+    @Param('id') id: string,
+    @Body() body: CancelRequestDto,
+    @AuthUser() user: any,
+  ) {
+    return this.serviceService.cancelServiceRequestByClient(id, body, user);
+  }
+
   @Put('/:id/cancel')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
