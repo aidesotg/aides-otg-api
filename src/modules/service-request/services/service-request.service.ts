@@ -578,6 +578,18 @@ export class ServiceRequestService {
         message: 'Request not found',
       });
     }
+    if (
+      (!request.care_giver && body.status === 'Rejected') ||
+      (request.care_giver &&
+        request.care_giver.toString() !== user._id.toString() &&
+        body.status === 'Rejected')
+    ) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'You cannot reject this request at this time',
+      });
+    }
+
     request.status = status;
     request.status_history.push({
       status: status,
