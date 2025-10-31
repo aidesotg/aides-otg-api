@@ -566,7 +566,7 @@ export class ServiceRequestService {
     const request = await this.serviceRequestModel
       .findOne({
         _id: id,
-        care_giver: user._id,
+        // care_giver: user._id,
         status: 'Pending',
       })
       .populate('created_by')
@@ -583,6 +583,7 @@ export class ServiceRequestService {
       status: status,
       created_at: new Date(),
     });
+    request.care_giver = user._id;
     await request.save();
 
     const days: any[] = [];
@@ -615,11 +616,11 @@ export class ServiceRequestService {
     });
 
     await this.notificationService.sendMessage({
-      user: request.care_giver,
+      user: user,
       title: `Request ${status.toLowerCase()}`,
       message: `You ${status.toLowerCase()} a request for the following service: ${
         (request.care_type as unknown as Service)?.name
-      } has been ${status.toLowerCase()}`,
+      }`,
       resource: 'service_request',
       resource_id: request._id.toString(),
     });
