@@ -41,6 +41,36 @@ export class LegalController {
     };
   }
 
+  @Get('/documents/active')
+  @UseGuards(AuthGuard('jwt'))
+  async getActiveDocuments(
+    @Query() params: LegalDocumentQueryDto,
+    @AuthUser() user: any,
+  ) {
+    const documents = await this.legalService.getLegalDocuments(
+      { ...params, is_active: true },
+      user,
+    );
+    return {
+      status: 'success',
+      message: 'Legal documents fetched',
+      data: documents,
+    };
+  }
+
+  @Get('/documents/latest')
+  @UseGuards(AuthGuard('jwt'))
+  async getLatestLegalDocument(@Query() params: any) {
+    const document = await this.legalService.getLatestLegalDocument(
+      params.title,
+    );
+    return {
+      status: 'success',
+      message: 'Latest legal document fetched',
+      data: document,
+    };
+  }
+
   @Get('/documents/:id')
   @UseGuards(AuthGuard('jwt'))
   async getLegalDocumentById(@Param('id') id: string) {

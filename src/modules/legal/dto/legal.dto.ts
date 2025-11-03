@@ -8,19 +8,19 @@ import {
   IsArray,
   IsNumber,
   Min,
+  IsBoolean,
+  IsMongoId,
 } from 'class-validator';
 
 export class CreateLegalDocumentDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  @MinLength(5)
   title: string;
 
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  @MinLength(50)
   body: string;
 
   @ApiProperty()
@@ -29,9 +29,20 @@ export class CreateLegalDocumentDto {
 
   @ApiProperty()
   @IsArray()
-  @IsString({ each: true })
+  @IsMongoId({ each: true })
   @IsOptional()
   roles?: string[];
+
+  @ApiProperty()
+  @IsBoolean()
+  @IsOptional()
+  all_roles?: boolean;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  version?: number;
 }
 
 export class UpdateLegalDocumentDto {

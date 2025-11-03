@@ -26,7 +26,7 @@ export class RateService {
   async getRateSettings() {
     let settings = await this.rateSettingsModel
       .findOne({ is_active: true, is_deleted: false })
-      .populate('created_by', ['fullname', 'email'])
+      // .populate('created_by', ['fullname', 'email'])
       .exec();
 
     if (!settings) {
@@ -41,7 +41,7 @@ export class RateService {
     const defaultSettings = new this.rateSettingsModel({
       platform_commission_percentage: 10,
       penalty_settings: {
-        customer_cancellation: {
+        client_cancellation: {
           penalty_percentage: 20,
           caregiver_benefit_percentage: 50,
           max_cancellation_time_hours: 2,
@@ -49,14 +49,15 @@ export class RateService {
         caregiver_cancellation: {
           penalty_amount: 1000,
           max_cancellation_time_hours: 2,
+          miss_appointment_penalty_percentage: 10,
         },
       },
       suspension_thresholds: {
         caregiver_max_cancellations: 3,
-        customer_max_cancellations: 10,
+        client_max_cancellations: 10,
       },
-      currency: 'NGN',
-      created_by: 'system', // This would be the system user ID
+      currency: 'USD',
+      // created_by: 'system', // This would be the system user ID
     });
 
     return await defaultSettings.save();
@@ -116,7 +117,7 @@ export class RateService {
     return {
       status: 'success',
       message: 'Rate settings created',
-      data: { settings },
+      data: settings,
     };
   }
 
@@ -133,25 +134,15 @@ export class RateService {
       });
     }
 
-    // Deactivate current settings
-    currentSettings.is_active = false;
+    for (const value in updateRateSettingsDto) {
+      currentSettings[value] = updateRateSettingsDto[value];
+    }
     await currentSettings.save();
-
-    // Create new settings with updates
-    const newSettingsData = {
-      ...currentSettings.toObject(),
-      ...updateRateSettingsDto,
-      created_by: user._id,
-      _id: undefined, // Remove the _id to create a new document
-    };
-
-    const newSettings = new this.rateSettingsModel(newSettingsData);
-    const settings = await newSettings.save();
 
     return {
       status: 'success',
       message: 'Rate settings updated',
-      data: { settings },
+      data: currentSettings,
     };
   }
 
@@ -180,7 +171,7 @@ export class RateService {
     return {
       status: 'success',
       message: 'Rate settings activated',
-      data: { settings },
+      data: settings,
     };
   }
 
@@ -224,19 +215,19 @@ export class RateService {
   }
 
   async calculateCancellationPenalty(
-    cancellationType: 'customer' | 'caregiver',
+    cancellationType: 'client' | 'caregiver',
     amount: number,
   ) {
     const settings = await this.getRateSettings();
 
-    if (cancellationType === 'customer') {
+    if (cancellationType === 'client') {
       const penaltyAmount =
         (amount *
-          settings.penalty_settings.customer_cancellation.penalty_percentage) /
+          settings.penalty_settings.client_cancellation.penalty_percentage) /
         100;
       const caregiverBenefit =
         (penaltyAmount *
-          settings.penalty_settings.customer_cancellation
+          settings.penalty_settings.client_cancellation
             .caregiver_benefit_percentage) /
         100;
       const platformBenefit = penaltyAmount - caregiverBenefit;
@@ -246,7 +237,7 @@ export class RateService {
         caregiver_benefit: caregiverBenefit,
         platform_benefit: platformBenefit,
         max_cancellation_time_hours:
-          settings.penalty_settings.customer_cancellation
+          settings.penalty_settings.client_cancellation
             .max_cancellation_time_hours,
       };
     } else {
@@ -262,7 +253,7 @@ export class RateService {
 
   async checkSuspensionThreshold(
     userId: string,
-    userType: 'caregiver' | 'customer',
+    userType: 'caregiver' | 'client',
   ) {
     const settings = await this.getRateSettings();
 
@@ -272,7 +263,7 @@ export class RateService {
       max_cancellations:
         userType === 'caregiver'
           ? settings.suspension_thresholds.caregiver_max_cancellations
-          : settings.suspension_thresholds.customer_max_cancellations,
+          : settings.suspension_thresholds.client_max_cancellations,
       current_cancellations: 0, // This would be fetched from actual data
     };
   }

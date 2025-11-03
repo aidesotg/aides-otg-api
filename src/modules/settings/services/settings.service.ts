@@ -29,14 +29,10 @@ export class SettingsService {
         message: 'settings not found',
       });
     }
-    const { id, ...rest } = setting.toObject();
-    return {
-      id,
-      options: rest,
-    };
+    return setting;
   }
 
-  async update(body: CreateSettingDto) {
+  async update(body: Partial<CreateSettingDto>) {
     const setting = await this.settingModel.findOne();
 
     if (!setting) {

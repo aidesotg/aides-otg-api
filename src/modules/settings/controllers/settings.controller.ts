@@ -28,7 +28,7 @@ export class SettingsController {
   @Put('/')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async update(@Body() body: CreateSettingDto) {
+  async update(@Body() body: Partial<CreateSettingDto>) {
     return this.settingService.update(body);
   }
 
@@ -37,11 +37,10 @@ export class SettingsController {
   @UseFilters(ExceptionsLoggerFilter)
   async getSettings() {
     const setting = await this.settingService.getSettings();
-    // return {
-    //   status: 'success',
-    //   message: 'settings created successfully',
-    //   data: setting,
-    // };
-    return setting;
+    return {
+      status: 'success',
+      message: 'settings fetched successfully',
+      data: setting,
+    };
   }
 }

@@ -11,7 +11,7 @@ export const RateSettingsSchema = new mongoose.Schema<RateSettings>(
       default: 10,
     },
     penalty_settings: {
-      customer_cancellation: {
+      client_cancellation: {
         penalty_percentage: {
           type: Number,
           min: 0,
@@ -31,15 +31,20 @@ export const RateSettingsSchema = new mongoose.Schema<RateSettings>(
         },
       },
       caregiver_cancellation: {
-        penalty_amount: {
+        penalty_percentage: {
           type: Number,
           min: 0,
-          default: 1000,
+          default: 100,
         },
         max_cancellation_time_hours: {
           type: Number,
           min: 1,
           default: 2,
+        },
+        miss_appointment_penalty_percentage: {
+          type: Number,
+          min: 0,
+          default: 100,
         },
       },
     },
@@ -49,7 +54,7 @@ export const RateSettingsSchema = new mongoose.Schema<RateSettings>(
         min: 1,
         default: 3,
       },
-      customer_max_cancellations: {
+      client_max_cancellations: {
         type: Number,
         min: 1,
         default: 10,
@@ -70,7 +75,6 @@ export const RateSettingsSchema = new mongoose.Schema<RateSettings>(
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
     },
   },
   {

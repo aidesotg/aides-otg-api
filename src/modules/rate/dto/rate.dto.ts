@@ -34,19 +34,24 @@ export class CaregiverCancellationSettingsDto {
   @ApiProperty()
   @IsNumber()
   @Min(0)
-  penalty_amount: number;
+  penalty_percentage: number;
 
   @ApiProperty()
   @IsNumber()
   @Min(1)
   max_cancellation_time_hours: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @Min(0)
+  miss_appointment_penalty_percentage: number;
 }
 
 export class PenaltySettingsDto {
   @ApiProperty()
   @ValidateNested()
   @Type(() => CustomerCancellationSettingsDto)
-  customer_cancellation: CustomerCancellationSettingsDto;
+  client_cancellation: CustomerCancellationSettingsDto;
 
   @ApiProperty()
   @ValidateNested()
@@ -63,7 +68,7 @@ export class SuspensionThresholdsDto {
   @ApiProperty()
   @IsNumber()
   @Min(1)
-  customer_max_cancellations: number;
+  client_max_cancellations: number;
 }
 
 export class CreateRateSettingsDto {

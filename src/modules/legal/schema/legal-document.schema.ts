@@ -18,9 +18,14 @@ export const LegalDocumentSchema = new mongoose.Schema<LegalDocument>(
     },
     roles: [
       {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Role',
       },
     ],
+    all_roles: {
+      type: Boolean,
+      default: false,
+    },
     version: {
       type: Number,
       default: 1,

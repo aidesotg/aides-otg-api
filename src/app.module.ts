@@ -23,6 +23,8 @@ import { InsuranceCompanyModule } from './modules/insurance-company/insurance-co
 import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module';
 import { ServiceRequestModule } from './modules/service-request/service-request.module';
 import { FaqModule } from './modules/faq/faq.module';
+import { LegalModule } from './modules/legal/legal.module';
+import { RateModule } from './modules/rate/rate.module';
 
 dotenv.config();
 
@@ -50,8 +52,10 @@ dotenv.config();
     NotificationModule,
     SettingsModule,
     WalletModule,
+    LegalModule,
     TermsModule,
     ChatModule,
+    RateModule,
     InsuranceCompanyModule,
     ActivityLogsModule,
     ServiceRequestModule,

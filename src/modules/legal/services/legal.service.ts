@@ -32,44 +32,80 @@ export class LegalService {
     createLegalDocumentDto: CreateLegalDocumentDto,
     user: any,
   ) {
+    const latestDocument = await this.legalDocumentModel
+      .findOne({
+        title: createLegalDocumentDto.title,
+        roles: createLegalDocumentDto.roles,
+        is_deleted: false,
+        is_active: true,
+      })
+      .sort({ version: -1 })
+      .exec();
+
+    if (
+      createLegalDocumentDto.version &&
+      latestDocument &&
+      createLegalDocumentDto.version > latestDocument.version
+    ) {
+      throw new BadRequestException(
+        'A newer version of this document already exists',
+      );
+    }
+
+    await this.legalDocumentModel.updateMany(
+      {
+        title: createLegalDocumentDto.title,
+        is_deleted: false,
+        is_active: true,
+      },
+      {
+        $set: {
+          is_active: false,
+        },
+      },
+    );
+
     const data = {
       ...createLegalDocumentDto,
+      version: createLegalDocumentDto.version || latestDocument.version + 0.1,
       created_by: user._id,
     };
 
     const newDocument = new this.legalDocumentModel(data);
     const document = await newDocument.save();
 
+    // Notify users if document was updated
+    //  if (data.version > document.version) {
+    //   await this.notificationService.sendMessage({
+    //     user: { _id: 'all' }, // This would need to be implemented to notify all users
+    //     title: 'Legal Document Updated',
+    //     message: `The legal document "${document.title}" has been updated. Please review and re-agree to the new version.`,
+    //     resource: 'legal_document',
+    //     resource_id: document._id.toString(),
+    //   });
+    // }
+
     return {
       status: 'success',
       message: 'Legal document created',
-      data: { document },
+      data: document,
     };
   }
 
   async getLegalDocuments(params: any, user: any) {
-    const { page = 1, pageSize = 50, ...rest } = params;
+    const { page = 1, pageSize = 50, role, ...rest } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
 
     const query: any = { is_deleted: false };
 
-    if (rest.agreement_type) query.agreement_type = rest.agreement_type;
-    if (rest.is_active !== undefined) query.is_active = rest.is_active;
-
     // Filter by user role if specified
     if (rest.role) {
-      query.$or = [
-        { roles: { $in: [rest.role] } },
-        { roles: { $size: 0 } }, // Documents that apply to all roles
-      ];
-    } else if (user.role !== 'admin' && user.role !== 'super_admin') {
-      // For non-admin users, only show documents that apply to their role or all roles
-      query.$or = [{ roles: { $in: [user.role] } }, { roles: { $size: 0 } }];
+      query.$or = [{ roles: { $in: [role] } }];
     }
 
     const documents = await this.legalDocumentModel
       .find(query)
-      .populate('created_by', ['fullname', 'email'])
+      // .populate('created_by', ['fullname', 'email'])
       .skip(pagination.offset)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
@@ -86,10 +122,19 @@ export class LegalService {
     };
   }
 
+  async getLatestLegalDocument(title: string) {
+    const document = await this.legalDocumentModel
+      .findOne({ title, is_deleted: false, is_active: true })
+      .sort({ version: -1 })
+      .exec();
+
+    return document;
+  }
+
   async getLegalDocumentById(id: string) {
     const document = await this.legalDocumentModel
       .findOne({ _id: id, is_deleted: false })
-      .populate('created_by', ['fullname', 'email'])
+      // .populate('created_by', ['fullname', 'email'])
       .populate('agreements')
       .exec();
 
@@ -182,12 +227,12 @@ export class LegalService {
     const data: any = { ...updateLegalDocumentDto };
 
     // If body is being updated, increment version
-    if (
-      updateLegalDocumentDto.body &&
-      updateLegalDocumentDto.body !== document.body
-    ) {
-      data.version = document.version + 1;
-    }
+    // if (
+    //   updateLegalDocumentDto.body &&
+    //   updateLegalDocumentDto.body !== document.body
+    // ) {
+    //   data.version = document.version + 1;
+    // }
 
     for (const value in data) {
       if (data[value] !== undefined) {
@@ -198,20 +243,20 @@ export class LegalService {
     await document.save();
 
     // Notify users if document was updated
-    if (data.version > document.version) {
-      await this.notificationService.sendMessage({
-        user: { _id: 'all' }, // This would need to be implemented to notify all users
-        title: 'Legal Document Updated',
-        message: `The legal document "${document.title}" has been updated. Please review and re-agree to the new version.`,
-        resource: 'legal_document',
-        resource_id: document._id.toString(),
-      });
-    }
+    // if (data.version > document.version) {
+    //   await this.notificationService.sendMessage({
+    //     user: { _id: 'all' }, // This would need to be implemented to notify all users
+    //     title: 'Legal Document Updated',
+    //     message: `The legal document "${document.title}" has been updated. Please review and re-agree to the new version.`,
+    //     resource: 'legal_document',
+    //     resource_id: document._id.toString(),
+    //   });
+    // }
 
     return {
       status: 'success',
       message: 'Legal document updated',
-      data: { document },
+      data: document,
     };
   }
 

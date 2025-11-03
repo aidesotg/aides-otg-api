@@ -32,7 +32,7 @@ export class RateController {
     return {
       status: 'success',
       message: 'Rate settings fetched',
-      data: { settings },
+      data: settings,
     };
   }
 

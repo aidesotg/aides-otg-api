@@ -2,65 +2,40 @@ import * as mongoose from 'mongoose';
 
 export const SettingSchema = new mongoose.Schema(
   {
-    siteTitle: {
+    company_name: {
       type: String,
     },
-    siteSubtitle: {
+    registration_id: {
       type: String,
     },
-    currency: {
+    company_email: {
       type: String,
     },
-    minimumOrderAmount: {
-      type: Number,
-    },
-    walletToCurrencyRatio: {
-      type: Number,
-    },
-    signupPoints: {
-      type: Number,
-    },
-    deliveryTime: {
-      title: { type: String },
-      description: { type: String },
-    },
-    logo: {
-      thumbnail: { type: String },
-      original: { type: String },
-    },
-    taxClass: {
+    company_phone: {
       type: String,
     },
-    shippingClass: {
+    website: {
       type: String,
     },
-    seo: {
-      metaTitle: { type: String },
-      metaDescription: { type: String },
-      ogTitle: { type: String },
-      ogDescription: { type: String },
-      ogImage: {
-        thumbnail: { type: String },
-        original: { type: String },
+    address: {
+      street: {
+        type: String,
       },
-      twitterHandle: { type: String },
-      twitterCardType: { type: String },
-      metaTags: { type: String },
-      canonicalUrl: { type: String },
-    },
-    contactDetails: {
-      socials: [{ icon: { type: String }, url: { type: String } }],
-      contact: { type: String },
-      location: {
-        lat: { type: Number },
-        lng: { type: Number },
-        city: { type: String },
-        state: { type: String },
-        country: { type: String },
-        zip: { type: String },
-        formattedAddress: { type: String },
+      city: {
+        type: String,
       },
-      website: { type: String },
+      state: {
+        type: String,
+      },
+      country: {
+        type: String,
+      },
+      zip_code: {
+        type: String,
+      },
+    },
+    company_photo: {
+      type: String,
     },
   },
   {
