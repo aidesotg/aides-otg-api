@@ -36,6 +36,16 @@ export class NotificationController {
     return this.notificationService.openNotifications(user);
   }
 
+  @Put('/open/:notificationId')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async openNotification(
+    @AuthUser() user: any,
+    @Param('notificationId') notificationId: string,
+  ) {
+    return this.notificationService.openNotification(user, notificationId);
+  }
+
   @Get('/broadcast')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)

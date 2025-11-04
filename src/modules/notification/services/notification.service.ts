@@ -66,17 +66,17 @@ export class NotificationService {
     };
   }
 
-  async openNotifications(user: any) {
-    await this.userModel
-      .findByIdAndUpdate(user._id, {
-        notification_counter: 0,
-      })
-      .exec();
+  // async openNotifications(user: any) {
+  //   await this.userModel
+  //     .findByIdAndUpdate(user._id, {
+  //       notification_counter: 0,
+  //     })
+  //     .exec();
 
-    return {
-      status: 'success',
-    };
-  }
+  //   return {
+  //     status: 'success',
+  //   };
+  // }
 
   async sendNotification(broadcastDto: CreateBroadcastDto) {
     const { title, body } = broadcastDto;
@@ -117,6 +117,39 @@ export class NotificationService {
     }
 
     return;
+  }
+
+  async openNotification(user: any, notificationId: string) {
+    const notification = await this.notificationModel.findOne({
+      _id: notificationId,
+    });
+    if (notification) {
+      notification.is_read = true;
+      await notification.save();
+      await this.userModel
+        .findByIdAndUpdate(user._id, { $inc: { notification_counter: -1 } })
+        .exec();
+    }
+
+    return {
+      status: 'success',
+      data: notification,
+    };
+  }
+
+  async openNotifications(user: any) {
+    await this.notificationModel.updateMany(
+      { user: user._id },
+      { is_read: true },
+      { setDefaultsOnInsert: true },
+    );
+    await this.userModel
+      .findByIdAndUpdate(user._id, { notification_counter: 0 })
+      .exec();
+
+    return {
+      status: 'success',
+    };
   }
 
   async createBroadcast(broadcastDto: CreateBroadcastDto) {

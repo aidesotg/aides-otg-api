@@ -9,7 +9,7 @@ export interface Notification extends mongoose.Document {
   resource: string;
   resource_id: string;
   isGeneral: boolean;
-  read: boolean;
+  is_read: boolean;
   mode: 'client' | 'admin' | 'caregiver';
   readonly createdAt: Date;
   readonly updatedAt: Date;

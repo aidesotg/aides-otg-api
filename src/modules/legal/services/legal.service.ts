@@ -105,6 +105,7 @@ export class LegalService {
 
     const documents = await this.legalDocumentModel
       .find(query)
+      .populate('roles', ['name'])
       // .populate('created_by', ['fullname', 'email'])
       .skip(pagination.offset)
       .limit(pagination.limit)
@@ -125,6 +126,7 @@ export class LegalService {
   async getLatestLegalDocument(title: string) {
     const document = await this.legalDocumentModel
       .findOne({ title, is_deleted: false, is_active: true })
+      .populate('roles', ['name'])
       .sort({ version: -1 })
       .exec();
 
@@ -134,6 +136,7 @@ export class LegalService {
   async getLegalDocumentById(id: string) {
     const document = await this.legalDocumentModel
       .findOne({ _id: id, is_deleted: false })
+      .populate('roles', ['name'])
       // .populate('created_by', ['fullname', 'email'])
       .populate('agreements')
       .exec();

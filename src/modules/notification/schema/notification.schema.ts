@@ -26,6 +26,15 @@ export const NotificationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    is_read: {
+      type: Boolean,
+      default: false,
+    },
+    mode: {
+      type: String,
+      enum: ['client', 'admin', 'caregiver'],
+      default: 'client',
+    },
   },
   { timestamps: true },
 );
