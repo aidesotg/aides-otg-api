@@ -67,9 +67,20 @@ export class NotificationService {
       .countDocuments({ user: user._id, is_read: false })
       .exec();
 
+    const count = await this.notificationModel
+      .countDocuments({
+        ...searchQuery,
+        $or: [{ user: user._id }, { isGeneral: true }],
+      })
+      .exec();
+
     return {
       status: 'success',
       message: 'Notifications fetched',
+      pagination: {
+        ...(await this.miscService.pageCount({ count, page, pageSize })),
+        total: count,
+      },
       data: {
         totalRead,
         totalUnread,
