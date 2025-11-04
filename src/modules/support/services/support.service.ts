@@ -173,7 +173,7 @@ export class SupportService {
     return {
       status: 'success',
       message: 'Ticket updated',
-      data: { ticket },
+      data: ticket,
     };
   }
 
@@ -271,7 +271,7 @@ export class SupportService {
     return {
       status: 'success',
       message: 'Ticket closed successfully',
-      data: { ticket },
+      data: ticket,
     };
   }
 

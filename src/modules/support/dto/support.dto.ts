@@ -93,6 +93,11 @@ export class UpdateTicketDto {
   @IsOptional()
   priority?: 'low' | 'medium' | 'high' | 'urgent';
 
+  @ApiProperty()
+  @IsArray()
+  @IsOptional()
+  attachments?: string[];
+
   // @ApiProperty()
   // @IsEnum(['open', 'in_review', 'closed'])
   // @IsOptional()
