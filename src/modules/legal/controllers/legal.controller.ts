@@ -71,6 +71,17 @@ export class LegalController {
     };
   }
 
+  @Get('/documents/:id/history')
+  @UseGuards(AuthGuard('jwt'))
+  async getDocumentHistory(@Param('id') id: string, @Query() params: any) {
+    const history = await this.legalService.getDocumentHistory(id, params);
+    return {
+      status: 'success',
+      message: 'Document history fetched',
+      data: history,
+    };
+  }
+
   @Get('/documents/:id')
   @UseGuards(AuthGuard('jwt'))
   async getLegalDocumentById(@Param('id') id: string) {

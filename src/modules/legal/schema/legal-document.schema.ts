@@ -43,6 +43,11 @@ export const LegalDocumentSchema = new mongoose.Schema<LegalDocument>(
       ref: 'User',
       required: true,
     },
+    parent_document: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'LegalDocument',
+      default: null,
+    },
   },
   {
     timestamps: true,

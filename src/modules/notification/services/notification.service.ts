@@ -51,18 +51,30 @@ export class NotificationService {
   async fetchUserNotifications(user: any, params?: any) {
     const { page = 1, pageSize = 10 } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
+    const searchQuery = await this.miscService.search(params);
 
     const notifications = await this.notificationModel
-      .find({ $or: [{ user: user._id }, { isGeneral: true }] })
+      .find({ ...searchQuery, $or: [{ user: user._id }, { isGeneral: true }] })
       .sort({ createdAt: -1 })
       .skip(pagination.offset)
       .limit(pagination.limit)
       .exec();
 
+    const totalRead = await this.notificationModel
+      .countDocuments({ user: user._id, is_read: true })
+      .exec();
+    const totalUnread = await this.notificationModel
+      .countDocuments({ user: user._id, is_read: false })
+      .exec();
+
     return {
       status: 'success',
       message: 'Notifications fetched',
-      data: notifications,
+      data: {
+        totalRead,
+        totalUnread,
+        notifications,
+      },
     };
   }
 

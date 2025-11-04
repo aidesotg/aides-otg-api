@@ -43,6 +43,11 @@ export class CreateLegalDocumentDto {
   @IsOptional()
   @Min(1)
   version?: number;
+
+  @ApiProperty()
+  @IsMongoId()
+  @IsOptional()
+  parent_document?: string;
 }
 
 export class UpdateLegalDocumentDto {

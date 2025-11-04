@@ -116,6 +116,20 @@ export class ServiceRequestController {
     return this.serviceService.getReviews(params, user);
   }
 
+  @Get('/reviews/caregiver/:caregiverId')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getCaregiverReviews(
+    @Param('caregiverId') caregiverId: string,
+    @Query() params: any,
+    @AuthUser() user: any,
+  ) {
+    return this.serviceService.getReviews(
+      { ...params, caregiver: caregiverId },
+      user,
+    );
+  }
+
   @Get('/reviews/:id')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)

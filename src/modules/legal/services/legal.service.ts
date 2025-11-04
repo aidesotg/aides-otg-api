@@ -32,42 +32,69 @@ export class LegalService {
     createLegalDocumentDto: CreateLegalDocumentDto,
     user: any,
   ) {
-    const latestDocument = await this.legalDocumentModel
-      .findOne({
-        title: createLegalDocumentDto.title,
-        roles: createLegalDocumentDto.roles,
-        is_deleted: false,
-        is_active: true,
-      })
-      .sort({ version: -1 })
-      .exec();
+    let latestDocument: LegalDocument;
+    let parentDocument: LegalDocument;
+    if (createLegalDocumentDto.parent_document) {
+      parentDocument = await this.legalDocumentModel
+        .findOne({
+          $or: [
+            { _id: createLegalDocumentDto.parent_document },
+            { parent_document: createLegalDocumentDto.parent_document },
+          ],
+          is_deleted: false,
+        })
+        .exec();
+      if (!parentDocument) {
+        throw new NotFoundException({
+          status: 'error',
+          message: 'Parent document not found',
+        });
+      }
+
+      latestDocument = await this.legalDocumentModel
+        .findOne({
+          $or: [
+            { _id: parentDocument._id },
+            { parent_document: parentDocument._id },
+          ],
+          is_deleted: false,
+        })
+        .sort({ version: -1 })
+        .exec();
+
+      await this.legalDocumentModel.updateMany(
+        {
+          $or: [
+            { _id: parentDocument._id },
+            { parent_document: parentDocument._id },
+          ],
+          is_deleted: false,
+          is_active: true,
+        },
+        {
+          $set: {
+            is_active: false,
+          },
+        },
+      );
+    }
 
     if (
       createLegalDocumentDto.version &&
       latestDocument &&
-      createLegalDocumentDto.version > latestDocument.version
+      createLegalDocumentDto.version >= latestDocument.version
     ) {
       throw new BadRequestException(
         'A newer version of this document already exists',
       );
     }
 
-    await this.legalDocumentModel.updateMany(
-      {
-        title: createLegalDocumentDto.title,
-        is_deleted: false,
-        is_active: true,
-      },
-      {
-        $set: {
-          is_active: false,
-        },
-      },
-    );
-
     const data = {
       ...createLegalDocumentDto,
-      version: createLegalDocumentDto.version || latestDocument.version + 0.1,
+      parent_document:
+        parentDocument?.parent_document || parentDocument?._id || null,
+      version:
+        createLegalDocumentDto.version || latestDocument?.version + 0.1 || 1,
       created_by: user._id,
     };
 
@@ -110,6 +137,39 @@ export class LegalService {
       .skip(pagination.offset)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
+      .exec();
+
+    const count = await this.legalDocumentModel.countDocuments(query).exec();
+
+    return {
+      pagination: {
+        ...(await this.miscService.pageCount({ count, page, pageSize })),
+        total: count,
+      },
+      documents,
+    };
+  }
+
+  async getDocumentHistory(id: string, params: any) {
+    const { page = 1, pageSize = 50, role, ...rest } = params;
+    const pagination = await this.miscService.paginate({ page, pageSize });
+
+    const document = await this.getLegalDocumentById(id);
+
+    const query: any = await this.miscService.search(params);
+    query.$or = [
+      { _id: document.parent_document },
+      { parent_document: document.parent_document },
+    ];
+    query.is_deleted = false;
+
+    const documents = await this.legalDocumentModel
+      .find(query)
+      .populate('roles', ['name'])
+      // .populate('created_by', ['fullname', 'email'])
+      .skip(pagination.offset)
+      .limit(pagination.limit)
+      .sort({ version: -1 })
       .exec();
 
     const count = await this.legalDocumentModel.countDocuments(query).exec();

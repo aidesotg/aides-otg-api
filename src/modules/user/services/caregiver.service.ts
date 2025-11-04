@@ -111,6 +111,19 @@ export class CaregiverService {
     };
   }
 
+  async getCaregiverById(id: string) {
+    const caregiver = await this.professionalProfileModel
+      .findOne({ $or: [{ _id: id }, { user: id }] })
+      .populate('user', ['first_name', 'last_name', 'profile_picture']);
+    if (!caregiver) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Caregiver not found',
+      });
+    }
+    return caregiver;
+  }
+
   //PROFESSIONAL PROFILE
   async createProfessionalProfile(
     createProfessionalProfileDto: CreateProfessionalProfileDto,
@@ -219,6 +232,7 @@ export class CaregiverService {
         ...(await this.miscService.pageCount({ count, page, pageSize })),
         total: count,
       },
+      rating: (await this.getPerformanceMetrics(user)).data.rating,
       data: reviews,
     };
   }

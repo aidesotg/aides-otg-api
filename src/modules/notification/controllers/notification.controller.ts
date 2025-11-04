@@ -29,7 +29,7 @@ export class NotificationController {
     return this.notificationService.fetchUserNotifications(user, query);
   }
 
-  @Put('/open')
+  @Put('/open/all')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
   async openNotifications(@AuthUser() user: any) {

@@ -21,6 +21,7 @@ import {
 } from '../dto/professional-profile.dto';
 import { CaregiverService } from '../services/caregiver.service';
 import { UpdateApplicationStatusDto } from '../dto/update-application-status.dto';
+import { User } from '../interface/user.interface';
 
 @ApiTags('user/caregiver')
 @Controller('user/caregiver')
@@ -31,6 +32,18 @@ export class CaregiverController {
   @UseFilters(ExceptionsLoggerFilter)
   async getCaregivers(@Query() params: any) {
     return this.caregiverService.getCaregivers(params);
+  }
+
+  @Get('/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getCaregiverById(@Param('id') id: string) {
+    const caregiver = await this.caregiverService.getCaregiverById(id);
+    return {
+      status: 'success',
+      message: 'Caregiver fetched',
+      data: caregiver,
+    };
   }
 
   @Get('/profile')
@@ -75,6 +88,15 @@ export class CaregiverController {
       message: 'Caregiver application fetched',
       data: application,
     };
+  }
+
+  @Get('/:id/reviews')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getCaregiverReviews(@Param('id') id: string, @Query() params: any) {
+    return this.caregiverService.getCaregiverReviews(params, {
+      _id: id,
+    } as User);
   }
 
   @Post('/')
