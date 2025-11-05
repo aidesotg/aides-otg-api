@@ -314,21 +314,6 @@ export class WalletService {
 
     await this.userService.getUser(user._id);
 
-    const payload = {
-      reference: ref,
-      amount: _.multiply(amount, 100),
-      currency,
-      callback_url:
-        origin && body.path
-          ? `${origin}/${body.path}`
-          : `${process.env.APP_URL}/wallet/confirmation`,
-      channels: ['card'],
-      metadata: {
-        customer_id: user._id,
-      },
-      email: user.email,
-    };
-
     const transaction = new this.transactionModel({
       tx_ref: ref,
       user: user._id,
@@ -774,7 +759,7 @@ export class WalletService {
 
     switch (eventType) {
       case 'payment_intent.succeeded':
-        await this.handleStripeResponse(transaction, data);
+        // await this.handleStripeResponse(transaction, data);
         break;
       case 'payment_intent.payment_failed':
         break;
@@ -801,6 +786,7 @@ export class WalletService {
   }
 
   public async handleStripeResponse(transaction, data) {
+    console.log('🚀 ~ WalletService ~ handleStripeResponse ~ data:', data);
     transaction = await this.transactionModel.findOne({
       $or: [
         { tx_ref: data.client_secret },

@@ -157,10 +157,10 @@ export class WalletController {
   async webhookStripe(
     @Body() body: any,
     @Headers() headers: any,
-    @Body() payload,
     @Req() req,
     @Res() res,
   ) {
-    return this.walletService.stripeWebhookSignatureVerification(req, body);
+    await this.walletService.stripeWebhookSignatureVerification(req, body);
+    return res.status(200).send();
   }
 }
