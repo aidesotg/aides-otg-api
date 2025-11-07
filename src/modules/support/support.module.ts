@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { HttpModule, Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TicketSchema } from './schema/ticket.schema';
 import { TicketMessageSchema } from './schema/ticket-message.schema';

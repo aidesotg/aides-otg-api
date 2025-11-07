@@ -8,6 +8,7 @@ import { MiscCLass } from './misc.service';
 import { ServicesController } from './services.controller';
 import { StripeService } from './stripe.service';
 import { RedisService } from './redis.service';
+import { TwilioService } from './twilio.service';
 import { StripeModule } from 'nestjs-stripe';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from 'src/modules/user/schema/user.schema';
@@ -30,6 +31,7 @@ import { UserSchema } from 'src/modules/user/schema/user.schema';
     FirebaseService,
     StripeService,
     RedisService,
+    TwilioService,
   ],
   exports: [
     Mailer,
@@ -40,6 +42,7 @@ import { UserSchema } from 'src/modules/user/schema/user.schema';
     FirebaseService,
     StripeService,
     RedisService,
+    TwilioService,
   ],
   controllers: [ServicesController],
 })

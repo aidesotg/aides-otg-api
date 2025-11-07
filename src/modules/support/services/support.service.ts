@@ -37,11 +37,16 @@ export class SupportService {
   async createTicket(createTicketDto: CreateTicketDto, user: any) {
     const ticketNumber = this.generateTicketNumber();
 
-    const data = {
+    const data: any = {
       ...createTicketDto,
       ticket_number: ticketNumber,
       created_by: user._id,
     };
+
+    if (createTicketDto.user) {
+      data.created_by_admin = true;
+      data.created_by = createTicketDto.user;
+    }
 
     const newTicket = new this.ticketModel(data);
     const ticket = await newTicket.save();
@@ -90,6 +95,7 @@ export class SupportService {
       .find(query)
       .populate('created_by', ['fullname', 'email'])
       .populate('assigned_to', ['fullname', 'email'])
+      .populate('user_type', ['name'])
       .skip(pagination.offset)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
@@ -111,6 +117,7 @@ export class SupportService {
       .findOne({ _id: id, is_deleted: false })
       .populate('created_by', ['fullname', 'email'])
       .populate('assigned_to', ['fullname', 'email'])
+      .populate('user_type', ['name'])
       .populate('messages')
       .exec();
 
@@ -257,6 +264,7 @@ export class SupportService {
     }
 
     ticket.status = 'closed';
+    ticket.date_closed = new Date();
     await ticket.save();
 
     // Send notification to ticket creator
@@ -293,6 +301,70 @@ export class SupportService {
     return {
       status: 'success',
       message: 'Ticket deleted successfully',
+    };
+  }
+
+  async getStatistics() {
+    const statistics: any = {
+      total_tickets: await this.ticketModel.countDocuments({
+        is_deleted: false,
+      }),
+      total_open_tickets: await this.ticketModel.countDocuments({
+        is_deleted: false,
+        status: { $ne: 'closed' },
+      }),
+      total_pending_tickets: await this.ticketModel.countDocuments({
+        is_deleted: false,
+        status: 'pending',
+      }),
+      total_in_review_tickets: await this.ticketModel.countDocuments({
+        is_deleted: false,
+        status: 'in_review',
+      }),
+
+      total_resolved_tickets: await this.ticketModel.countDocuments({
+        is_deleted: false,
+        status: 'closed',
+      }),
+    };
+
+    const averageResolutionTime = await this.ticketModel.aggregate([
+      {
+        $match: {
+          is_deleted: false,
+          status: 'closed',
+          date_closed: { $ne: null },
+        },
+      },
+      {
+        $project: {
+          resolution_time: {
+            $subtract: ['$date_closed', '$createdAt'],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          average_resolution_time: { $avg: '$resolution_time' },
+        },
+      },
+      {
+        $project: {
+          average_resolution_time: {
+            $divide: ['$average_resolution_time', 60000], // Convert milliseconds to minutes
+          },
+        },
+      },
+    ]);
+
+    statistics.average_resolution_time =
+      averageResolutionTime[0]?.average_resolution_time || 0;
+
+    return {
+      status: 'success',
+      message: 'Statistics fetched successfully',
+      data: statistics,
     };
   }
 }

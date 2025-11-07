@@ -1,28 +1,225 @@
-import { Injectable } from '@nestjs/common';
-import { Imail } from './mailers/interface/imail.interface';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-require('dotenv').config();
-
-const accountSid = process.env.TWILIO_ACCOUNT_SID; // Your Account SID from www.twilio.com/console
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const client = require('twilio')(accountSid, authToken);
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Twilio } from 'twilio';
 
 @Injectable()
-export class Twilio {
-  // public twilio = client;
-  async send(message: string, phone: string) {
+export class TwilioService {
+  private twilioClient: Twilio;
+  private readonly logger = new Logger(TwilioService.name);
+
+  constructor(private configService: ConfigService) {
+    this.twilioClient = new Twilio(
+      this.configService.get('TWILIO_ACCOUNT_SID'),
+      this.configService.get('TWILIO_AUTH_TOKEN'),
+    );
+  }
+
+  async sendSMS(to: string, message: string) {
     try {
-      client.messages
-        .create({
-          body: message,
-          from: 'whatsapp:+14155238886',
-          to: `whatsapp:+2348100612255`,
-        })
-        .then((message) => console.log(message.sid))
-        .done();
+      const response = await this.twilioClient.messages.create({
+        body: message,
+        from: this.configService.get('TWILIO_PHONE_NUMBER'),
+        to: to,
+      });
+
+      this.logger.log(`SMS sent successfully. SID: ${response.sid}`);
+      return response;
     } catch (error) {
-      console.log(error);
+      this.logger.error(`Failed to send SMS: ${error.message}`);
+      throw error;
     }
   }
+
+  async sendWhatsApp(to: string, message: string) {
+    try {
+      const response = await this.twilioClient.messages.create({
+        body: message,
+        from: `whatsapp:${this.configService.get('TWILIO_WHATSAPP_NUMBER')}`,
+        to: `whatsapp:${to}`,
+      });
+
+      this.logger.log(
+        `WhatsApp message sent successfully. SID: ${response.sid}`,
+      );
+      return response;
+    } catch (error) {
+      this.logger.error(`Failed to send WhatsApp message: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // For bulk marketing messages
+  async sendBulkMessages(
+    recipients: string[],
+    message: string,
+    channel: 'sms' | 'whatsapp',
+  ) {
+    const results = [];
+
+    for (const recipient of recipients) {
+      try {
+        const response =
+          channel === 'sms'
+            ? await this.sendSMS(recipient, message)
+            : await this.sendWhatsApp(recipient, message);
+
+        results.push({ recipient, status: 'success', sid: response.sid });
+      } catch (error) {
+        results.push({ recipient, status: 'failed', error: error.message });
+      }
+    }
+
+    return results;
+  }
+
+  async makeCall(
+    to: string,
+    from?: string,
+    url?: string,
+    method?: 'GET' | 'POST',
+    statusCallback?: string,
+    statusCallbackMethod?: 'GET' | 'POST',
+    record?: boolean,
+  ) {
+    try {
+      const callOptions: any = {
+        to: to,
+        from: from || this.configService.get('TWILIO_PHONE_NUMBER'),
+      };
+
+      // If URL is provided, use it for TwiML instructions
+      if (url) {
+        callOptions.url = url;
+      } else {
+        // Default TwiML URL if APP_URL is configured
+        const appUrl = this.configService.get('APP_URL');
+        if (appUrl) {
+          callOptions.url = `${appUrl}/twilio/call-handler`;
+        } else {
+          throw new Error(
+            'Either URL parameter or APP_URL environment variable must be provided',
+          );
+        }
+      }
+
+      // Optional parameters
+      if (method) {
+        callOptions.method = method;
+      }
+
+      if (statusCallback) {
+        callOptions.statusCallback = statusCallback;
+      }
+
+      if (statusCallbackMethod) {
+        callOptions.statusCallbackMethod = statusCallbackMethod;
+      }
+
+      if (record !== undefined) {
+        callOptions.record = record;
+      }
+
+      const response = await this.twilioClient.calls.create(callOptions);
+
+      this.logger.log(`Call initiated successfully. Call SID: ${response.sid}`);
+      return response;
+    } catch (error) {
+      this.logger.error(`Failed to make call: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async makeCallWithTwiML(
+    to: string,
+    twiml: string,
+    from?: string,
+    statusCallback?: string,
+    statusCallbackMethod?: 'GET' | 'POST',
+    record?: boolean,
+  ) {
+    try {
+      const callOptions: any = {
+        to: to,
+        from: from || this.configService.get('TWILIO_PHONE_NUMBER'),
+        twiml: twiml,
+      };
+
+      if (statusCallback) {
+        callOptions.statusCallback = statusCallback;
+      }
+
+      if (statusCallbackMethod) {
+        callOptions.statusCallbackMethod = statusCallbackMethod;
+      }
+
+      if (record !== undefined) {
+        callOptions.record = record;
+      }
+
+      const response = await this.twilioClient.calls.create(callOptions);
+
+      this.logger.log(
+        `Call with TwiML initiated successfully. Call SID: ${response.sid}`,
+      );
+      return response;
+    } catch (error) {
+      this.logger.error(`Failed to make call with TwiML: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async getCall(callSid: string) {
+    try {
+      const call = await this.twilioClient.calls(callSid).fetch();
+      this.logger.log(`Call retrieved successfully. Call SID: ${call.sid}`);
+      return call;
+    } catch (error) {
+      this.logger.error(`Failed to get call: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async updateCall(callSid: string, status: 'canceled' | 'completed') {
+    try {
+      const call = await this.twilioClient.calls(callSid).update({ status });
+      this.logger.log(`Call updated successfully. Call SID: ${call.sid}`);
+      return call;
+    } catch (error) {
+      this.logger.error(`Failed to update call: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // async sendWhatsAppTemplate(
+  //   to: string,
+  //   templateName: string,
+  //   components: {
+  //     type: 'body' | 'header' | 'button';
+  //     parameters: Array<{
+  //       type: 'text' | 'currency' | 'date_time' | 'image' | 'document';
+  //       text?: string;
+  //       currency?: { code: string; amount: number };
+  //       date_time?: { date_time: string };
+  //       image?: { link: string };
+  //       document?: { link: string };
+  //     }>;
+  //   }[],
+  // ) {
+  //   try {
+  //     const response = await this.twilioClient.messages.create({
+  //       from: `whatsapp:${this.configService.get('TWILIO_WHATSAPP_NUMBER')}`,
+  //       to: `whatsapp:${to}`,
+  //       contentSid: templateName,
+  //       contentVariables: JSON.stringify(components),
+  //     });
+
+  //     this.logger.log(
+  //       `WhatsApp template sent successfully. SID: ${response.sid}`,
+  //     );
+  //     return response;
+  //   } catch (error) {
+  //     this.logger.error(`Failed to send WhatsApp template: ${error.message}`);
+  //     throw error;
+  //   }
+  // }
 }

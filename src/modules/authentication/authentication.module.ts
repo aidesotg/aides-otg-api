@@ -1,4 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RoleModule } from 'src/modules/role/role.module';
 import { RoleSchema } from 'src/modules/role/schema/role.schema';
@@ -10,14 +11,20 @@ import { AuthenticationService } from './services/authentication.service';
 import { AdminLoginSchema } from './schema/admin-login.schema';
 import { WalletModule } from '../wallet/wallet.module';
 import { UserModule } from '../user/user.module';
+import { SocialAuthTokenSchema } from './schema/social-auth.schema';
+import { SocialAuthService } from './services/social-auth.service';
+import { AuthzModule } from 'src/framework/authz/authz.module';
 
 @Module({
   imports: [
+    HttpModule,
+    AuthzModule,
     MongooseModule.forFeature([
       { name: 'User', schema: UserSchema },
       { name: 'Role', schema: RoleSchema },
       { name: 'PasswordReset', schema: PasswordResetSchema },
       { name: 'AdminLogin', schema: AdminLoginSchema },
+      { name: 'SocialAuthToken', schema: SocialAuthTokenSchema },
     ]),
     forwardRef(() => RoleModule),
     ServicesModule,
@@ -25,6 +32,6 @@ import { UserModule } from '../user/user.module';
     forwardRef(() => UserModule),
   ],
   controllers: [AuthenticationController],
-  providers: [AuthenticationService],
+  providers: [AuthenticationService, SocialAuthService],
 })
 export class AuthenticationModule {}

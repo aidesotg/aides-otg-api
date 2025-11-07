@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
   Put,
@@ -20,6 +23,8 @@ import {
   TwoFactorLoginRequestDto,
   TwoFactorLoginVerificationDto,
 } from '../dto/2fa-auth.dto';
+import { SocialSignInDto } from '../dto/social-signin.dto';
+import { SocialAuthService } from '../services/social-auth.service';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthenticationController {
@@ -48,6 +53,20 @@ export class AuthenticationController {
     @Body() body: TwoFactorLoginVerificationDto,
   ) {
     return this.authenticationService.twoFactorLoginVerification(body);
+  }
+
+  @Post('/social')
+  @HttpCode(HttpStatus.OK)
+  public async social(@Body() socialSignInDto: SocialSignInDto) {
+    try {
+      return this.authenticationService.signInSocial(socialSignInDto);
+    } catch (err) {
+      console.log('🚀 ~ AuthController ~ err:', err);
+      throw new ForbiddenException({
+        status: 'error',
+        message: 'Authentication failed',
+      });
+    }
   }
 
   @Get('/roles')

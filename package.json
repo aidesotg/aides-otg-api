@@ -24,6 +24,7 @@
     "seed:refresh": "node dist/seeder --refresh"
   },
   "dependencies": {
+    "@nestjs/axios": "^3.0.0",
     "@nestjs/common": "^7.6.15",
     "@nestjs/config": "^1.2.1",
     "@nestjs/core": "^7.6.15",
@@ -36,7 +37,7 @@
     "@types/ioredis": "^5.0.0",
     "@types/passport-local": "^1.0.33",
     "aws-sdk": "^2.995.0",
-    "axios": "^0.21.1",
+    "axios": "^1.6.0",
     "backblaze-b2": "^1.7.0",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.4.0",
@@ -66,7 +67,7 @@
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
-    "rxjs": "^6.6.6",
+    "rxjs": "^7.2.0",
     "speakeasy": "^2.0.0",
     "stripe": "^8.222.0",
     "swagger-ui-express": "^4.1.6",

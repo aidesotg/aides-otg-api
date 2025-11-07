@@ -38,6 +38,12 @@ export class SupportController {
     };
   }
 
+  @Get('/statistics')
+  @UseGuards(AuthGuard('jwt'))
+  async getStatistics() {
+    return this.supportService.getStatistics();
+  }
+
   @Get('/tickets/:id')
   @UseGuards(AuthGuard('jwt'))
   async getTicketById(@Param('id') id: string) {

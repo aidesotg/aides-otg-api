@@ -36,6 +36,8 @@ import {
   TwoFactorLoginRequestDto,
   TwoFactorLoginVerificationDto,
 } from '../dto/2fa-auth.dto';
+import { SocialSignInDto } from '../dto/social-signin.dto';
+import { SocialAuthService } from './social-auth.service';
 
 dotenv.config();
 
@@ -55,7 +57,50 @@ export class AuthenticationService {
     @Inject(forwardRef(() => UserService))
     private userService: UserService,
     private miscService: MiscCLass,
+    private socialAuthService: SocialAuthService,
   ) {}
+
+  async signInSocial(payload: SocialSignInDto) {
+    try {
+      const { auth, socialPayload, newUser } =
+        await this.socialAuthService.socialSignIn(payload);
+
+      return await this.signInUser(auth, payload, newUser);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async signInUser(
+    user: User,
+    data: LoginDto | SocialSignInDto,
+    newUser?: boolean,
+  ) {
+    // user.last_login = new Date();
+    if (data.device_token && !user.device_token.includes(data.device_token)) {
+      user.device_token.push(data.device_token);
+      await user.save();
+      await this.firebaseService.subscribeToTopic(data.device_token, 'general');
+    }
+    await user.save();
+
+    const expire = 2592000;
+    const token = jwt.sign(
+      { id: user.id, email: user.email, roles: user.roles },
+      process.env.SECRET,
+      { expiresIn: expire },
+    );
+
+    return {
+      status: 'success',
+      message: 'Login successful',
+      data: {
+        user,
+        token: `Bearer ${token}`,
+        expires_in: expire,
+      },
+    };
+  }
 
   async register(body: RegistrationDto) {
     console.log(

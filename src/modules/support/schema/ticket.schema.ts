@@ -18,8 +18,8 @@ export const TicketSchema = new mongoose.Schema<Ticket>(
     },
     status: {
       type: String,
-      enum: ['open', 'in_review', 'closed'],
-      default: 'open',
+      enum: ['pending', 'open', 'in_review', 'closed'],
+      default: 'pending',
     },
     priority: {
       type: String,
@@ -28,14 +28,14 @@ export const TicketSchema = new mongoose.Schema<Ticket>(
     },
     category: {
       type: String,
-      enum: [
-        'technical',
-        'billing',
-        'general',
-        'complaint',
-        'dispute',
-        'other',
-      ],
+      // enum: [
+      //   'technical',
+      //   'billing',
+      //   'general',
+      //   'complaint',
+      //   'dispute',
+      //   'other',
+      // ],
       required: true,
     },
     created_by: {
@@ -46,11 +46,24 @@ export const TicketSchema = new mongoose.Schema<Ticket>(
     assigned_to: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+      default: null,
+    },
+    user_type: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
     },
     attachments: [String],
     is_deleted: {
       type: Boolean,
       default: false,
+    },
+    created_by_admin: {
+      type: Boolean,
+      default: false,
+    },
+    date_closed: {
+      type: Date,
+      default: null,
     },
   },
   {

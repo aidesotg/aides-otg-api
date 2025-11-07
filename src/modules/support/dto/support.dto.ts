@@ -8,6 +8,7 @@ import {
   IsArray,
   ValidateNested,
   IsBoolean,
+  IsMongoId,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -50,14 +51,10 @@ export class CreateTicketDto {
   description: string;
 
   @ApiProperty()
-  @IsEnum(['technical', 'billing', 'general', 'complaint', 'dispute', 'other'])
-  category:
-    | 'technical'
-    | 'billing'
-    | 'general'
-    | 'complaint'
-    | 'dispute'
-    | 'other';
+  @IsString()
+  @IsNotEmpty()
+  // @IsEnum(['technical', 'billing', 'general', 'complaint', 'dispute', 'other'])
+  category: string;
 
   @ApiProperty()
   @IsEnum(['low', 'medium', 'high'])
@@ -68,6 +65,16 @@ export class CreateTicketDto {
   @IsArray()
   @IsOptional()
   attachments?: string[];
+
+  @ApiProperty()
+  @IsMongoId()
+  @IsOptional()
+  user_type?: string;
+
+  @ApiProperty()
+  @IsMongoId()
+  @IsOptional()
+  user?: string;
 }
 
 export class UpdateTicketDto {
