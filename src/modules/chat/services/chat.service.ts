@@ -19,6 +19,7 @@ import { CreateChannelDto } from 'src/modules/chat/dto/create-channel.dto';
 import { DeleteMessageDto } from 'src/modules/chat/dto/delete-messages.dto';
 import { Service } from 'aws-sdk';
 import fbaseadmin from 'src/services/config/firebase.config';
+import { ServiceRequest } from 'src/modules/service-request/interface/service-request-interface.interface';
 // import { db } from '../services/firebase/config';
 
 @Injectable()
@@ -31,7 +32,8 @@ export class ChatService {
     private readonly channelMessageModel: Model<ChannelMessage>,
     @InjectModel('EntityChannelStatus')
     private readonly entityChannelStatusModel: Model<EntityChannelStatus>,
-    @InjectModel('Service') private readonly serviceModel: Model<Service>,
+    @InjectModel('ServiceRequest')
+    private readonly serviceRequestModel: Model<ServiceRequest>,
     private miscService: MiscCLass,
     private notificationService: NotificationService,
   ) {}
@@ -40,16 +42,25 @@ export class ChatService {
     const { service_id, receiver_id } = body;
     let serviceId = null;
     if (service_id) {
-      const service = await this.serviceModel.findOne({
+      const service = await this.serviceRequestModel.findOne({
         _id: service_id,
       });
       if (!service) {
         throw new BadRequestException({
           status: 'error',
-          message: 'Unable to to start channel',
+          message: 'Unable to to start channel, service request not found',
         });
       }
       serviceId = service._id;
+      if (
+        service.beneficiary.toString() !== receiver_id.toString() &&
+        service.care_giver.toString() !== receiver_id.toString()
+      ) {
+        throw new BadRequestException({
+          status: 'error',
+          message: 'Unable to to start channel with this user',
+        });
+      }
     }
     let channel_id = null;
 

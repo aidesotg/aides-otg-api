@@ -14,6 +14,7 @@ import { EntityChannelStatusSchema } from './schema/entity-channel-status.schema
 import { forwardRef } from '@nestjs/common';
 import { NotificationModule } from 'src/modules/notification/notification.module';
 import { ServiceSchema } from '../service/schema/service.schema';
+import { ServiceRequestSchema } from '../service-request/schema/service-request.schema';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ServiceSchema } from '../service/schema/service.schema';
       { name: 'ChannelMessage', schema: ChannelMessageSchema },
       { name: 'EntityChannelStatus', schema: EntityChannelStatusSchema },
       { name: 'Service', schema: ServiceSchema },
+      { name: 'ServiceRequest', schema: ServiceRequestSchema },
     ]),
     forwardRef(() => UserModule),
     forwardRef(() => ServicesModule),
