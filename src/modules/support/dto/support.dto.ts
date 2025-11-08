@@ -75,6 +75,11 @@ export class CreateTicketDto {
   @IsMongoId()
   @IsOptional()
   user?: string;
+
+  @ApiProperty()
+  @IsMongoId()
+  @IsOptional()
+  against?: string;
 }
 
 export class UpdateTicketDto {

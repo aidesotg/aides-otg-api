@@ -43,6 +43,11 @@ export const TicketSchema = new mongoose.Schema<Ticket>(
       ref: 'User',
       required: true,
     },
+    against: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     assigned_to: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -64,6 +69,16 @@ export const TicketSchema = new mongoose.Schema<Ticket>(
     date_closed: {
       type: Date,
       default: null,
+    },
+    resource_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+      refPath: 'resource_type',
+    },
+    resource_type: {
+      type: String,
+      enum: ['Review', 'ServiceRequest'],
+      default: 'user',
     },
   },
   {
