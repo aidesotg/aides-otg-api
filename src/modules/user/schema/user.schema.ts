@@ -76,6 +76,7 @@ export const UserSchema = new mongoose.Schema<User>(
       zip_code: {
         type: String,
       },
+      location: {},
     },
     profile_picture: {
       type: String,

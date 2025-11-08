@@ -1,5 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  ValidateNested,
+} from 'class-validator';
+
+export class LocationDto {
+  @ApiProperty()
+  @IsNumber()
+  latitude: number;
+
+  @ApiProperty()
+  @IsNumber()
+  lng: number;
+}
 
 export class AddressDto {
   @ApiProperty()
@@ -26,4 +42,10 @@ export class AddressDto {
   @IsString()
   @IsOptional()
   zip_code?: string;
+
+  @ApiProperty()
+  @ValidateNested()
+  @Type(() => LocationDto)
+  @IsOptional()
+  coordinates?: LocationDto;
 }

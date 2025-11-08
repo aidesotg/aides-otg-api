@@ -33,6 +33,7 @@ export const SettingSchema = new mongoose.Schema(
       zip_code: {
         type: String,
       },
+      location: {},
     },
     company_photo: {
       type: String,

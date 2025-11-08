@@ -34,18 +34,6 @@ export class CaregiverController {
     return this.caregiverService.getCaregivers(params);
   }
 
-  @Get('/:id')
-  @UseGuards(AuthGuard('jwt'))
-  @UseFilters(ExceptionsLoggerFilter)
-  async getCaregiverById(@Param('id') id: string) {
-    const caregiver = await this.caregiverService.getCaregiverById(id);
-    return {
-      status: 'success',
-      message: 'Caregiver fetched',
-      data: caregiver,
-    };
-  }
-
   @Get('/profile')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
@@ -65,6 +53,18 @@ export class CaregiverController {
   @UseFilters(ExceptionsLoggerFilter)
   async getPerformanceMetrics(@AuthUser() user: any) {
     return this.caregiverService.getPerformanceMetrics(user);
+  }
+
+  @Get('/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getCaregiverById(@Param('id') id: string) {
+    const caregiver = await this.caregiverService.getCaregiverById(id);
+    return {
+      status: 'success',
+      message: 'Caregiver fetched',
+      data: caregiver,
+    };
   }
 
   @Get('/applications/pending')

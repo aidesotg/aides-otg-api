@@ -13,6 +13,7 @@ export interface Patient extends mongoose.Document {
     state?: string;
     country?: string;
     zip_code?: string;
+    location?: Record<string, number>;
   };
   emergency_contact: {
     name?: string;

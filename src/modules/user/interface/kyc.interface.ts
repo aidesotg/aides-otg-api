@@ -13,6 +13,7 @@ export interface Kyc extends mongoose.Document {
     state: string;
     country: string;
     zip_code: string;
+    location?: Record<string, number>;
   };
   document_url: string[];
   reason: string;

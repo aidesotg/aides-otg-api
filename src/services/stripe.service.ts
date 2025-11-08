@@ -99,9 +99,11 @@ export class StripeService {
     //   user: user._id,
     // });
     // await subscription.save();
+    // For Checkout Sessions, Apple Pay and Google Pay are supported through payment_method_types
+    // Note: TypeScript types may not include these, but Stripe API supports them
     const session = await this.stripe.checkout.sessions.create({
       mode: 'payment',
-      payment_method_types: ['card'],
+      payment_method_types: ['card'] as any, // Allows Apple Pay and Google Pay to be enabled automatically
       customer: String(user.stripeCustomerId ?? customer?.id),
       client_reference_id: reference,
       metadata,
@@ -134,23 +136,28 @@ export class StripeService {
       );
     }
 
-    // const reference = `web:${Date.now()}`;
-    // const subscription = new this.model({
-    //   transactionId: reference,
-    //   user: user._id,
-    // });
-    // await subscription.save();
-    return await this.stripe.paymentIntents.create({
+    // Configure automatic payment methods for Apple Pay and Google Pay
+    // When using automatic_payment_methods, only specify 'card' in payment_method_types
+    // Stripe will automatically enable Apple Pay and Google Pay if available
+    const paymentIntentConfig: Stripe.PaymentIntentCreateParams = {
       ...rest,
       customer: String(user.stripeCustomerId ?? customer?.id),
-    });
+      payment_method_types: rest.payment_method_types || ['card'],
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    };
+
+    return await this.stripe.paymentIntents.create(paymentIntentConfig);
   }
 
   async createCheckoutSession(customerId: string, priceId: string) {
     console.log('customerId: ', customerId);
+    // For Checkout Sessions, Apple Pay and Google Pay are supported through payment_method_types
+    // Note: TypeScript types may not include these, but Stripe API supports them
     const session = await this.stripe.checkout.sessions.create({
       mode: 'subscription',
-      payment_method_types: ['card'],
+      payment_method_types: ['card'] as any, // Allows Apple Pay and Google Pay to be enabled automatically
       customer: customerId,
       client_reference_id: customerId,
       line_items: [
@@ -266,6 +273,147 @@ export class StripeService {
 
   async retrieveSession(session_id: any) {
     return await this.stripe.checkout.sessions.retrieve(session_id);
+  }
+
+  /**
+   * Create a payment method for Apple Pay or Google Pay
+   */
+  public async createPaymentMethod(payload: {
+    type: 'apple_pay' | 'google_pay' | 'card';
+    apple_pay?: {
+      payment_data: any;
+      payment_method: any;
+      transaction_identifier: string;
+    };
+    google_pay?: {
+      payment_method_data: any;
+    };
+    card?: {
+      number: string;
+      exp_month: number;
+      exp_year: number;
+      cvc: string;
+    };
+    billing_details?: Stripe.PaymentMethodCreateParams.BillingDetails;
+  }) {
+    const { type, apple_pay, google_pay, card, billing_details } = payload;
+
+    const paymentMethodParams: Stripe.PaymentMethodCreateParams = {
+      type: type === 'apple_pay' || type === 'google_pay' ? 'card' : type,
+      billing_details,
+    };
+
+    if (type === 'apple_pay' && apple_pay) {
+      paymentMethodParams.type = 'card';
+      // Apple Pay token is handled by Stripe.js on the client side
+      // This method is for attaching payment methods created on the client
+    } else if (type === 'google_pay' && google_pay) {
+      paymentMethodParams.type = 'card';
+      // Google Pay token is handled by Stripe.js on the client side
+      // This method is for attaching payment methods created on the client
+    } else if (type === 'card' && card) {
+      paymentMethodParams.card = card;
+    }
+
+    return await this.stripe.paymentMethods.create(paymentMethodParams);
+  }
+
+  /**
+   * Attach a payment method to a customer
+   */
+  public async attachPaymentMethod(
+    paymentMethodId: string,
+    customerId: string,
+  ) {
+    return await this.stripe.paymentMethods.attach(paymentMethodId, {
+      customer: customerId,
+    });
+  }
+
+  /**
+   * Confirm a payment intent with a payment method
+   */
+  public async confirmPaymentIntent(
+    paymentIntentId: string,
+    paymentMethodId?: string,
+    returnUrl?: string,
+  ) {
+    const params: Stripe.PaymentIntentConfirmParams = {};
+
+    if (paymentMethodId) {
+      params.payment_method = paymentMethodId;
+    }
+
+    if (returnUrl) {
+      params.return_url = returnUrl;
+    }
+
+    return await this.stripe.paymentIntents.confirm(paymentIntentId, params);
+  }
+
+  /**
+   * Retrieve payment intent details
+   */
+  public async retrievePaymentIntent(paymentIntentId: string) {
+    return await this.stripe.paymentIntents.retrieve(paymentIntentId);
+  }
+
+  /**
+   * List payment methods for a customer
+   */
+  public async listCustomerPaymentMethods(
+    customerId: string,
+    type: 'card' | 'apple_pay' | 'google_pay' = 'card',
+  ) {
+    return await this.stripe.paymentMethods.list({
+      customer: customerId,
+      type: 'card', // Apple Pay and Google Pay are card payment methods
+    });
+  }
+
+  /**
+   * Create a payment intent specifically configured for Apple Pay and Google Pay
+   */
+  public async createMobilePaymentIntent(payload: {
+    user: any;
+    amount: number;
+    currency: string;
+    metadata?: Record<string, string>;
+    return_url?: string;
+  }) {
+    const { user, amount, currency, metadata, return_url } = payload;
+
+    let customer;
+
+    if (!user.stripeCustomerId) {
+      customer = await this.stripe.customers.create({
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+      });
+
+      await this.userModel.updateOne(
+        { _id: user._id },
+        { stripeCustomerId: user.stripeCustomerId ?? customer?.id },
+        {
+          upsert: true,
+          setDefaultsOnInsert: true,
+        },
+      );
+    }
+
+    const paymentIntent = await this.stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // Convert to cents
+      currency: currency.toLowerCase(),
+      customer: String(user.stripeCustomerId ?? customer?.id),
+      payment_method_types: ['card'],
+      automatic_payment_methods: {
+        enabled: true,
+      },
+      metadata: metadata || {},
+      ...(return_url && { return_url: return_url }),
+    });
+
+    return paymentIntent;
   }
 
   async webhookSignatureVerification(body: any, headers: any) {

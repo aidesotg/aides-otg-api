@@ -423,7 +423,7 @@ export class ServiceRequestService {
 
     return {
       status: 'success',
-      message: 'Active requests fetched',
+      message: 'Requests fetched',
 
       pagination: {
         ...(await this.miscService.pageCount({ count, page, pageSize })),

@@ -232,9 +232,18 @@ export class WalletService {
         metadata: {
           customer_id: String(user._id),
           paymentType: body.type ?? user.details?.type ?? 'wallet',
+          transaction_ref: ref,
         },
       });
+
+      // Store both client_secret and payment_intent_id for webhook matching
       transaction.tx_ref = intent.client_secret;
+      transaction.details = JSON.stringify({
+        ...body,
+        payment_intent_id: intent.id,
+        client_secret: intent.client_secret,
+        customer_id: intent.customer,
+      });
 
       await transaction.save();
       return {
@@ -724,8 +733,7 @@ export class WalletService {
     let data;
     let eventType;
     // Check if webhook signing is configured.
-    const webhookSecret = null;
-    let transaction = null;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || null;
 
     if (webhookSecret) {
       // Retrieve the event by verifying the signature using the raw body and secret.
@@ -738,70 +746,368 @@ export class WalletService {
           signature,
           webhookSecret,
         );
+        // Extract the object from the event.
+        data = event.data.object;
+        eventType = event.type;
       } catch (err) {
         console.log(`⚠️  Webhook signature verification failed.`);
         console.log(err);
         throw new ForbiddenException({
-          status: 'success',
+          status: 'error',
           message: 'Failed or Invalid Transaction',
         });
       }
-      // Extract the object from the event.
-      data = event.data.object;
-      eventType = event.type;
     } else {
-      // Webhook signing is recommended, but if the secret is not configured in `config.js`,
+      // Webhook signing is recommended, but if the secret is not configured,
       // retrieve the event data directly from the request body.
-      data = body.data.object;
+      data = body.data?.object || body.object;
       eventType = body.type;
     }
 
-    let response;
+    console.log(`📦 Received Stripe webhook: ${eventType}`);
 
     switch (eventType) {
       case 'payment_intent.succeeded':
-        // await this.handleStripeResponse(transaction, data);
+        await this.handlePaymentIntentSucceeded(data);
         break;
       case 'payment_intent.payment_failed':
+        await this.handlePaymentIntentFailed(data);
+        break;
+      case 'payment_intent.requires_action':
+        await this.handlePaymentIntentRequiresAction(data);
         break;
       case 'checkout.session.completed':
-        // Payment is successful and the subscription is created.\
-
+        // Payment is successful and the subscription is created.
         if (data.mode == 'payment') {
-          await this.handleStripeResponse(transaction, data);
+          await this.handleCheckoutSessionCompleted(data);
         }
         break;
       case 'account.updated':
-        console.log('CHARGES', !data.charges_enabled);
-
-        const user = await this.userModel.findOne({
-          'stripeConnect.stripeCustomerId': data.id,
-        });
-        user.stripeConnect.active = data.charges_enabled;
-        await user.save();
+        await this.handleAccountUpdated(data);
         break;
       default:
+        console.log(`Unhandled event type: ${eventType}`);
     }
 
-    return;
+    return { received: true };
   }
 
+  /**
+   * Handle payment intent succeeded event
+   * Handles Apple Pay, Google Pay, and regular card payments
+   */
+  private async handlePaymentIntentSucceeded(
+    paymentIntent: Stripe.PaymentIntent,
+  ) {
+    console.log('✅ Payment Intent Succeeded:', paymentIntent.id);
+
+    // Find transaction by payment intent ID, client secret, or metadata
+    const searchQueries: any[] = [
+      { tx_ref: paymentIntent.client_secret },
+      { tx_ref: paymentIntent.id },
+    ];
+
+    // Also search in details JSON if it contains payment_intent_id
+    if (paymentIntent.metadata?.transaction_ref) {
+      searchQueries.push({ tx_ref: paymentIntent.metadata.transaction_ref });
+    }
+
+    let transaction = await this.transactionModel.findOne({
+      $or: searchQueries,
+    });
+
+    // If not found, try searching in details JSON field
+    if (!transaction) {
+      const transactions = await this.transactionModel
+        .find({
+          $or: [
+            { tx_ref: paymentIntent.client_secret },
+            { tx_ref: paymentIntent.id },
+          ],
+        })
+        .exec();
+
+      transaction = transactions.find((t) => {
+        try {
+          const details = JSON.parse(t.details || '{}');
+          return (
+            details.payment_intent_id === paymentIntent.id ||
+            details.client_secret === paymentIntent.client_secret
+          );
+        } catch {
+          return false;
+        }
+      });
+    }
+
+    if (!transaction) {
+      console.log(
+        '⚠️ Transaction not found for payment intent:',
+        paymentIntent.id,
+      );
+      return;
+    }
+
+    if (transaction.status === 'successful') {
+      console.log('ℹ️ Transaction already processed');
+      return;
+    }
+
+    // Retrieve payment method details to detect Apple Pay/Google Pay
+    let paymentMethod: Stripe.PaymentMethod | null = null;
+    let paymentMethodType = 'card';
+    let isApplePay = false;
+    let isGooglePay = false;
+
+    if (paymentIntent.payment_method) {
+      try {
+        paymentMethod = await this.stripe.paymentMethods.retrieve(
+          paymentIntent.payment_method as string,
+        );
+
+        // Detect Apple Pay or Google Pay
+        if (paymentMethod.type === 'card' && paymentMethod.card) {
+          // Check for Apple Pay indicators
+          if (paymentMethod.card.wallet?.type === 'apple_pay') {
+            isApplePay = true;
+            paymentMethodType = 'apple_pay';
+          }
+          // Check for Google Pay indicators
+          else if (paymentMethod.card.wallet?.type === 'google_pay') {
+            isGooglePay = true;
+            paymentMethodType = 'google_pay';
+          }
+        }
+      } catch (error) {
+        console.log('Error retrieving payment method:', error);
+      }
+    }
+
+    // Credit wallet if transaction type is wallet
+    if (transaction.type === 'wallet') {
+      const amount = paymentIntent.amount / 100; // Convert from cents
+      await this.credit({
+        id: transaction.user,
+        amount,
+        genus: constants.transactionGenus.DEPOSIT,
+        description: `Wallet deposit via ${paymentMethodType}`,
+        ref: paymentIntent.id,
+      });
+
+      // Send notification
+      const user = await this.userService.getUser({ _id: transaction.user });
+      await this.walletTransactionMessage({
+        user,
+        amount,
+        type: 'credit',
+        details: `Wallet deposit via ${paymentMethodType}`,
+      });
+    }
+
+    // Update transaction
+    transaction.status = 'successful';
+    transaction.trx_id = paymentIntent.id;
+    transaction.payment_type = paymentMethodType;
+    transaction.details = JSON.stringify({
+      payment_intent_id: paymentIntent.id,
+      payment_method_id: paymentIntent.payment_method,
+      is_apple_pay: isApplePay,
+      is_google_pay: isGooglePay,
+      currency: paymentIntent.currency,
+      amount: paymentIntent.amount,
+      metadata: paymentIntent.metadata,
+    });
+
+    await transaction.save();
+    console.log('✅ Transaction processed successfully');
+  }
+
+  /**
+   * Handle payment intent failed event
+   */
+  private async handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
+    console.log('❌ Payment Intent Failed:', paymentIntent.id);
+
+    let transaction = await this.transactionModel.findOne({
+      $or: [
+        { tx_ref: paymentIntent.client_secret },
+        { tx_ref: paymentIntent.id },
+        { 'details.payment_intent_id': paymentIntent.id },
+      ],
+    });
+
+    if (transaction && transaction.status !== 'successful') {
+      transaction.status = 'failed';
+      transaction.details = JSON.stringify({
+        payment_intent_id: paymentIntent.id,
+        error: paymentIntent.last_payment_error,
+        failure_reason: paymentIntent.last_payment_error?.message,
+      });
+      await transaction.save();
+    }
+  }
+
+  /**
+   * Handle payment intent requires action (e.g., 3D Secure)
+   */
+  private async handlePaymentIntentRequiresAction(
+    paymentIntent: Stripe.PaymentIntent,
+  ) {
+    console.log('⚠️ Payment Intent Requires Action:', paymentIntent.id);
+
+    let transaction = await this.transactionModel.findOne({
+      $or: [
+        { tx_ref: paymentIntent.client_secret },
+        { tx_ref: paymentIntent.id },
+        { 'details.payment_intent_id': paymentIntent.id },
+      ],
+    });
+
+    if (transaction) {
+      transaction.status = 'pending';
+      transaction.details = JSON.stringify({
+        payment_intent_id: paymentIntent.id,
+        requires_action: true,
+        next_action: paymentIntent.next_action,
+      });
+      await transaction.save();
+    }
+  }
+
+  /**
+   * Handle checkout session completed event
+   */
+  private async handleCheckoutSessionCompleted(
+    session: Stripe.Checkout.Session,
+  ) {
+    console.log('✅ Checkout Session Completed:', session.id);
+
+    let transaction = await this.transactionModel.findOne({
+      $or: [{ tx_ref: session.client_reference_id }, { tx_ref: session.id }],
+    });
+
+    if (!transaction) {
+      console.log('⚠️ Transaction not found for session:', session.id);
+      return;
+    }
+
+    if (transaction.status === 'successful') {
+      return;
+    }
+
+    // Retrieve payment intent to get payment method details
+    let paymentIntent: Stripe.PaymentIntent | null = null;
+    let paymentMethodType = 'card';
+    let isApplePay = false;
+    let isGooglePay = false;
+
+    if (session.payment_intent) {
+      try {
+        paymentIntent = await this.stripe.paymentIntents.retrieve(
+          session.payment_intent as string,
+        );
+
+        if (paymentIntent.payment_method) {
+          const paymentMethod = await this.stripe.paymentMethods.retrieve(
+            paymentIntent.payment_method as string,
+          );
+
+          if (paymentMethod.type === 'card' && paymentMethod.card) {
+            if (paymentMethod.card.wallet?.type === 'apple_pay') {
+              isApplePay = true;
+              paymentMethodType = 'apple_pay';
+            } else if (paymentMethod.card.wallet?.type === 'google_pay') {
+              isGooglePay = true;
+              paymentMethodType = 'google_pay';
+            }
+          }
+        }
+      } catch (error) {
+        console.log('Error retrieving payment intent:', error);
+      }
+    }
+
+    // Credit wallet if transaction type is wallet
+    if (transaction.type === 'wallet') {
+      const amount = (session.amount_total || 0) / 100; // Convert from cents
+      await this.credit({
+        id: transaction.user,
+        amount,
+        genus: constants.transactionGenus.DEPOSIT,
+        description: `Wallet deposit via ${paymentMethodType}`,
+        ref: session.client_reference_id || session.id,
+      });
+
+      // Send notification
+      const user = await this.userService.getUser({ _id: transaction.user });
+      await this.walletTransactionMessage({
+        user,
+        amount,
+        type: 'credit',
+        details: `Wallet deposit via ${paymentMethodType}`,
+      });
+    }
+
+    // Update transaction
+    transaction.status = 'successful';
+    transaction.trx_id = session.id;
+    transaction.payment_type = paymentMethodType;
+    transaction.details = JSON.stringify({
+      session_id: session.id,
+      payment_intent_id: session.payment_intent,
+      is_apple_pay: isApplePay,
+      is_google_pay: isGooglePay,
+      amount_total: session.amount_total,
+      currency: session.currency,
+      customer: session.customer,
+      metadata: session.metadata,
+    });
+
+    await transaction.save();
+    console.log('✅ Checkout session processed successfully');
+  }
+
+  /**
+   * Handle account updated event
+   */
+  private async handleAccountUpdated(account: Stripe.Account) {
+    console.log('📝 Account Updated:', account.id);
+
+    const user = await this.userModel.findOne({
+      'stripeConnect.stripeCustomerId': account.id,
+    });
+
+    if (user) {
+      user.stripeConnect.active =
+        account.charges_enabled && account.details_submitted;
+      await user.save();
+    }
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   */
   public async handleStripeResponse(transaction, data) {
     console.log('🚀 ~ WalletService ~ handleStripeResponse ~ data:', data);
-    transaction = await this.transactionModel.findOne({
-      $or: [
-        { tx_ref: data.client_secret },
-        { tx_ref: data.client_reference_id },
-      ],
-      // status: 'initiated',
-    });
+
+    if (!transaction) {
+      transaction = await this.transactionModel.findOne({
+        $or: [
+          { tx_ref: data.client_secret },
+          { tx_ref: data.client_reference_id },
+          { tx_ref: data.id },
+        ],
+      });
+    }
+
     if (!transaction) {
       throw new ForbiddenException({
-        status: 'success',
+        status: 'error',
         message: 'Invalid Transaction',
       });
     }
-    if (transaction.status == 'successful') {
+
+    if (transaction.status === 'successful') {
       return {
         status: 'success',
         message: 'Transaction successful',
@@ -809,37 +1115,40 @@ export class WalletService {
     }
 
     if (
-      transaction.status != 'successful' &&
-      transaction.status != 'initiated'
+      transaction.status !== 'successful' &&
+      transaction.status !== 'initiated'
     ) {
       throw new ForbiddenException({
-        status: 'success',
+        status: 'error',
         message: 'Failed or Invalid Transaction',
       });
     }
-    let response;
-    if (transaction.type == 'wallet') {
+
+    if (transaction.type === 'wallet') {
+      const amount = data.amount_total
+        ? data.amount_total / 100
+        : transaction.amount;
       await this.credit({
         id: transaction.user,
-        amount: transaction.amount,
+        amount,
         genus: constants.transactionGenus.DEPOSIT,
         description: 'wallet deposit',
-        ref: data.client_reference_id,
+        ref: data.client_reference_id || data.id,
       });
     }
 
     transaction.status = 'successful';
     transaction.narration = data.narration;
-    transaction.payment_type = data.payment_methods;
+    transaction.payment_type = data.payment_method_types?.[0] || 'card';
     transaction.trx_id = data.id;
-    // transaction.charged_amount = data.amount_total / 100;
-    // transaction.flw_ref = data.flw_ref;
-    transaction.app_fee = data.app_fee;
+    transaction.app_fee = data.application_fee_amount
+      ? data.application_fee_amount / 100
+      : null;
     transaction.customer = JSON.stringify(data.customer);
-    transaction.card = JSON.stringify(data.card);
+    transaction.card = JSON.stringify(data.payment_method_types);
 
     await transaction.save();
-    return response;
+    return { status: 'success', message: 'Transaction processed' };
   }
 
   async getSupportedCountries() {

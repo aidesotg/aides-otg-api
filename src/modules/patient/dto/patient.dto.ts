@@ -15,33 +15,34 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { AddressDto } from 'src/modules/user/dto/address.dto';
 
-export class AddressDto {
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  street?: string;
+// export class AddressDto {
+//   @ApiProperty()
+//   @IsString()
+//   @IsOptional()
+//   street?: string;
 
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  city?: string;
+//   @ApiProperty()
+//   @IsString()
+//   @IsOptional()
+//   city?: string;
 
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  state?: string;
+//   @ApiProperty()
+//   @IsString()
+//   @IsOptional()
+//   state?: string;
 
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  country?: string;
+//   @ApiProperty()
+//   @IsString()
+//   @IsOptional()
+//   country?: string;
 
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  zip_code?: string;
-}
+//   @ApiProperty()
+//   @IsString()
+//   @IsOptional()
+//   zip_code?: string;
+// }
 
 export class EmergencyContactDto {
   @ApiProperty()

@@ -29,6 +29,7 @@ export const PatientSchema = new mongoose.Schema<Patient>(
       state: String,
       country: String,
       zip_code: String,
+      location: {},
     },
     emergency_contact: {
       name: String,

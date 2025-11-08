@@ -41,6 +41,7 @@ export const KycSchema = new mongoose.Schema<Kyc>(
       zip_code: {
         type: String,
       },
+      location: {},
     },
     document_url: {
       type: [String],

@@ -13,6 +13,7 @@ export interface Setting extends mongoose.Document {
     state: string;
     country: string;
     zip_code: string;
+    location?: Record<string, number>;
   };
   company_photo: string;
   readonly createdAt: Date;
