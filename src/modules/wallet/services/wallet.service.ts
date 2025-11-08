@@ -300,9 +300,10 @@ export class WalletService {
             // currency: process.env.CURRENCY
           },
         ],
-        success_url: origin
-          ? `${origin}${body.path}?session_id={CHECKOUT_SESSION_ID}`
-          : `${process.env.APP_URL}/wallet/confirmation?session_id={CHECKOUT_SESSION_ID}`,
+        success_url:
+          origin && body.path
+            ? `${origin}${body.path}?session_id={CHECKOUT_SESSION_ID}`
+            : `${process.env.APP_URL}/wallet/confirmation?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: origin
           ? `${origin}${body.path}/canceled.html`
           : `${process.env.APP_URL}/canceled.html`,

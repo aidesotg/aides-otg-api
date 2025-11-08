@@ -58,7 +58,8 @@ export class ChatService {
       ) {
         throw new BadRequestException({
           status: 'error',
-          message: 'Unable to to start channel with this user',
+          message:
+            'Unable to to start channel, receiver must either be the beneficiary or the care giver',
         });
       }
     }
@@ -71,7 +72,7 @@ export class ChatService {
     if (!receiver) {
       throw new BadRequestException({
         status: 'error',
-        message: 'Unable to start channel',
+        message: 'Unable to start channel, unable to find receiver',
       });
     }
 
