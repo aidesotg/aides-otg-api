@@ -92,7 +92,7 @@ export class ServiceRequestService {
     return {
       status: 'success',
       message: 'Request created',
-      data: request,
+      data: await this.getRequestById(request._id),
     };
   }
 
@@ -535,7 +535,7 @@ export class ServiceRequestService {
     return {
       status: 'success',
       message: 'Request updated',
-      data: service,
+      data: await this.getRequestById(id),
     };
   }
 
@@ -640,7 +640,7 @@ export class ServiceRequestService {
     return {
       status: 'success',
       message: `Request ${status.toLowerCase()} successfully`,
-      data: request,
+      data: await this.getRequestById(id),
     };
   }
 
