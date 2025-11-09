@@ -123,4 +123,63 @@ export class FirebaseService {
         console.log('Error subscribing to topic:', error);
       });
   }
+  async register(data: any) {
+    try {
+      // let firebaseAdmin = serviceAccount;
+
+      return firebaseadmin
+        .auth()
+        .createUser({
+          email: data.email,
+          password: data.password,
+          displayName: data.displayName,
+          // photoURL: data.photoURL,
+          emailVerified: true,
+          disabled: false,
+        })
+        .then(function (response) {
+          console.log('successfully created user:', response);
+          return response;
+        })
+        .catch(function (error) {
+          console.log('Error creating user:', error);
+          return null;
+        });
+    } catch (error) {
+      console.log(
+        '🚀 ~ file: firebase.service.ts:201 ~ FirebaseService ~ register ~ error:',
+        error,
+      );
+      return;
+    }
+  }
+
+  async getUser(data: any) {
+    try {
+      // let firebaseAdmin = serviceAccount;
+
+      let status = false;
+
+      return firebaseadmin
+        .auth()
+        .getUserByEmail(data.email)
+        .then(function (response) {
+          console.log('successfully fetched user:', response.toJSON());
+          status = true;
+        })
+        .catch(async function (error) {
+          console.log('Error getting user:', error);
+        });
+      // if (!status) {
+      //   await this.register(data);
+      // }
+      return;
+    } catch (error) {
+      console.log(
+        '🚀 ~ file: firebase.service.ts:228 ~ FirebaseService ~ getUser ~ error:',
+        error,
+      );
+      return;
+    }
+  }
 }

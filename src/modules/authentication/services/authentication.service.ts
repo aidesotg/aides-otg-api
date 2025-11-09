@@ -197,9 +197,19 @@ export class AuthenticationService {
 
     if (device_token && !user.device_token.includes(device_token)) {
       user.device_token.push(device_token);
-      await user.save();
       await this.firebaseService.subscribeToTopic(device_token, 'general');
     }
+
+    if (!user.firebase_uid) {
+      const firebaseResponse: any = await this.firebaseService.register({
+        email: user.email,
+        password: String(user._id),
+        displayName: `${user.first_name} ${user.last_name}`,
+        // photoURL: user.profile_picture ?? '',
+      });
+      if (firebaseResponse) user.firebase_uid = firebaseResponse.uid;
+    }
+    await user.save();
 
     await this.walletService.createWallet(user, user.email);
 

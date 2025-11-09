@@ -445,6 +445,14 @@ export class ServiceRequestService {
       ])
       .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
       .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
+      .populate({
+        path: 'care_type',
+        select: 'name category price',
+        populate: {
+          path: 'category',
+          select: 'title',
+        },
+      })
       .lean()
       .exec();
 
