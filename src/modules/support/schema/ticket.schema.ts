@@ -77,8 +77,8 @@ export const TicketSchema = new mongoose.Schema<Ticket>(
     },
     resource_type: {
       type: String,
-      enum: ['Review', 'ServiceRequest'],
-      default: 'user',
+      enum: ['Review', 'ServiceRequest', 'Wallet', 'General'],
+      default: 'General',
     },
   },
   {
