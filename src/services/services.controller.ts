@@ -32,4 +32,17 @@ export class ServicesController {
   async getStates() {
     return this.miscService.getStates();
   }
+
+  @Get('twilio-token')
+  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(ValidationPipe)
+  async getTwilioToken() {
+    return {
+      status: 'success',
+      message: 'Twilio token generated',
+      data: {
+        token: process.env.TWILIO_AUTH_TOKEN,
+      },
+    };
+  }
 }

@@ -89,11 +89,8 @@ export class UserController {
 
   @Post('/check/ssn')
   @UseGuards(AuthGuard('jwt'))
-  async checkDuplicateSSN(
-    @Body() body: { ssn: string },
-    @AuthUser() user: any,
-  ) {
-    return this.userService.checkDuplicateSSN(user, body.ssn);
+  async checkDuplicateSSN(@Body('ssn') ssn: string, @AuthUser() user: any) {
+    return this.userService.checkDuplicateSSN(user, ssn);
   }
 
   @Post('/check/phone')

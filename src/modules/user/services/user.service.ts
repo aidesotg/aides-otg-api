@@ -121,7 +121,10 @@ export class UserService {
         message: 'SSN already exists for another user',
       });
     }
-    return true;
+    return {
+      status: 'success',
+      message: 'SSN is available',
+    };
   }
 
   async checkDuplicatePhone(user: User, phone: string) {
