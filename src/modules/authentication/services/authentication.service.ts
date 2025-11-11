@@ -560,9 +560,9 @@ export class AuthenticationService {
       .findOne({ email, used: false })
       .exec();
 
-    const time = new Date().getTime();
-    const expires_in = new Date(codeExist.expiry).getTime();
     if (codeExist) {
+      const time = new Date().getTime();
+      const expires_in = new Date(codeExist.expiry).getTime();
       code = codeExist.token;
       if (time > expires_in) {
         codeExist.used = true;
