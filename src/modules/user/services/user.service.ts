@@ -201,88 +201,102 @@ export class UserService {
 
   async createProfile(user: User, body: CreateProfileDto) {
     const { beneficiaries, insurance, emergency_contact, ...rest } = body;
-    const userDetails = await this.userModel.findById(user._id);
+    const session = await this.userModel.db.startSession();
+    let userDetails: any;
+    await session.startTransaction();
+    try {
+      userDetails = await this.userModel.findById(user._id).session(session);
 
-    if (!userDetails) {
-      throw new NotFoundException({
-        status: 'error',
-        message: 'user not found',
-      });
-    }
-
-    for (const value in rest) {
-      if (value) {
-        userDetails[value] = rest[value];
-      }
-    }
-    userDetails.client_id = await this.generateClientId(userDetails);
-    if (emergency_contact) {
-      userDetails.emergency_contact = [emergency_contact];
-    }
-    const beneficiariesData: any = [];
-    const insuranceData: any = [];
-    const userBeneficiaryData: any = [];
-
-    if (beneficiaries && beneficiaries.length > 0) {
-      for (const beneficiary of beneficiaries) {
-        const { insurance, ...rest } = beneficiary;
-        if (beneficiary.insurance) {
-          const policyExists =
-            await this.insuranceService.verifyExistingInsurance(
-              insurance.policy_number,
-            );
-          if (policyExists) {
-            throw new BadRequestException({
-              status: 'error',
-              message: `Beneficiary with Policy number: ${insurance.policy_number} already exists`,
-            });
-          }
-        }
-        const newBeneficiary = new this.beneficiaryModel({
-          ...rest,
-          user: userDetails._id,
+      if (!userDetails) {
+        throw new NotFoundException({
+          status: 'error',
+          message: 'user not found',
         });
-        beneficiariesData.push(newBeneficiary.save());
+      }
 
-        if (beneficiary.insurance) {
-          const newInsurance = new this.insuranceModel({
-            ...insurance,
+      for (const value in rest) {
+        if (value) {
+          userDetails[value] = rest[value];
+        }
+      }
+      userDetails.client_id = await this.generateClientId(userDetails);
+      if (emergency_contact) {
+        userDetails.emergency_contact = [emergency_contact];
+      }
+      const beneficiariesData: any = [];
+      const insuranceData: any = [];
+      const userBeneficiaryData: any = [];
+
+      if (beneficiaries && beneficiaries.length > 0) {
+        for (const beneficiary of beneficiaries) {
+          const { insurance, ...rest } = beneficiary;
+          if (beneficiary.insurance) {
+            const policyExists =
+              await this.insuranceService.verifyExistingInsurance(
+                insurance.policy_number,
+              );
+            if (policyExists) {
+              throw new BadRequestException({
+                status: 'error',
+                message: `Beneficiary with Policy number: ${insurance.policy_number} already exists`,
+              });
+            }
+          }
+          const newBeneficiary = new this.beneficiaryModel({
+            ...rest,
+            user: userDetails._id,
+          });
+          beneficiariesData.push(newBeneficiary.save({ session }));
+
+          if (beneficiary.insurance) {
+            const newInsurance = new this.insuranceModel({
+              ...insurance,
+              beneficiary: newBeneficiary._id,
+            });
+            insuranceData.push(newInsurance.save({ session }));
+          }
+
+          const newUserBeneficiary = new this.userBeneficiaryModel({
+            user: userDetails._id,
             beneficiary: newBeneficiary._id,
           });
-          insuranceData.push(newInsurance.save());
+
+          userBeneficiaryData.push(newUserBeneficiary.save({ session }));
+        }
+      }
+      if (insurance) {
+        const policyExists =
+          await this.insuranceService.verifyExistingInsurance(
+            insurance.policy_number,
+          );
+        if (policyExists) {
+          throw new BadRequestException({
+            status: 'error',
+            message: `Insurance with Policy number: ${insurance.policy_number} already exists`,
+          });
         }
 
-        const newUserBeneficiary = new this.userBeneficiaryModel({
+        const newInsurance = new this.insuranceModel({
+          ...insurance,
           user: userDetails._id,
-          beneficiary: newBeneficiary._id,
         });
-
-        userBeneficiaryData.push(newUserBeneficiary.save());
-      }
-    }
-    if (insurance) {
-      const policyExists = await this.insuranceService.verifyExistingInsurance(
-        insurance.policy_number,
-      );
-      if (policyExists) {
-        throw new BadRequestException({
-          status: 'error',
-          message: `Insurance with Policy number: ${insurance.policy_number} already exists`,
-        });
+        insuranceData.push(newInsurance.save({ session }));
       }
 
-      const newInsurance = new this.insuranceModel({
-        ...insurance,
-        user: userDetails._id,
-      });
-      insuranceData.push(newInsurance.save());
+      if (beneficiariesData.length > 0) await Promise.all(beneficiariesData);
+      if (insuranceData.length > 0) await Promise.all(insuranceData);
+      if (userBeneficiaryData.length > 0)
+        await Promise.all(userBeneficiaryData);
+
+      await userDetails.save({ session });
+
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
     }
-
-    if (beneficiariesData.length > 0) await Promise.all(beneficiariesData);
-    if (insuranceData.length > 0) await Promise.all(insuranceData);
-    if (userBeneficiaryData.length > 0) await Promise.all(userBeneficiaryData);
-
-    await userDetails.save();
 
     await this.walletService.createWallet(userDetails, userDetails.email);
 

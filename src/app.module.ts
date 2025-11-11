@@ -25,6 +25,7 @@ import { ServiceRequestModule } from './modules/service-request/service-request.
 import { FaqModule } from './modules/faq/faq.module';
 import { LegalModule } from './modules/legal/legal.module';
 import { RateModule } from './modules/rate/rate.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 dotenv.config();
 
@@ -60,6 +61,7 @@ dotenv.config();
     ActivityLogsModule,
     ServiceRequestModule,
     FaqModule,
+    DashboardModule,
   ],
   controllers: [],
   providers: [],
