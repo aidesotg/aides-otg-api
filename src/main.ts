@@ -19,7 +19,13 @@ async function bootstrap() {
     optionsSuccessStatus: 204,
   });
 
-  app.useGlobalPipes(new ValidateInputPipe());
+  app.useGlobalPipes(
+    new ValidateInputPipe({
+      transform: true,
+      whitelist: true,
+      // forbidNonWhitelisted: true,
+    }),
+  );
 
   app.setGlobalPrefix('/api/v1');
 
