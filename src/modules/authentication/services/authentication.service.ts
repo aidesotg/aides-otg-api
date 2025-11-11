@@ -560,9 +560,17 @@ export class AuthenticationService {
       .findOne({ email, used: false })
       .exec();
 
+    const time = new Date().getTime();
+    const expires_in = new Date(codeExist.expiry).getTime();
     if (codeExist) {
       code = codeExist.token;
-    } else {
+      if (time > expires_in) {
+        codeExist.used = true;
+        codeExist.save();
+        code = null;
+      }
+    }
+    if (!code) {
       code = otpGenerator.generate(6, {
         digits: true,
         alphabets: false,
