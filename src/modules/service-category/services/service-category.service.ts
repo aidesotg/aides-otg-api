@@ -132,10 +132,16 @@ export class ServiceCategoryService {
   }
 
   async suspendServiceCategory(id: string) {
-    const category = await this.getServiceCategoryById(id);
+    const category: any = await this.getServiceCategoryById(id);
     const status = category.status;
     category.status = status === 'active' ? 'suspended' : 'active';
     await category.save();
+    if (status === 'active' && category.no_of_services > 0) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Service category cannot be suspended because it has services',
+      });
+    }
 
     return {
       status: 'success',
@@ -147,7 +153,13 @@ export class ServiceCategoryService {
   }
 
   async deleteServiceCategory(id: string) {
-    const category = await this.getServiceCategoryById(id);
+    const category: any = await this.getServiceCategoryById(id);
+    if (category.no_of_services > 0) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Service category cannot be deleted because it has services',
+      });
+    }
     category.is_deleted = true;
     await category.save();
 
