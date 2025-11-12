@@ -64,6 +64,7 @@ export class ServiceCategoryService {
 
     const categories = await this.serviceCategoryModel
       .find(query)
+      .populate('no_of_services')
       // .populate('created_by', ['fullname', 'email'])
       .skip(pagination.offset)
       .limit(pagination.limit)
@@ -85,7 +86,7 @@ export class ServiceCategoryService {
     const category = await this.serviceCategoryModel
       .findOne({ _id: id, is_deleted: false })
       .populate('created_by', ['fullname', 'email'])
-      .populate('services')
+      .populate('no_of_services')
       .exec();
 
     if (!category) {

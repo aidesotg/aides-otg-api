@@ -66,8 +66,8 @@ export class CreateServiceRequestDto {
 
   @ApiProperty()
   @IsMongoId()
-  @IsNotEmpty()
-  beneficiary: string;
+  @IsOptional()
+  beneficiary?: string;
 
   @ApiProperty()
   @IsString()
@@ -133,9 +133,10 @@ export class UpdateServiceRequestDto {
   location?: LocationDto;
 
   @ApiProperty({ required: false })
-  @IsString()
+  @IsArray()
+  @IsMongoId({ each: true })
   @IsOptional()
-  care_type?: string;
+  care_type?: string[];
 
   @ApiProperty({ required: false })
   @IsString()

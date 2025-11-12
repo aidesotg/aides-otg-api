@@ -35,8 +35,9 @@ ServiceCategorySchema.method('toJSON', function () {
   return object;
 });
 
-ServiceCategorySchema.virtual('services', {
+ServiceCategorySchema.virtual('no_of_services', {
   ref: 'Service',
   localField: '_id',
   foreignField: 'category',
+  count: true,
 });
