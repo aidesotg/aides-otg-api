@@ -453,7 +453,7 @@ export class UserService {
       });
     }
 
-    await this.checkDuplicateSSN(userDetails, data.ssn);
+    if (data.ssn) await this.checkDuplicateSSN(userDetails, data.ssn);
 
     for (const value in data) {
       if (value) {
