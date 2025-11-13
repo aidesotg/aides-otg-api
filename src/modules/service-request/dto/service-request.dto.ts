@@ -134,7 +134,6 @@ export class UpdateServiceRequestDto {
 
   @ApiProperty({ required: false })
   @IsArray()
-  @IsMongoId({ each: true })
   @IsOptional()
   care_type?: string[];
 
