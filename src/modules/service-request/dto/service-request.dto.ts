@@ -82,7 +82,6 @@ export class CreateServiceRequestDto {
   location: LocationDto;
 
   @ApiProperty()
-  @IsMongoId()
   @IsNotEmpty()
   care_type: string;
 

@@ -106,16 +106,17 @@ export class SocialAuthService {
       },
       (err) => {
         console.log('RESPONSESSSS', err.response);
-        if (err.response && err.response.data) {
-          if (err.response.data.error) {
-            throw new ForbiddenException({
-              status: 'error',
-              message: err.response.data?.error?.message,
-            });
-          } else if (err.response.data.error_description) {
+        if (err?.response && err?.response?.data) {
+          if (err.response.data.error_description) {
             throw new ForbiddenException({
               status: 'error',
               message: err.response.data.error_description,
+            });
+          } else if (err?.response?.data?.error) {
+            throw new ForbiddenException({
+              status: 'error',
+              message:
+                err.response.data?.error?.message ?? err.response.data?.error,
             });
           }
         }

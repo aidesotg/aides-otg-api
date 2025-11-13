@@ -30,6 +30,20 @@ import { SocialAuthService } from '../services/social-auth.service';
 export class AuthenticationController {
   constructor(private authenticationService: AuthenticationService) {}
 
+  @Post('/social/login')
+  @HttpCode(HttpStatus.OK)
+  public async socialLogin(@Body() socialSignInDto: SocialSignInDto) {
+    try {
+      return this.authenticationService.signInSocial(socialSignInDto);
+    } catch (err) {
+      console.log('🚀 ~ AuthController ~ err:', err);
+      throw new ForbiddenException({
+        status: 'error',
+        message: 'Authentication failed',
+      });
+    }
+  }
+
   @Post('/register')
   @UseFilters(ExceptionsLoggerFilter)
   async register(@Body() registerDto: RegistrationDto) {
