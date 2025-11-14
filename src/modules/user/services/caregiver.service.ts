@@ -26,7 +26,7 @@ import { ProfessionalProfile } from '../interface/professional-profile.interface
 import { UserService } from './user.service';
 import { Bank } from '../interface/bank.interface';
 import { Review } from 'src/modules/service-request/interface/review.interface';
-import { ServiceRequest } from 'src/modules/service-request/interface/service-request-interface.interface';
+import { ServiceRequest } from 'src/modules/service-request/interface/service-request.interface';
 import constants from 'src/framework/constants';
 
 @Injectable()

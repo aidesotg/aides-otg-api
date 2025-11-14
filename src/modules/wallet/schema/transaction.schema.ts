@@ -98,14 +98,7 @@ export const TransactionSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: [
-        'wallet',
-        'subscription',
-        'charity',
-        'token',
-        'group',
-        'focusGroup',
-      ],
+      enum: ['wallet', 'subscription', 'serviceRequest'],
       default: 'wallet',
     },
     group: {

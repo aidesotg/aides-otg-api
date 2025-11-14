@@ -271,6 +271,40 @@ export class MiscCLass {
     return password;
   }
 
+  /**
+   * Generate a random 8-character password with uppercase, lowercase, numbers, and special characters (#, $, @)
+   * @returns {Promise<string>} A random 8-character password
+   */
+  async generateSecurePassword(): Promise<string> {
+    const length = 8;
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    const special = '#$@';
+    const allChars = lowercase + uppercase + numbers + special;
+
+    let password = '';
+
+    // Ensure at least one character from each category
+    password += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+    password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+    password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    password += special.charAt(Math.floor(Math.random() * special.length));
+
+    // Fill the rest with random characters from all categories
+    for (let i = 4; i < length; i++) {
+      password += allChars.charAt(Math.floor(Math.random() * allChars.length));
+    }
+
+    // Shuffle the password to randomize the position of required characters
+    password = password
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('');
+
+    return password;
+  }
+
   generateRandomNumber(length: number): string {
     const numbers = '0123456789';
     let randomNumber = '';

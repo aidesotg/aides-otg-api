@@ -13,15 +13,20 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/modules/user/interface/user.interface';
 import { SocialAuthToken } from '../interface/social-auth.interface';
 import { SocialSignInDto } from '../dto/social-signin.dto';
+import * as bcrypt from 'bcryptjs';
+import { MiscCLass } from 'src/services/misc.service';
+import { Role } from 'src/modules/role/interface/role.interface';
 
 @Injectable()
 export class SocialAuthService {
   constructor(
     @InjectModel('User') protected model: Model<User>,
+    @InjectModel('Role') private roleModel: Model<Role>,
     @InjectModel('SocialAuthToken')
     protected authTokenModel: Model<SocialAuthToken>,
     private http: HttpService,
     private readonly jwtService: JwtService,
+    private readonly miscService: MiscCLass,
   ) {}
 
   async socialSignIn(payload: SocialSignInDto) {
@@ -55,6 +60,12 @@ export class SocialAuthService {
         });
         newUser = true;
       }
+      if (newUser) {
+        const randomPassword = await this.miscService.generateSecurePassword();
+        auth.password = await bcrypt.hash(randomPassword, 10);
+        auth.status = 'active';
+        auth.roles = [(await this.roleModel.findOne({ name: 'Client' }))._id];
+      }
 
       console.log('🚀 ~ SocialAuthService ~ socialSignIn ~ auth:', auth);
       const { authObject, socialPayload } = await this.signInSocial(
@@ -81,11 +92,24 @@ export class SocialAuthService {
     /* Todo : the social authentication auth are not verified properly should be done before production */
     let url = '';
     if (socialType === 'google') {
-      url = `${process.env.SOCIAL_GOOGLE_USER_INFO_URL}?access_token=${accessToken}`;
+      const isIdToken = this.isJWT(accessToken);
+
+      if (isIdToken) {
+        // Verify/inspect the Google ID token
+        url = `https://oauth2.googleapis.com/tokeninfo?id_token=${accessToken}`;
+      } else {
+        // Use the Google OAuth userinfo endpoint with an access token
+        url =
+          process.env.SOCIAL_GOOGLE_USER_INFO_URL ||
+          'https://www.googleapis.com/oauth2/v2/userinfo';
+        headers = {
+          Authorization: `Bearer ${accessToken}`,
+        };
+      }
     } else if (socialType === 'apple') {
       return this.verifyAppleIDToken(accessToken);
     }
-    return lastValueFrom(this.http.get(url)).then(
+    return lastValueFrom(this.http.get(url, { headers })).then(
       (response) => {
         if (socialType === 'google') {
           response.data.id = response.data.sub;

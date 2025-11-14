@@ -19,7 +19,7 @@ import { CreateChannelDto } from 'src/modules/chat/dto/create-channel.dto';
 import { DeleteMessageDto } from 'src/modules/chat/dto/delete-messages.dto';
 import { Service } from 'aws-sdk';
 import fbaseadmin from 'src/services/config/firebase.config';
-import { ServiceRequest } from 'src/modules/service-request/interface/service-request-interface.interface';
+import { ServiceRequest } from 'src/modules/service-request/interface/service-request.interface';
 // import { db } from '../services/firebase/config';
 
 @Injectable()

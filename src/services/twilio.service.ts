@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Twilio } from 'twilio';
+import * as twilio from 'twilio';
 
 @Injectable()
 export class TwilioService {
@@ -186,6 +187,89 @@ export class TwilioService {
       return call;
     } catch (error) {
       this.logger.error(`Failed to update call: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a Twilio JWT access token for client-side use
+   * @param identity - Unique identifier for the user (e.g., user ID, email, or username)
+   * @param grants - Optional grants for Voice, Video, Chat, etc.
+   * @returns JWT token string
+   */
+  generateAccessToken(
+    identity: string,
+    grants?: {
+      voice?: {
+        incomingAllow?: boolean;
+        outgoingAllow?: boolean;
+      };
+      video?: {
+        room?: string;
+      };
+      chat?: {
+        serviceSid?: string;
+      };
+    },
+  ): string {
+    try {
+      const accountSid = this.configService.get('TWILIO_ACCOUNT_SID');
+      const apiKey = this.configService.get('TWILIO_API_KEY_SID');
+      const apiSecret = this.configService.get('TWILIO_API_KEY_SECRET');
+
+      if (!accountSid || !apiKey || !apiSecret) {
+        throw new Error(
+          'Twilio credentials (TWILIO_ACCOUNT_SID, TWILIO_API_KEY_SID, TWILIO_API_KEY_SECRET) are required to generate access token',
+        );
+      }
+
+      const AccessToken = twilio.jwt.AccessToken;
+      const token = new AccessToken(accountSid, apiKey, apiSecret, {
+        identity: identity,
+        ttl: 3600, // Token expires in 1 hour (default)
+      });
+
+      // Add Voice grant if provided
+      if (grants?.voice) {
+        const VoiceGrant = twilio.jwt.AccessToken.VoiceGrant;
+        const voiceGrantOptions: any = {};
+        if (grants.voice.incomingAllow !== undefined) {
+          voiceGrantOptions.incomingAllow = grants.voice.incomingAllow;
+        }
+        if (grants.voice.outgoingAllow !== undefined) {
+          voiceGrantOptions.outgoingAllow = grants.voice.outgoingAllow;
+        }
+        const voiceGrant = new VoiceGrant(voiceGrantOptions);
+        token.addGrant(voiceGrant);
+      }
+
+      // Add Video grant if provided
+      if (grants?.video) {
+        const VideoGrant = twilio.jwt.AccessToken.VideoGrant;
+        const videoGrant = new VideoGrant({
+          room: grants.video.room,
+        });
+        token.addGrant(videoGrant);
+      }
+
+      // Add Chat grant if provided
+      if (grants?.chat) {
+        const ChatGrant = twilio.jwt.AccessToken.ChatGrant;
+        const chatGrant = new ChatGrant({
+          serviceSid: grants.chat.serviceSid,
+        });
+        token.addGrant(chatGrant);
+      }
+
+      const jwtToken = token.toJwt();
+      this.logger.log(
+        `Twilio access token generated for identity: ${identity}`,
+      );
+      return jwtToken;
+    } catch (error) {
+      this.logger.error(
+        `Failed to generate Twilio access token: ${error.message}`,
+      );
       throw error;
     }
   }

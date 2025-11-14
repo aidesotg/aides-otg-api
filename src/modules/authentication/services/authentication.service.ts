@@ -38,6 +38,7 @@ import {
 } from '../dto/2fa-auth.dto';
 import { SocialSignInDto } from '../dto/social-signin.dto';
 import { SocialAuthService } from './social-auth.service';
+import PlainMail from 'src/services/mailers/templates/plain-mail';
 
 dotenv.config();
 
@@ -64,7 +65,6 @@ export class AuthenticationService {
     try {
       const { auth, socialPayload, newUser } =
         await this.socialAuthService.socialSignIn(payload);
-
       return await this.signInUser(auth, payload, newUser);
     } catch (error) {
       throw error;
@@ -79,11 +79,11 @@ export class AuthenticationService {
     // user.last_login = new Date();
     if (data.device_token && !user.device_token.includes(data.device_token)) {
       user.device_token.push(data.device_token);
-      await user.save();
       await this.firebaseService.subscribeToTopic(data.device_token, 'general');
     }
+    await this.validateUser(user);
     await user.save();
-
+    await this.walletService.createWallet(user, user.email);
     const expire = 2592000;
     const token = jwt.sign(
       { id: user.id, email: user.email, roles: user.roles },
@@ -176,39 +176,8 @@ export class AuthenticationService {
       );
     }
 
-    if (user.status === 'inactive') {
-      const { message } = await this.resendVerification(user.email);
-      throw new HttpException(
-        {
-          status: 'error',
-          message,
-        },
-        403,
-      );
-    }
+    await this.validateUser(user);
 
-    if (user.status === 'suspended') {
-      throw new UnauthorizedException({
-        status: 'error',
-        message:
-          'Your account is currently suspended, please contact admin or customer support for more information',
-      });
-    }
-
-    if (device_token && !user.device_token.includes(device_token)) {
-      user.device_token.push(device_token);
-      await this.firebaseService.subscribeToTopic(device_token, 'general');
-    }
-
-    if (!user.firebase_uid) {
-      const firebaseResponse: any = await this.firebaseService.register({
-        email: user.email,
-        password: String(user._id),
-        displayName: `${user.first_name} ${user.last_name}`,
-        // photoURL: user.profile_picture ?? '',
-      });
-      if (firebaseResponse) user.firebase_uid = firebaseResponse.uid;
-    }
     await user.save();
 
     await this.walletService.createWallet(user, user.email);
@@ -308,6 +277,38 @@ export class AuthenticationService {
         data,
       };
     }
+  }
+
+  async validateUser(user: User) {
+    if (user.status === 'inactive') {
+      const { message } = await this.resendVerification(user.email);
+      throw new HttpException(
+        {
+          status: 'error',
+          message,
+        },
+        403,
+      );
+    }
+
+    if (user.status === 'suspended') {
+      throw new UnauthorizedException({
+        status: 'error',
+        message:
+          'Your account is currently suspended, please contact admin or customer support for more information',
+      });
+    }
+
+    if (!user.firebase_uid) {
+      const firebaseResponse: any = await this.firebaseService.register({
+        email: user.email,
+        password: String(user._id),
+        displayName: `${user.first_name} ${user.last_name}`,
+        // photoURL: user.profile_picture ?? '',
+      });
+      if (firebaseResponse) user.firebase_uid = firebaseResponse.uid;
+    }
+    return user;
   }
 
   async twoFactorLogin(body: TwoFactorLoginRequestDto) {

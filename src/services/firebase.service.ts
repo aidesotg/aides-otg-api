@@ -137,13 +137,14 @@ export class FirebaseService {
           emailVerified: true,
           disabled: false,
         })
-        .then(function (response) {
+        .then(async (response) => {
           console.log('successfully created user:', response);
+          await this.getUser(data);
           return response;
         })
-        .catch(function (error) {
+        .catch(async (error) => {
           console.log('Error creating user:', error);
-          return null;
+          return this.getUser(data);
         });
     } catch (error) {
       console.log(
@@ -166,6 +167,7 @@ export class FirebaseService {
         .then(function (response) {
           console.log('successfully fetched user:', response.toJSON());
           status = true;
+          return response.toJSON();
         })
         .catch(async function (error) {
           console.log('Error getting user:', error);

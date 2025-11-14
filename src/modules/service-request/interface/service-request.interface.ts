@@ -6,6 +6,7 @@ export interface ServiceRequest extends mongoose.Document {
   transaction_id: string;
   self_care: boolean;
   created_by: mongoose.Schema.Types.ObjectId;
+  recepient_type: string;
   beneficiary: mongoose.Schema.Types.ObjectId;
   details: string;
   location: {
@@ -15,7 +16,7 @@ export interface ServiceRequest extends mongoose.Document {
     country: string;
     zip_code?: string;
   };
-  care_type: string;
+  care_type: string[];
   notes: string;
   duration_type: string;
   date_list: {
@@ -32,6 +33,12 @@ export interface ServiceRequest extends mongoose.Document {
   }[];
   cancellation_reason: string;
   cancellation_note: string;
+  payments: {
+    total: number;
+    user_covered_payments: number;
+    inurance_covered_payments: number;
+    claimed_insurance_payment: number;
+  };
   readonly createdAt: Date;
   updatedAt: Date;
 }

@@ -20,8 +20,6 @@ export const UserSchema = new mongoose.Schema<User>(
     },
     phone: {
       type: String,
-      required: true,
-      unique: true,
     },
     password: {
       type: String,

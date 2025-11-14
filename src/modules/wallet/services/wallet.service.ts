@@ -34,6 +34,7 @@ import { WithdrawalOtp } from 'src/modules/wallet/interface/withdrawal-otp.inter
 import moment from 'moment';
 import { WithdrawDto } from 'src/modules/wallet/dto/withdrawal.dto';
 import { StripeService } from 'src/services/stripe.service';
+import { ServiceRequestService } from 'src/modules/service-request/services/service-request.service';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config();
 
@@ -56,6 +57,8 @@ export class WalletService {
     private stripeService: StripeService,
     @InjectConnection() private readonly connection: Connection,
     @InjectStripe() private readonly stripe: Stripe,
+    @Inject(forwardRef(() => ServiceRequestService))
+    private serviceRequestService: ServiceRequestService,
   ) {}
 
   async walletTransactionMessage({ user, amount, type, details }) {
@@ -279,48 +282,48 @@ export class WalletService {
   async initiate(body: any, user: any, origin?: string) {
     console.log('🚀 ~ WalletService ~ initiate ~ origin:', origin);
     console.log('🚀 ~ WalletService ~ initiate ~ body:', body);
-    const { amount, payment_method } = body;
+    const { amount, payment_method, type } = body;
     const currency = body.currency ?? process.env.CURRENCY;
     const ref = await this.miscService.referenceGenerator();
     let response;
 
-    if (payment_method == 'stripe') {
-      const orderPayload = {
-        reference: ref,
-        user,
-        origin,
-        metadata: {
-          customer_id: String(user._id),
-          paymentType: body.type ?? user.details?.type ?? 'wallet',
-        },
-        line_items: [
-          {
-            price_data: {
-              currency,
-              product_data: {
-                name: `Payment of ${currency}${amount}`,
-              },
-              unit_amount: Number(
-                parseFloat(String(_.multiply(Number(amount), 100))).toFixed(2),
-              ),
+    // if (payment_method == 'stripe') {
+    const orderPayload = {
+      reference: ref,
+      user,
+      origin,
+      metadata: {
+        customer_id: String(user._id),
+        paymentType: body.type ?? user.details?.type ?? 'wallet',
+      },
+      line_items: [
+        {
+          price_data: {
+            currency,
+            product_data: {
+              name: `Payment of ${currency}${amount}`,
             },
-            // For metered billing, do not pass quantity
-            quantity: 1,
-            // currency: process.env.CURRENCY
+            unit_amount: Number(
+              parseFloat(String(_.multiply(Number(amount), 100))).toFixed(2),
+            ),
           },
-        ],
-        success_url:
-          origin && body.path
-            ? `${origin}${body.path}?session_id={CHECKOUT_SESSION_ID}`
-            : `${process.env.APP_URL}/wallet/confirmation?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: origin
-          ? `${origin}${body.path}/canceled.html`
-          : `${process.env.APP_URL}/canceled.html`,
-      };
-      response = await this.stripeService.stripeCreateCheckoutSession(
-        orderPayload,
-      );
-    }
+          // For metered billing, do not pass quantity
+          quantity: 1,
+          // currency: process.env.CURRENCY
+        },
+      ],
+      success_url:
+        origin && body.path
+          ? `${origin}${body.path}?session_id={CHECKOUT_SESSION_ID}`
+          : `${process.env.APP_URL}/wallet/confirmation?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: origin
+        ? `${origin}${body.path}/canceled.html`
+        : `${process.env.APP_URL}/canceled.html`,
+    };
+    response = await this.stripeService.stripeCreateCheckoutSession(
+      orderPayload,
+    );
+    // }
 
     await this.userService.getUser(user._id);
 
@@ -1046,6 +1049,15 @@ export class WalletService {
         type: 'credit',
         details: `Wallet deposit via ${paymentMethodType}`,
       });
+    }
+
+    // update service request payment
+    if (transaction.type === 'serviceRequest') {
+      const user = await this.userService.getUser({ _id: transaction.user });
+      await this.serviceRequestService.updateServiceRequestPayment(
+        user,
+        transaction,
+      );
     }
 
     // Update transaction

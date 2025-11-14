@@ -3,10 +3,12 @@ import {
   NotFoundException,
   HttpException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ServiceRequest } from '../interface/service-request-interface.interface';
+import { ServiceRequest } from '../interface/service-request.interface';
 import {
   CreateServiceRequestDto,
   UpdateServiceRequestDto,
@@ -26,14 +28,21 @@ import { AcceptRequestDto } from '../dto/accept-request.dto';
 import { Review } from '../interface/review.interface';
 import { AddReviewDto } from '../dto/add-review.dto';
 import { RedisService } from 'src/services/redis.service';
+import { InsuranceCompany } from 'src/modules/insurance-company/interface/insurance-comapny.interface';
+import { Insurance } from 'src/modules/insurance/interface/insurance.interface';
+import { UserService } from 'src/modules/user/services/user.service';
+import { WalletService } from 'src/modules/wallet/services/wallet.service';
+import { Transaction } from 'src/modules/wallet/interface/transaction.interface';
 
 @Injectable()
 export class ServiceRequestService {
   constructor(
     @InjectModel('ServiceRequest')
     private readonly serviceRequestModel: Model<ServiceRequest>,
+    @InjectModel('Insurance') private readonly insuranceModel: Model<Insurance>,
     @InjectModel('ServiceRequestDayLogs')
     private readonly serviceRequestDayLogsModel: Model<ServiceRequestDayLogs>,
+    @InjectModel('Service') private readonly serviceModel: Model<Service>,
     @InjectModel('Review') private readonly reviewModel: Model<Review>,
     @InjectModel('User') private readonly userModel: Model<User>,
     @InjectModel('UserBeneficiary')
@@ -42,6 +51,8 @@ export class ServiceRequestService {
     private miscService: MiscCLass,
     private notificationService: NotificationService,
     private redisService: RedisService,
+    @Inject(forwardRef(() => WalletService))
+    private walletService: WalletService,
   ) {}
 
   private generateBookingId() {
@@ -50,21 +61,26 @@ export class ServiceRequestService {
     return `BKNG-${timestamp}-${random}`;
   }
 
-  async createServiceRequest(
+  async initiateCreateServiceRequest(
     createServiceDto: CreateServiceRequestDto,
     user: User,
+    origin?: string,
   ) {
     const { beneficiary, date_list, ...rest } = createServiceDto;
-    const isBeneficiary = await this.userBeneficiaryModel.findOne({
-      beneficiary: beneficiary,
-      user: user._id,
-    });
-    if (!isBeneficiary) {
-      throw new NotFoundException({
-        status: 'error',
-        message: 'Beneficiary not found for user',
+
+    if (!createServiceDto.self_care) {
+      const isBeneficiary = await this.userBeneficiaryModel.findOne({
+        beneficiary: beneficiary,
+        user: user._id,
       });
+      if (!isBeneficiary) {
+        throw new NotFoundException({
+          status: 'error',
+          message: 'Beneficiary not found for user',
+        });
+      }
     }
+
     const dateList = date_list as any;
     for (const date of dateList) {
       if (new Date(date.date) < new Date()) {
@@ -73,15 +89,72 @@ export class ServiceRequestService {
           message: 'Dates in the date list cannot be in the past',
         });
       }
+    }
+
+    const requestpaymentbreakdown = await this.calculateTotalPrice(
+      createServiceDto,
+    );
+    const { totals } = requestpaymentbreakdown;
+
+    const response = await this.walletService.initiate(
+      {
+        amount: totals.userCoveredCarePrice,
+        payment_method: 'stripe',
+        type: 'serviceRequest',
+        request: createServiceDto,
+        payments: {
+          total: totals.totalPrice,
+          user_covered_payments: totals.userCoveredCarePrice,
+          inurance_covered_payments: totals.insuranceCoveredCarePrice,
+          claimed_insurance_payment: 0,
+        },
+      },
+      user,
+      origin,
+    );
+    //TODO: Send notification to care giver if care giver is passed
+
+    return {
+      status: 'success',
+      message: 'Request created',
+      data: {
+        request: createServiceDto,
+        paymentBreakdown: requestpaymentbreakdown,
+        checkoutUrl: response.data.checkoutUrl,
+      },
+    };
+  }
+
+  async createServiceRequest(
+    createServiceDto: CreateServiceRequestDto,
+    user: User,
+    payments: any,
+  ) {
+    const { beneficiary, date_list, ...rest } = createServiceDto;
+    let recepient_type = 'User';
+    let recepient_id = user._id;
+    if (!createServiceDto.self_care) {
+      const isBeneficiary = await this.userBeneficiaryModel.findOne({
+        beneficiary: beneficiary,
+        user: user._id,
+      });
+      recepient_type = 'Beneficiary';
+      recepient_id = isBeneficiary._id;
+    }
+    const dateList = date_list as any;
+    for (const date of dateList) {
       date.day_of_week = await this.miscService.getDayOfWeek(
         date.date.toString(),
       );
     }
     const data = {
       ...createServiceDto,
+      beneficiary: recepient_id,
+      recepient_type: recepient_type,
       booking_id: this.generateBookingId(),
       date_list: dateList,
       created_by: user._id,
+      payments,
     };
 
     const newRequest = new this.serviceRequestModel(data);
@@ -89,11 +162,239 @@ export class ServiceRequestService {
 
     //TODO: Send notification to care giver if care giver is passed
 
+    return request;
+  }
+
+  // async createServiceRequest(
+  //   createServiceDto: CreateServiceRequestDto,
+  //   user: User,
+  //   origin?: string,
+  // ) {
+  //   const { beneficiary, date_list, ...rest } = createServiceDto;
+  //   let recepient_type = 'User';
+  //   let recepient_id = user._id;
+  //   if (!createServiceDto.self_care) {
+  //     const isBeneficiary = await this.userBeneficiaryModel.findOne({
+  //       beneficiary: beneficiary,
+  //       user: user._id,
+  //     });
+  //     if (!isBeneficiary) {
+  //       throw new NotFoundException({
+  //         status: 'error',
+  //         message: 'Beneficiary not found for user',
+  //       });
+  //     }
+  //     recepient_type = 'Beneficiary';
+  //     recepient_id = isBeneficiary._id;
+  //   }
+  //   const dateList = date_list as any;
+  //   for (const date of dateList) {
+  //     if (new Date(date.date) < new Date()) {
+  //       throw new BadRequestException({
+  //         status: 'error',
+  //         message: 'Dates in the date list cannot be in the past',
+  //       });
+  //     }
+  //     date.day_of_week = await this.miscService.getDayOfWeek(
+  //       date.date.toString(),
+  //     );
+  //   }
+  //   const data = {
+  //     ...createServiceDto,
+  //     beneficiary: recepient_id,
+  //     recepient_type: recepient_type,
+  //     booking_id: this.generateBookingId(),
+  //     date_list: dateList,
+  //     created_by: user._id,
+  //   };
+
+  //   const newRequest = new this.serviceRequestModel(data);
+  //   const request = await newRequest.save();
+
+  //   // const requestpaymentbreakdown = await this.calculateTotalPrice(request);
+  //   // const { totals } = requestpaymentbreakdown;
+
+  //   const response = await this.walletService.initiate(
+  //     {
+  //       amount: totals.userCoveredCarePrice,
+  //       payment_method: 'stripe',
+  //       type: 'serviceRequest',
+  //       requestId: request._id,
+  //     },
+  //     user,
+  //     origin,
+  //   );
+  //   //TODO: Send notification to care giver if care giver is passed
+
+  //   return {
+  //     status: 'success',
+  //     message: 'Request created',
+  //     data: {
+  //       request: await this.getRequestById(request._id),
+  //       paymentBreakdown: requestpaymentbreakdown,
+  //       checkoutUrl: response.data.checkoutUrl,
+  //     },
+  //   };
+  // }
+
+  async calculateTotalPrice(request: CreateServiceRequestDto) {
+    let insurance;
+    if (request.self_care) {
+      insurance = await this.insuranceModel
+        .findOne({
+          beneficiary: request.beneficiary.toString(),
+        })
+        .populate('insurance_company');
+    }
+    // if (!insurance) {
+    //   throw new NotFoundException({
+    //     status: 'error',
+    //     message: 'Insurance not found',
+    //   });
+    // }
+    const InsuranceCompany: InsuranceCompany =
+      insurance?.insurance_company as any;
+
+    const insuranceCoveredCareTypes = request.care_type.filter((service) => {
+      return InsuranceCompany?.services_covered?.includes(service);
+    });
+
+    const userCoveredCareTypes = request.care_type.filter((service) => {
+      return !insuranceCoveredCareTypes.includes(service);
+    });
+
+    // Fetch all care types services just once
+    const requestedCareTypesServices = await this.serviceModel.find({
+      _id: { $in: request.care_type },
+      status: 'active',
+    });
+
+    // Filter the fetched services based on coverage types
+    const userCoveredCareTypesServices = requestedCareTypesServices.filter(
+      (service) => {
+        return userCoveredCareTypes.some(
+          (careTypeId) => service._id.toString() === careTypeId.toString(),
+        );
+      },
+    );
+
+    const insuranceCoveredCareTypesServices = requestedCareTypesServices.filter(
+      (service) => {
+        return insuranceCoveredCareTypes.some(
+          (careTypeId) => service._id.toString() === careTypeId.toString(),
+        );
+      },
+    );
+
+    const totalPrice = requestedCareTypesServices.reduce((acc, service) => {
+      return acc + service.price;
+    }, 0);
+
+    const userCoveredCareTypesServicesPrice =
+      userCoveredCareTypesServices.reduce((acc, service) => {
+        return acc + service.price;
+      }, 0);
+
+    const insuranceCoveredCareTypesServicesPrice =
+      insuranceCoveredCareTypesServices.reduce((acc, service) => {
+        return acc + service.price;
+      }, 0);
+
     return {
-      status: 'success',
-      message: 'Request created',
-      data: await this.getRequestById(request._id),
+      insuranceCoveredCareTypes,
+      userCoveredCareTypes,
+      totals: {
+        totalPrice,
+        userCoveredCarePrice: userCoveredCareTypesServicesPrice,
+        insuranceCoveredCarePrice: insuranceCoveredCareTypesServicesPrice,
+      },
     };
+  }
+
+  // async calculateTotalPrice(request: CreateServiceRequestDto) {
+  //   let insurance;
+  //   if (request.recepient_type === 'Beneficiary') {
+  //     insurance = await this.insuranceModel
+  //       .findOne({
+  //         beneficiary: request.beneficiary.toString(),
+  //       })
+  //       .populate('insurance_company');
+  //   }
+  //   // if (!insurance) {
+  //   //   throw new NotFoundException({
+  //   //     status: 'error',
+  //   //     message: 'Insurance not found',
+  //   //   });
+  //   // }
+  //   const InsuranceCompany: InsuranceCompany =
+  //     insurance?.insurance_company as any;
+
+  //   const insuranceCoveredCareTypes = request.care_type.filter((service) => {
+  //     return InsuranceCompany?.services_covered?.includes(service);
+  //   });
+
+  //   const userCoveredCareTypes = request.care_type.filter((service) => {
+  //     return !insuranceCoveredCareTypes.includes(service);
+  //   });
+
+  //   // Fetch all care types services just once
+  //   const requestedCareTypesServices = await this.serviceModel.find({
+  //     _id: { $in: request.care_type },
+  //     status: 'active',
+  //   });
+
+  //   // Filter the fetched services based on coverage types
+  //   const userCoveredCareTypesServices = requestedCareTypesServices.filter(
+  //     (service) => {
+  //       return userCoveredCareTypes.some(
+  //         (careTypeId) => service._id.toString() === careTypeId.toString(),
+  //       );
+  //     },
+  //   );
+
+  //   const insuranceCoveredCareTypesServices = requestedCareTypesServices.filter(
+  //     (service) => {
+  //       return insuranceCoveredCareTypes.some(
+  //         (careTypeId) => service._id.toString() === careTypeId.toString(),
+  //       );
+  //     },
+  //   );
+
+  //   const totalPrice = requestedCareTypesServices.reduce((acc, service) => {
+  //     return acc + service.price;
+  //   }, 0);
+
+  //   const userCoveredCareTypesServicesPrice =
+  //     userCoveredCareTypesServices.reduce((acc, service) => {
+  //       return acc + service.price;
+  //     }, 0);
+
+  //   const insuranceCoveredCareTypesServicesPrice =
+  //     insuranceCoveredCareTypesServices.reduce((acc, service) => {
+  //       return acc + service.price;
+  //     }, 0);
+
+  //   return {
+  //     insuranceCoveredCareTypes,
+  //     userCoveredCareTypes,
+  //     totals: {
+  //       totalPrice,
+  //       userCoveredCarePrice: userCoveredCareTypesServicesPrice,
+  //       insuranceCoveredCarePrice: insuranceCoveredCareTypesServicesPrice,
+  //     },
+  //   };
+  // }
+
+  async updateServiceRequestPayment(user: User, transaction: Transaction) {
+    const requestBody = JSON.parse(transaction.details);
+
+    await this.createServiceRequest(
+      requestBody.request,
+      user,
+      requestBody.payments,
+    );
+
+    return;
   }
 
   async updateCaregiverLocation(

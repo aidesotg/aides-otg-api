@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ServiceRequestSchema } from './schema/service-request.schema';
 import { ServiceCategorySchema } from 'src/modules/service-category/schema/service-category.schema';
@@ -12,6 +12,9 @@ import { NotificationModule } from '../notification/notification.module';
 import { ReviewSchema } from './schema/review.schema';
 import { UserModule } from '../user/user.module';
 import { UserSchema } from '../user/schema/user.schema';
+import { InsuranceSchema } from '../insurance/schema/insurance.schema';
+import { ServiceSchema } from '../service/schema/service.schema';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
@@ -23,10 +26,13 @@ import { UserSchema } from '../user/schema/user.schema';
       { name: 'Favorite', schema: FavoriteSchema },
       { name: 'Review', schema: ReviewSchema },
       { name: 'User', schema: UserSchema },
+      { name: 'Insurance', schema: InsuranceSchema },
+      { name: 'Service', schema: ServiceSchema },
     ]),
     ServicesModule,
     NotificationModule,
-    UserModule,
+    forwardRef(() => UserModule),
+    forwardRef(() => WalletModule),
   ],
   controllers: [ServiceRequestController],
   providers: [ServiceRequestService],

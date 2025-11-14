@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { ServiceRequest } from '../interface/service-request-interface.interface';
+import { ServiceRequest } from '../interface/service-request.interface';
 
 export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
   {
@@ -16,9 +16,14 @@ export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
+    recepient_type: {
+      type: String,
+      enum: ['Beneficiary', 'User'],
+      default: 'Beneficiary',
+    },
     beneficiary: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Beneficiary',
+      refPath: 'recepient_type',
     },
     details: {
       type: String,
@@ -106,6 +111,12 @@ export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
         },
       },
     ],
+    payments: {
+      total: { type: Number },
+      user_covered_payments: { type: Number },
+      inurance_covered_payments: { type: Number },
+      claimed_insurance_payment: { type: Number },
+    },
   },
   {
     timestamps: true,

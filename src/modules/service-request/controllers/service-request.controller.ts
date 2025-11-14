@@ -9,6 +9,7 @@ import {
   UseFilters,
   Query,
   Delete,
+  Headers,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ServiceRequestService } from '../services/service-request.service';
@@ -161,8 +162,9 @@ export class ServiceRequestController {
   async createServiceRequest(
     @Body() body: CreateServiceRequestDto,
     @AuthUser() user: any,
+    @Headers('origin') origin: string,
   ) {
-    return this.serviceService.createServiceRequest(body, user);
+    return this.serviceService.initiateCreateServiceRequest(body, user, origin);
   }
 
   @Post('/favorites')

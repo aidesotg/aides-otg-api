@@ -10,6 +10,7 @@ import { ServicesModule } from 'src/services/services.module';
 import { WalletSchema } from './schema/wallet.schema';
 import { NotificationModule } from 'src/modules/notification/notification.module';
 import { WithdrawalOtpSchema } from './schema/withdrawal-otp.schema';
+import { ServiceRequestModule } from '../service-request/service-request.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { WithdrawalOtpSchema } from './schema/withdrawal-otp.schema';
     forwardRef(() => UserModule),
     ServicesModule,
     NotificationModule,
+    forwardRef(() => ServiceRequestModule),
   ],
   providers: [WalletService],
   controllers: [WalletController],
