@@ -223,60 +223,37 @@ export class WalletService {
       group: body.group ?? false,
     });
 
-    //   console.log(redirect_url);
+    const intent = await this.stripeService.stripeCreatePaymentIntent({
+      user,
+      amount: Number(
+        parseFloat(String(_.multiply(Number(amount), 100))).toFixed(2),
+      ),
+      currency,
+      metadata: {
+        customer_id: String(user._id),
+        paymentType: body.type ?? user.details?.type ?? 'wallet',
+        transaction_ref: ref,
+      },
+    });
 
-    if (payment_method == 'stripe') {
-      const intent = await this.stripeService.stripeCreatePaymentIntent({
-        user,
-        amount: Number(
-          parseFloat(String(_.multiply(Number(amount), 100))).toFixed(2),
-        ),
-        currency,
-        metadata: {
-          customer_id: String(user._id),
-          paymentType: body.type ?? user.details?.type ?? 'wallet',
-          transaction_ref: ref,
-        },
-      });
+    // Store both client_secret and payment_intent_id for webhook matching
+    transaction.tx_ref = intent.client_secret;
+    transaction.details = JSON.stringify({
+      ...body,
+      payment_intent_id: intent.id,
+      client_secret: intent.client_secret,
+      customer_id: intent.customer,
+    });
 
-      // Store both client_secret and payment_intent_id for webhook matching
-      transaction.tx_ref = intent.client_secret;
-      transaction.details = JSON.stringify({
-        ...body,
-        payment_intent_id: intent.id,
+    await transaction.save();
+    return {
+      status: 'success',
+      data: {
         client_secret: intent.client_secret,
-        customer_id: intent.customer,
-      });
-
-      await transaction.save();
-      return {
-        status: 'success',
-        data: {
-          client_secret: intent.client_secret,
-          customer: intent.customer,
-          pub_key: process.env.STRIPE_PUB_KEY,
-        },
-      };
-    } else {
-      await transaction.save();
-      return {
-        status: 'success',
-        data: {
-          tx_ref: ref,
-          amount,
-          currency,
-          flwpubk: process.env.FLUTTERWAVE_PUBLIC_KEY,
-          flwenckey: process.env.FLUTTERWAVE_ENCRYPTION_KEY,
-        },
-        // data: {
-        //   tx_ref: ref,
-        //   amount: _.multiply(amount, 100),
-        //   currency,
-        //   email: user.email,
-        //   paystackpubk: process.env.PAYSTACK_PUBLIC_KEY,
-        // },
-      };
-    }
+        customer: intent.customer,
+        pub_key: process.env.STRIPE_PUB_KEY,
+      },
+    };
   }
 
   async initiate(body: any, user: any, origin?: string) {
@@ -316,9 +293,10 @@ export class WalletService {
         origin && body.path
           ? `${origin}${body.path}?session_id={CHECKOUT_SESSION_ID}`
           : `${process.env.APP_URL}/wallet/confirmation?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: origin
-        ? `${origin}${body.path}/canceled.html`
-        : `${process.env.APP_URL}/canceled.html`,
+      cancel_url:
+        origin && body.path
+          ? `${origin}${body.path}/canceled.html`
+          : `${process.env.APP_URL}/canceled.html`,
     };
     response = await this.stripeService.stripeCreateCheckoutSession(
       orderPayload,

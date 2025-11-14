@@ -156,15 +156,21 @@ export class ServiceRequestController {
     return this.serviceService.addReview(body, user);
   }
 
-  @Post('')
+  @Post('/create/:type')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
   async createServiceRequest(
     @Body() body: CreateServiceRequestDto,
     @AuthUser() user: any,
+    @Param('type') type: string,
     @Headers('origin') origin: string,
   ) {
-    return this.serviceService.initiateCreateServiceRequest(body, user, origin);
+    return this.serviceService.initiateCreateServiceRequest(
+      body,
+      user,
+      type,
+      origin,
+    );
   }
 
   @Post('/favorites')

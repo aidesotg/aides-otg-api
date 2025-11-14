@@ -64,8 +64,15 @@ export class ServiceRequestService {
   async initiateCreateServiceRequest(
     createServiceDto: CreateServiceRequestDto,
     user: User,
+    type: string,
     origin?: string,
   ) {
+    if (type !== 'web' && type !== 'mobile') {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Invalid type param, allowed values are: web or mobile',
+      });
+    }
     const { beneficiary, date_list, ...rest } = createServiceDto;
 
     if (!createServiceDto.self_care) {
@@ -116,74 +123,50 @@ export class ServiceRequestService {
       requestpaymentbreakdown,
     );
     const { totals } = requestpaymentbreakdown;
+    const payload = {
+      amount: totals.userCoveredCarePrice,
+      payment_method: 'stripe',
+      type: 'serviceRequest',
+      request: createServiceDto,
+      path: createServiceDto.path,
+      payments: {
+        total: totals.totalPrice,
+        user_covered_payments: totals.userCoveredCarePrice,
+        inurance_covered_payments: totals.insuranceCoveredCarePrice,
+        claimed_insurance_payment: 0,
+      },
+    };
 
-    const response = await this.walletService.initiate(
-      {
-        amount: totals.userCoveredCarePrice,
-        payment_method: 'stripe',
-        type: 'serviceRequest',
-        request: createServiceDto,
-        payments: {
-          total: totals.totalPrice,
-          user_covered_payments: totals.userCoveredCarePrice,
-          inurance_covered_payments: totals.insuranceCoveredCarePrice,
-          claimed_insurance_payment: 0,
+    if (type === 'web') {
+      const response = await this.walletService.initiate(payload, user, origin);
+      //TODO: Send notification to care giver if care giver is passed
+
+      return {
+        status: 'success',
+        message: 'Request awaiting payment',
+        data: {
+          request: createServiceDto,
+          paymentBreakdown: requestpaymentbreakdown,
+          checkoutUrl: response.data.checkoutUrl,
         },
-      },
-      user,
-      origin,
-    );
-    //TODO: Send notification to care giver if care giver is passed
-
-    return {
-      status: 'success',
-      message: 'Request created',
-      data: {
-        request: createServiceDto,
-        paymentBreakdown: requestpaymentbreakdown,
-        checkoutUrl: response.data.checkoutUrl,
-      },
-    };
-  }
-
-  async createServiceRequest(
-    createServiceDto: CreateServiceRequestDto,
-    user: User,
-    payments: any,
-  ) {
-    const { beneficiary, date_list, ...rest } = createServiceDto;
-    let recepient_type = 'User';
-    let recepient_id = user._id;
-    if (!createServiceDto.self_care) {
-      const isBeneficiary = await this.userBeneficiaryModel.findOne({
-        beneficiary: beneficiary,
-        user: user._id,
-      });
-      recepient_type = 'Beneficiary';
-      recepient_id = isBeneficiary._id;
+      };
     }
-    const dateList = date_list as any;
-    for (const date of dateList) {
-      date.day_of_week = await this.miscService.getDayOfWeek(
-        date.date.toString(),
-      );
+    if (type === 'mobile') {
+      const response = await this.walletService.initiateMobile(payload, user);
+      return {
+        status: 'success',
+        message: 'Request awaiting payment',
+        data: {
+          request: createServiceDto,
+          paymentBreakdown: requestpaymentbreakdown,
+          checkoutUrl: response.data,
+        },
+      };
     }
-    const data = {
-      ...createServiceDto,
-      beneficiary: recepient_id,
-      recepient_type: recepient_type,
-      booking_id: this.generateBookingId(),
-      date_list: dateList,
-      created_by: user._id,
-      payments,
-    };
-
-    const newRequest = new this.serviceRequestModel(data);
-    const request = await newRequest.save();
-
-    //TODO: Send notification to care giver if care giver is passed
-
-    return request;
+    throw new BadRequestException({
+      status: 'error',
+      message: 'Invalid type param, allowed values are: web or mobile',
+    });
   }
 
   // async createServiceRequest(
@@ -415,9 +398,52 @@ export class ServiceRequestService {
       requestBody.request,
       user,
       requestBody.payments,
+      transaction.tx_ref ?? transaction.trx_id,
     );
 
     return;
+  }
+
+  async createServiceRequest(
+    createServiceDto: CreateServiceRequestDto,
+    user: User,
+    payments: any,
+    transactionId: string,
+  ) {
+    const { beneficiary, date_list, ...rest } = createServiceDto;
+    let recepient_type = 'User';
+    let recepient_id = user._id;
+    if (!createServiceDto.self_care) {
+      const isBeneficiary = await this.userBeneficiaryModel.findOne({
+        beneficiary: beneficiary,
+        user: user._id,
+      });
+      recepient_type = 'Beneficiary';
+      recepient_id = isBeneficiary._id;
+    }
+    const dateList = date_list as any;
+    for (const date of dateList) {
+      date.day_of_week = await this.miscService.getDayOfWeek(
+        date.date.toString(),
+      );
+    }
+    const data = {
+      ...createServiceDto,
+      beneficiary: recepient_id,
+      recepient_type: recepient_type,
+      booking_id: this.generateBookingId(),
+      transaction_id: transactionId,
+      date_list: dateList,
+      created_by: user._id,
+      payments,
+    };
+
+    const newRequest = new this.serviceRequestModel(data);
+    const request = await newRequest.save();
+
+    //TODO: Send notification to care giver if care giver is passed
+
+    return request;
   }
 
   async updateCaregiverLocation(
