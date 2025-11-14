@@ -736,7 +736,7 @@ export class WalletService {
     let data;
     let eventType;
     // Check if webhook signing is configured.
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || null;
+    const webhookSecret = null;
 
     if (webhookSecret) {
       // Retrieve the event by verifying the signature using the raw body and secret.

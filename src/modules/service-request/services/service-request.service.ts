@@ -81,6 +81,23 @@ export class ServiceRequestService {
       }
     }
 
+    const services = await this.serviceModel.find({
+      _id: { $in: createServiceDto.care_type },
+    });
+
+    const unsupportedServices = [];
+    for (const service of services) {
+      if (service.status !== 'active') unsupportedServices.push(service.name);
+    }
+    if (unsupportedServices.length > 0) {
+      throw new BadRequestException({
+        status: 'error',
+        message: `The following services are currently not supported: ${unsupportedServices.join(
+          ', ',
+        )}`,
+      });
+    }
+
     const dateList = date_list as any;
     for (const date of dateList) {
       if (new Date(date.date) < new Date()) {
@@ -93,6 +110,10 @@ export class ServiceRequestService {
 
     const requestpaymentbreakdown = await this.calculateTotalPrice(
       createServiceDto,
+    );
+    console.log(
+      '🚀 ~ ServiceRequestService ~ initiateCreateServiceRequest ~ requestpaymentbreakdown:',
+      requestpaymentbreakdown,
     );
     const { totals } = requestpaymentbreakdown;
 
@@ -264,10 +285,12 @@ export class ServiceRequestService {
     });
 
     // Fetch all care types services just once
-    const requestedCareTypesServices = await this.serviceModel.find({
-      _id: { $in: request.care_type },
-      status: 'active',
-    });
+    const requestedCareTypesServices = await this.serviceModel
+      .find({
+        _id: { $in: request.care_type },
+        status: 'active',
+      })
+      .select('name price');
 
     // Filter the fetched services based on coverage types
     const userCoveredCareTypesServices = requestedCareTypesServices.filter(
@@ -301,8 +324,8 @@ export class ServiceRequestService {
       }, 0);
 
     return {
-      insuranceCoveredCareTypes,
-      userCoveredCareTypes,
+      insuranceCoveredCareTypes: insuranceCoveredCareTypesServices,
+      userCoveredCareTypes: userCoveredCareTypesServices,
       totals: {
         totalPrice,
         userCoveredCarePrice: userCoveredCareTypesServicesPrice,
