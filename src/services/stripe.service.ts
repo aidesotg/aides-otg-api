@@ -142,7 +142,8 @@ export class StripeService {
     const paymentIntentConfig: Stripe.PaymentIntentCreateParams = {
       ...rest,
       customer: String(user.stripeCustomerId ?? customer?.id),
-      payment_method_types: rest.payment_method_types || ['card'],
+      // payment_method_types: ['automatic_payment_methods'],
+      // payment_method_types: rest.payment_method_types || ['card'],
       automatic_payment_methods: {
         enabled: true,
       },
