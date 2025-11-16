@@ -201,8 +201,8 @@ export class TwilioService {
     identity: string,
     grants?: {
       voice?: {
-        incomingAllow?: true;
-        outgoingAllow?: true;
+        incomingAllow?: boolean;
+        outgoingAllow?: boolean;
       };
       video?: {
         room?: string;

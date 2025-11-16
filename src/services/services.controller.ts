@@ -58,10 +58,12 @@ export class ServicesController {
       }
     }
 
-    const token = this.twilioService.generateAccessToken(
-      identity,
-      parsedGrants,
-    );
+    const token = this.twilioService.generateAccessToken(identity, {
+      voice: {
+        incomingAllow: true,
+        outgoingAllow: true,
+      },
+    });
 
     return {
       status: 'success',
