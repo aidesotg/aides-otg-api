@@ -70,10 +70,8 @@ export class CreateServiceRequestDto {
   beneficiary?: string;
 
   @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(10)
-  details: string;
+  @IsOptional()
+  details?: string;
 
   @ApiProperty({ type: LocationDto })
   @ValidateNested()
@@ -88,7 +86,7 @@ export class CreateServiceRequestDto {
 
   @ApiProperty()
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   notes: string;
 
   @ApiProperty()
