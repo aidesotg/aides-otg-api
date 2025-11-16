@@ -117,6 +117,7 @@ export class ServiceRequestService {
 
     const requestpaymentbreakdown = await this.calculateTotalPrice(
       createServiceDto,
+      user,
     );
     console.log(
       '🚀 ~ ServiceRequestService ~ initiateCreateServiceRequest ~ requestpaymentbreakdown:',
@@ -241,12 +242,18 @@ export class ServiceRequestService {
   //   };
   // }
 
-  async calculateTotalPrice(request: CreateServiceRequestDto) {
+  async calculateTotalPrice(request: CreateServiceRequestDto, user: User) {
     let insurance;
-    if (request.self_care) {
+    if (!request.self_care) {
       insurance = await this.insuranceModel
         .findOne({
           beneficiary: request.beneficiary.toString(),
+        })
+        .populate('insurance_company');
+    } else {
+      insurance = await this.insuranceModel
+        .findOne({
+          user: user._id.toString(),
         })
         .populate('insurance_company');
     }
