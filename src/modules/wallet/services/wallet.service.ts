@@ -885,6 +885,15 @@ export class WalletService {
       });
     }
 
+    // update service request payment
+    if (transaction.type === 'serviceRequest') {
+      const user = await this.userService.getUser({ _id: transaction.user });
+      await this.serviceRequestService.updateServiceRequestPayment(
+        user,
+        transaction,
+      );
+    }
+
     // Update transaction
     transaction.status = 'successful';
     transaction.trx_id = paymentIntent.id;

@@ -10,8 +10,8 @@ export class TwilioService {
 
   constructor(private configService: ConfigService) {
     this.twilioClient = new Twilio(
-      this.configService.get('TWILIO_ACCOUNT_SID'),
-      this.configService.get('TWILIO_AUTH_TOKEN'),
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN,
     );
   }
 
@@ -19,7 +19,7 @@ export class TwilioService {
     try {
       const response = await this.twilioClient.messages.create({
         body: message,
-        from: this.configService.get('TWILIO_PHONE_NUMBER'),
+        from: process.env.TWILIO_PHONE_NUMBER,
         to: to,
       });
 
@@ -35,7 +35,7 @@ export class TwilioService {
     try {
       const response = await this.twilioClient.messages.create({
         body: message,
-        from: `whatsapp:${this.configService.get('TWILIO_WHATSAPP_NUMBER')}`,
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
         to: `whatsapp:${to}`,
       });
 
@@ -85,7 +85,7 @@ export class TwilioService {
     try {
       const callOptions: any = {
         to: to,
-        from: from || this.configService.get('TWILIO_PHONE_NUMBER'),
+        from: from || process.env.TWILIO_PHONE_NUMBER,
       };
 
       // If URL is provided, use it for TwiML instructions
@@ -93,7 +93,7 @@ export class TwilioService {
         callOptions.url = url;
       } else {
         // Default TwiML URL if APP_URL is configured
-        const appUrl = this.configService.get('APP_URL');
+        const appUrl = process.env.APP_URL;
         if (appUrl) {
           callOptions.url = `${appUrl}/twilio/call-handler`;
         } else {
@@ -141,7 +141,7 @@ export class TwilioService {
     try {
       const callOptions: any = {
         to: to,
-        from: from || this.configService.get('TWILIO_PHONE_NUMBER'),
+        from: from || process.env.TWILIO_PHONE_NUMBER,
         twiml: twiml,
       };
 
@@ -203,6 +203,7 @@ export class TwilioService {
       voice?: {
         incomingAllow?: boolean;
         outgoingAllow?: boolean;
+        twimlAppSid?: string;
       };
       video?: {
         room?: string;
@@ -213,9 +214,9 @@ export class TwilioService {
     },
   ): string {
     try {
-      const accountSid = this.configService.get('TWILIO_ACCOUNT_SID');
-      const apiKey = this.configService.get('TWILIO_API_KEY_SID');
-      const apiSecret = this.configService.get('TWILIO_API_KEY_SECRET');
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const apiKey = process.env.TWILIO_API_KEY_SID;
+      const apiSecret = process.env.TWILIO_API_KEY_SECRET;
 
       if (!accountSid || !apiKey || !apiSecret) {
         throw new Error(
@@ -232,13 +233,34 @@ export class TwilioService {
       // Add Voice grant if provided
       if (grants?.voice) {
         const VoiceGrant = twilio.jwt.AccessToken.VoiceGrant;
-        const voiceGrantOptions: any = {};
+
+        // TwiML App SID is required for Voice grants
+        const twimlAppSid =
+          grants.voice.twimlAppSid || process.env.TWILIO_TWIML_APP_SID;
+
+        if (!twimlAppSid) {
+          throw new Error(
+            'TWILIO_TWIML_APP_SID is required for Voice grants. Please set it in environment variables or pass it in the grants parameter.',
+          );
+        }
+
+        const voiceGrantOptions: any = {
+          outgoingApplicationSid: twimlAppSid,
+        };
+
+        // Set incoming/outgoing permissions
         if (grants.voice.incomingAllow !== undefined) {
           voiceGrantOptions.incomingAllow = grants.voice.incomingAllow;
+        } else {
+          voiceGrantOptions.incomingAllow = true;
         }
+
         if (grants.voice.outgoingAllow !== undefined) {
           voiceGrantOptions.outgoingAllow = grants.voice.outgoingAllow;
+        } else {
+          voiceGrantOptions.outgoingAllow = true;
         }
+
         const voiceGrant = new VoiceGrant(voiceGrantOptions);
         token.addGrant(voiceGrant);
       }
@@ -291,7 +313,7 @@ export class TwilioService {
   // ) {
   //   try {
   //     const response = await this.twilioClient.messages.create({
-  //       from: `whatsapp:${this.configService.get('TWILIO_WHATSAPP_NUMBER')}`,
+  //       from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER')}`,
   //       to: `whatsapp:${to}`,
   //       contentSid: templateName,
   //       contentVariables: JSON.stringify(components),
