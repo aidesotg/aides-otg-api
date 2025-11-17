@@ -26,7 +26,7 @@ export class CreateProfileDto {
   @ApiProperty() @IsString() date_of_birth: string;
   @ApiProperty() @IsString() gender: string;
   @ApiProperty() @IsString() @IsOptional() profile_picture?: string;
-  @ApiProperty() @IsString() type_of_care: string;
+  @ApiProperty() @IsArray() type_of_care: string[];
   @ApiProperty() @IsArray() @IsOptional() special_requirements?: string[];
   @ApiProperty() @IsArray() @IsOptional() health_conditions?: string[];
   @ApiProperty() @IsString() ssn: string;

@@ -98,6 +98,12 @@ export const UserSchema = new mongoose.Schema<User>(
         },
       },
     ],
+    type_of_care: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Service',
+      },
+    ],
 
     special_requirements: [
       {
