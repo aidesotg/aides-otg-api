@@ -6,6 +6,7 @@ import { UserSchema } from '../user/schema/user.schema';
 import { ServiceRequestSchema } from '../service-request/schema/service-request.schema';
 import { RoleSchema } from '../role/schema/role.schema';
 import { WalletTransactionSchema } from '../wallet/schema/wallet-transaction.schema';
+import { WalletSchema } from '../wallet/schema/wallet.schema';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { WalletTransactionSchema } from '../wallet/schema/wallet-transaction.sch
       { name: 'ServiceRequest', schema: ServiceRequestSchema },
       { name: 'Role', schema: RoleSchema },
       { name: 'WalletTransaction', schema: WalletTransactionSchema },
+      { name: 'Wallet', schema: WalletSchema },
     ]),
   ],
   controllers: [DashboardController],

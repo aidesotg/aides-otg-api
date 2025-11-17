@@ -5,6 +5,7 @@ import { User } from '../../user/interface/user.interface';
 import { ServiceRequest } from '../../service-request/interface/service-request.interface';
 import { Role } from '../../role/interface/role.interface';
 import { WalletTransaction } from '../../wallet/interface/wallet-transaction.interface';
+import { Wallet } from '../../wallet/interface/wallet.interface';
 
 @Injectable()
 export class DashboardService {
@@ -15,6 +16,7 @@ export class DashboardService {
     @InjectModel('Role') private readonly roleModel: Model<Role>,
     @InjectModel('WalletTransaction')
     private readonly walletTransactionModel: Model<WalletTransaction>,
+    @InjectModel('Wallet') private readonly walletModel: Model<Wallet>,
   ) {}
 
   /**
@@ -114,6 +116,122 @@ export class DashboardService {
         activeCaregivers: {
           value: activeCaregivers,
         },
+      },
+    };
+  }
+
+  /**
+   * Get financial summary metrics
+   */
+  async getFinancialSummary() {
+    const [walletStats, financialAggregates] = await Promise.all([
+      this.walletModel.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalBalance: { $sum: { $ifNull: ['$balance', 0] } },
+          },
+        },
+      ]),
+      this.serviceRequestModel.aggregate([
+        {
+          $group: {
+            _id: null,
+            pendingPayouts: {
+              $sum: {
+                $cond: [
+                  { $eq: ['$status', 'Pending'] },
+                  { $ifNull: ['$payments.total', 0] },
+                  0,
+                ],
+              },
+            },
+            insuranceCoveredPayments: {
+              $sum: { $ifNull: ['$payments.inurance_covered_payments', 0] },
+            },
+            claimedInsurancePayments: {
+              $sum: { $ifNull: ['$payments.claimed_insurance_payment', 0] },
+            },
+            refundsProcessed: {
+              $sum: {
+                $cond: [
+                  { $in: ['$status', ['Cancelled', 'Rejected']] },
+                  { $ifNull: ['$payments.total', 0] },
+                  0,
+                ],
+              },
+            },
+          },
+        },
+      ]),
+    ]);
+
+    const totalWalletBalance = walletStats[0]?.totalBalance || 0;
+    const aggregates = financialAggregates[0] || {};
+
+    const insuranceCoveredPayments = aggregates.insuranceCoveredPayments || 0;
+    const claimedInsurancePayments = aggregates.claimedInsurancePayments || 0;
+    const unclaimedInsurancePayments = Math.max(
+      insuranceCoveredPayments - claimedInsurancePayments,
+      0,
+    );
+
+    return {
+      status: 'success',
+      message: 'Financial summary fetched successfully',
+      data: {
+        totalWalletBalance,
+        pendingPayouts: aggregates.pendingPayouts || 0,
+        insuranceCoveredPayments,
+        claimedInsurancePayments,
+        unclaimedInsurancePayments,
+        refundsProcessed: aggregates.refundsProcessed || 0,
+      },
+    };
+  }
+
+  /**
+   * Get payment distribution between wallet and insurance
+   */
+  async getPaymentDistribution() {
+    const [distribution] = await this.serviceRequestModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          walletPayments: {
+            $sum: { $ifNull: ['$payments.user_covered_payments', 0] },
+          },
+          insurancePayments: {
+            $sum: { $ifNull: ['$payments.inurance_covered_payments', 0] },
+          },
+        },
+      },
+    ]);
+
+    const walletPayments = distribution?.walletPayments || 0;
+    const insurancePayments = distribution?.insurancePayments || 0;
+    const total = walletPayments + insurancePayments;
+
+    const walletPercentage = total ? (walletPayments / total) * 100 : 0;
+    const insurancePercentage = total ? (insurancePayments / total) * 100 : 0;
+
+    return {
+      status: 'success',
+      message: 'Payment distribution fetched successfully',
+      data: {
+        total,
+        breakdown: [
+          {
+            label: 'Wallet',
+            value: walletPayments,
+            percentage: Number(walletPercentage.toFixed(2)),
+          },
+          {
+            label: 'Insurance',
+            value: insurancePayments,
+            percentage: Number(insurancePercentage.toFixed(2)),
+          },
+        ],
       },
     };
   }

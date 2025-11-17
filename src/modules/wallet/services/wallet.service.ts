@@ -866,6 +866,10 @@ export class WalletService {
 
     // Credit wallet if transaction type is wallet
     if (transaction.type === 'wallet') {
+      console.log(
+        '🚀 ~ WalletService ~ handlePaymentIntentSucceeded ~ type:',
+        'wallet',
+      );
       const amount = paymentIntent.amount / 100; // Convert from cents
       await this.credit({
         id: transaction.user,
@@ -887,6 +891,10 @@ export class WalletService {
 
     // update service request payment
     if (transaction.type === 'serviceRequest') {
+      console.log(
+        '🚀 ~ WalletService ~ handlePaymentIntentSucceeded ~ type:',
+        'service request',
+      );
       const user = await this.userService.getUser({ _id: transaction.user });
       await this.serviceRequestService.updateServiceRequestPayment(
         user,

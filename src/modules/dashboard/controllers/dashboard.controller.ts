@@ -52,4 +52,18 @@ export class DashboardController {
   async getGeospatialInsights() {
     return this.dashboardService.getGeospatialInsights();
   }
+
+  @Get('/financial-summary')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getFinancialSummary() {
+    return this.dashboardService.getFinancialSummary();
+  }
+
+  @Get('/payment-distribution')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getPaymentDistribution() {
+    return this.dashboardService.getPaymentDistribution();
+  }
 }

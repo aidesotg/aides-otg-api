@@ -234,7 +234,6 @@ export class TwilioService {
       if (grants?.voice) {
         const VoiceGrant = twilio.jwt.AccessToken.VoiceGrant;
 
-        // TwiML App SID is required for Voice grants
         const twimlAppSid =
           grants.voice.twimlAppSid || process.env.TWILIO_TWIML_APP_SID;
 
@@ -244,24 +243,11 @@ export class TwilioService {
           );
         }
 
-        const voiceGrantOptions: any = {
+        const voiceGrant = new VoiceGrant({
           outgoingApplicationSid: twimlAppSid,
-        };
+          incomingAllow: grants.voice.incomingAllow ?? true,
+        });
 
-        // Set incoming/outgoing permissions
-        if (grants.voice.incomingAllow !== undefined) {
-          voiceGrantOptions.incomingAllow = grants.voice.incomingAllow;
-        } else {
-          voiceGrantOptions.incomingAllow = true;
-        }
-
-        if (grants.voice.outgoingAllow !== undefined) {
-          voiceGrantOptions.outgoingAllow = grants.voice.outgoingAllow;
-        } else {
-          voiceGrantOptions.outgoingAllow = true;
-        }
-
-        const voiceGrant = new VoiceGrant(voiceGrantOptions);
         token.addGrant(voiceGrant);
       }
 
