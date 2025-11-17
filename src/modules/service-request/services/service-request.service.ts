@@ -654,8 +654,18 @@ export class ServiceRequestService {
         'label',
         'relationship',
       ])
-      .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
-      .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
+      .populate('created_by', [
+        'first_name',
+        'last_name',
+        'profile_picture',
+        'phone',
+      ])
+      .populate('care_giver', [
+        'first_name',
+        'last_name',
+        'profile_picture',
+        'phone',
+      ])
       .populate({
         path: 'care_type',
         select: 'name category price',
@@ -707,7 +717,12 @@ export class ServiceRequestService {
         'relationship',
       ])
       .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
-      .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
+      .populate('care_giver', [
+        'first_name',
+        'last_name',
+        'profile_picture',
+        'phone',
+      ])
       .populate({
         path: 'care_type',
         select: 'name category price',
@@ -761,8 +776,18 @@ export class ServiceRequestService {
         'label',
         'relationship',
       ])
-      .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
-      .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
+      .populate('created_by', [
+        'first_name',
+        'last_name',
+        'profile_picture',
+        'phone',
+      ])
+      .populate('care_giver', [
+        'first_name',
+        'last_name',
+        'profile_picture',
+        'phone',
+      ])
       .populate({
         path: 'care_type',
         select: 'name category price',
@@ -800,8 +825,18 @@ export class ServiceRequestService {
         'label',
         'relationship',
       ])
-      .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
-      .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
+      .populate('created_by', [
+        'first_name',
+        'last_name',
+        'profile_picture',
+        'phone',
+      ])
+      .populate('care_giver', [
+        'first_name',
+        'last_name',
+        'profile_picture',
+        'phone',
+      ])
       .populate({
         path: 'care_type',
         select: 'name category price',
