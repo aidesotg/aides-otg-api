@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
   UsePipes,
@@ -17,6 +18,11 @@ import { AwsService } from './aws.service';
 import { PresignUrlDto } from './dto/presign-url.dto';
 import { MiscCLass } from './misc.service';
 import { TwilioService } from './twilio.service';
+import {
+  MakeCallDto,
+  MakeCallWithTwimlDto,
+  UpdateCallStatusDto,
+} from './dto/twilio-call.dto';
 
 @Controller('services')
 export class ServicesController {
@@ -72,6 +78,87 @@ export class ServicesController {
         token,
         identity,
       },
+    };
+  }
+
+  @Post('twilio/calls')
+  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(ValidationPipe)
+  async createTwilioCall(@Body() body: MakeCallDto) {
+    const {
+      to,
+      from,
+      url,
+      method,
+      statusCallback,
+      statusCallbackMethod,
+      record,
+    } = body;
+
+    const response = await this.twilioService.makeCall(
+      to,
+      from,
+      url,
+      method,
+      statusCallback,
+      statusCallbackMethod,
+      record,
+    );
+
+    return {
+      status: 'success',
+      message: 'Call initiated successfully',
+      data: response,
+    };
+  }
+
+  @Post('twilio/calls/twiml')
+  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(ValidationPipe)
+  async createTwilioCallWithTwiml(@Body() body: MakeCallWithTwimlDto) {
+    const { to, twiml, from, statusCallback, statusCallbackMethod, record } =
+      body;
+
+    const response = await this.twilioService.makeCallWithTwiML(
+      to,
+      twiml,
+      from,
+      statusCallback,
+      statusCallbackMethod,
+      record,
+    );
+
+    return {
+      status: 'success',
+      message: 'Call initiated successfully',
+      data: response,
+    };
+  }
+
+  @Get('twilio/calls/:sid')
+  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(ValidationPipe)
+  async getTwilioCall(@Param('sid') sid: string) {
+    const call = await this.twilioService.getCall(sid);
+    return {
+      status: 'success',
+      message: 'Call fetched successfully',
+      data: call,
+    };
+  }
+
+  @Patch('twilio/calls/:sid')
+  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(ValidationPipe)
+  async updateTwilioCall(
+    @Param('sid') sid: string,
+    @Body() body: UpdateCallStatusDto,
+  ) {
+    const call = await this.twilioService.updateCall(sid, body.status);
+    return {
+      status: 'success',
+      message: 'Call updated successfully',
+      data: call,
     };
   }
 }

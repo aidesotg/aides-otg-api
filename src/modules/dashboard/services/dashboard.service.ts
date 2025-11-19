@@ -6,6 +6,7 @@ import { ServiceRequest } from '../../service-request/interface/service-request.
 import { Role } from '../../role/interface/role.interface';
 import { WalletTransaction } from '../../wallet/interface/wallet-transaction.interface';
 import { Wallet } from '../../wallet/interface/wallet.interface';
+import constants from 'src/framework/constants';
 
 @Injectable()
 export class DashboardService {
@@ -62,18 +63,12 @@ export class DashboardService {
       .exec();
 
     // Total Revenue (sum of all payment transactions)
-    const revenueResult = await this.walletTransactionModel
+    const revenueResult = await this.serviceRequestModel
       .aggregate([
-        {
-          $match: {
-            genus: 'PAYMENT',
-            type: 'credit',
-          },
-        },
         {
           $group: {
             _id: null,
-            total: { $sum: '$amount' },
+            total: { $sum: '$payments.total' },
           },
         },
       ])
@@ -244,10 +239,10 @@ export class DashboardService {
     timeframe: 'daily' | 'weekly' | 'monthly' = 'weekly',
   ) {
     const caregiverRole = await this.roleModel
-      .findOne({ name: 'Care Giver' })
+      .findOne({ name: constants.roles.CARE_GIVER })
       .exec();
     const customerRole = await this.roleModel
-      .findOne({ name: 'Customer' })
+      .findOne({ name: constants.roles.CLIENT })
       .exec();
 
     if (!caregiverRole || !customerRole) {
@@ -409,7 +404,7 @@ export class DashboardService {
    * @param params - Query parameters (page, pageSize, etc.)
    */
   async getUnassignedRequests(params: any = {}) {
-    const { page = 1, pageSize = 50 } = params;
+    const { page = 1, pageSize = 10 } = params;
 
     const skip = (page - 1) * pageSize;
     const limit = parseInt(pageSize.toString(), 10);

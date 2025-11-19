@@ -64,7 +64,7 @@ export class UpdateProfileDto {
   @IsOptional()
   @Type(() => AddressDto)
   address: AddressDto;
-  @ApiProperty() @IsString() @IsOptional() type_of_care?: string;
+  @ApiProperty() @IsArray() @IsOptional() type_of_care?: string[];
   @ApiProperty() @IsArray() @IsOptional() special_requirements?: string[];
   @ApiProperty() @IsArray() @IsOptional() health_conditions?: string[];
   @ApiProperty() @IsString() @IsOptional() ssn?: string;

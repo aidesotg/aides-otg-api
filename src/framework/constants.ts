@@ -39,7 +39,7 @@ const requestStatuses = {
 const roles = {
   SUPER_ADMIN: 'Super Admin',
   SUPPORT_ADMIN: 'Support Admin',
-  CUSTOMER: 'Customer',
+  CLIENT: 'Client',
   INSURANCE_ADMIN: 'Insurance Admin',
   CARE_GIVER: 'Care Giver',
 };
