@@ -329,6 +329,10 @@ export class UserService {
       .populate({
         path: 'insurance',
       })
+      .populate({
+        path: 'type_of_care',
+        select: '_id name',
+      })
       .exec();
     if (!userDetails) {
       throw new HttpException(
@@ -366,6 +370,10 @@ export class UserService {
           populate: [{ path: 'insurance' }],
         },
       ])
+      .populate({
+        path: 'type_of_care',
+        select: '_id name',
+      })
       .skip(pagination.offset)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
