@@ -1507,7 +1507,7 @@ export class ServiceRequestService {
       .find(query)
       .populate('request')
       .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
-      .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
+      .populate('user', ['first_name', 'last_name', 'profile_picture'])
       .skip(pagination.offset)
       .limit(pagination.limit)
       .sort({ createdAt: -1 });
@@ -1525,7 +1525,11 @@ export class ServiceRequestService {
   }
 
   async getReviewById(id: string) {
-    const review = await this.reviewModel.findOne({ _id: id });
+    const review = await this.reviewModel
+      .findOne({ _id: id })
+      .populate('request')
+      .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
+      .populate('user', ['first_name', 'last_name', 'profile_picture']);
     if (!review) {
       throw new NotFoundException({
         status: 'error',

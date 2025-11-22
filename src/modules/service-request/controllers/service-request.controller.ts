@@ -126,7 +126,7 @@ export class ServiceRequestController {
     @AuthUser() user: any,
   ) {
     return this.serviceService.getReviews(
-      { ...params, caregiver: caregiverId },
+      { ...params, care_giver: caregiverId },
       user,
     );
   }

@@ -244,3 +244,10 @@ UserSchema.virtual('has_applied', {
   foreignField: 'user',
   count: true,
 });
+
+UserSchema.virtual('insurance', {
+  ref: 'Insurance',
+  localField: '_id',
+  foreignField: 'user',
+  justOne: true,
+});

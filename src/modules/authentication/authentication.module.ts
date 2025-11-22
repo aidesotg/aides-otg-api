@@ -6,6 +6,7 @@ import { RoleSchema } from 'src/modules/role/schema/role.schema';
 import { ServicesModule } from 'src/services/services.module';
 import { PasswordResetSchema } from 'src/modules/user/schema/password-reset.schema';
 import { UserSchema } from 'src/modules/user/schema/user.schema';
+import { ServiceRequestSchema } from 'src/modules/service-request/schema/service-request.schema';
 import { AuthenticationController } from './controllers/authentication.controller';
 import { AuthenticationService } from './services/authentication.service';
 import { AdminLoginSchema } from './schema/admin-login.schema';
@@ -25,6 +26,7 @@ import { AuthzModule } from 'src/framework/authz/authz.module';
       { name: 'PasswordReset', schema: PasswordResetSchema },
       { name: 'AdminLogin', schema: AdminLoginSchema },
       { name: 'SocialAuthToken', schema: SocialAuthTokenSchema },
+      { name: 'ServiceRequest', schema: ServiceRequestSchema },
     ]),
     forwardRef(() => RoleModule),
     ServicesModule,

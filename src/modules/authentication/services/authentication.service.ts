@@ -32,6 +32,7 @@ import { Role } from 'src/modules/role/interface/role.interface';
 import { WalletService } from 'src/modules/wallet/services/wallet.service';
 import { MiscCLass } from 'src/services/misc.service';
 import { UserService } from 'src/modules/user/services/user.service';
+import { ServiceRequest } from 'src/modules/service-request/interface/service-request.interface';
 import {
   TwoFactorLoginRequestDto,
   TwoFactorLoginVerificationDto,
@@ -50,6 +51,8 @@ export class AuthenticationService {
     @InjectModel('PasswordReset')
     private passwordResetModel: Model<PasswordReset>,
     @InjectModel('AdminLogin') private adminLoginModel: Model<AdminLogin>,
+    @InjectModel('ServiceRequest')
+    private serviceRequestModel: Model<ServiceRequest>,
     private roleService: RoleService,
     private mailerService: Mailer,
     private firebaseService: FirebaseService,
@@ -159,6 +162,7 @@ export class AuthenticationService {
       })
       .populate('roles', ['name'])
       .populate('has_applied')
+      .populate('insurance')
       .exec();
     if (!user) {
       throw new HttpException(
@@ -266,8 +270,24 @@ export class AuthenticationService {
         { expiresIn: expire },
       );
 
+      // Check if user is a caregiver and get completed requests count
+      let completedRequestsCount = 0;
+      const isCaregiver = user.roles?.some(
+        (role: any) => role.name === 'Care Giver',
+      );
+
+      if (isCaregiver) {
+        completedRequestsCount = await this.serviceRequestModel.countDocuments({
+          care_giver: user._id,
+          status: 'Completed',
+        });
+      }
+
       const data = {
-        user,
+        user: {
+          ...user.toObject(),
+          completed_requests: completedRequestsCount ?? 0,
+        },
         token: `Bearer ${token}`,
         expires_in: expire,
       };
@@ -348,6 +368,7 @@ export class AuthenticationService {
       .findOne({ _id: body.userId })
       .populate('roles', ['name'])
       .populate('has_applied')
+      .populate('insurance')
       .exec();
     if (!user) {
       throw new NotFoundException({
@@ -378,8 +399,24 @@ export class AuthenticationService {
       { expiresIn: expire },
     );
 
+    // Check if user is a caregiver and get completed requests count
+    let completedRequestsCount = 0;
+    const isCaregiver = user.roles?.some(
+      (role: any) => role.name === 'Care Giver',
+    );
+
+    if (isCaregiver) {
+      completedRequestsCount = await this.serviceRequestModel.countDocuments({
+        care_giver: user._id,
+        status: 'Completed',
+      });
+    }
+
     const data = {
-      user,
+      user: {
+        ...user.toObject(),
+        completed_requests: completedRequestsCount ?? 0,
+      },
       token: `Bearer ${token}`,
       expires_in: expire,
     };
