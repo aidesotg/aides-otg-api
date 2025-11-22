@@ -78,10 +78,10 @@ export class CaregiverService {
   }
 
   async getCaregivers(params) {
-    const { page = 1, pageSize = 50, ...rest } = params;
+    const { page = 1, pageSize = 50, status, ...rest } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
     const query: any = await this.miscService.search(rest);
-    query.status = 'approved';
+    if (!status) query.status = 'approved';
 
     if (!query.suspended) {
       query.suspended = false;

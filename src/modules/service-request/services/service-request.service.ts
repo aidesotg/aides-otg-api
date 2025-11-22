@@ -74,6 +74,7 @@ export class ServiceRequestService {
       });
     }
     const { beneficiary, date_list, ...rest } = createServiceDto;
+    let payment_method = createServiceDto.payment_method;
 
     if (!createServiceDto.self_care) {
       const isBeneficiary = await this.userBeneficiaryModel.findOne({
@@ -126,7 +127,7 @@ export class ServiceRequestService {
     const { totals } = requestpaymentbreakdown;
     const payload = {
       amount: totals.userCoveredCarePrice,
-      payment_method: 'stripe',
+      payment_method: createServiceDto.payment_method,
       type: 'serviceRequest',
       request: createServiceDto,
       path: createServiceDto.path,
@@ -138,10 +139,43 @@ export class ServiceRequestService {
       },
     };
 
-    if (type === 'web') {
-      const response = await this.walletService.initiate(payload, user, origin);
-      //TODO: Send notification to care giver if care giver is passed
+    if (!payment_method) payment_method = 'stripe';
 
+    if (payment_method === 'stripe') {
+      if (type === 'web') {
+        const response = await this.walletService.initiate(
+          payload,
+          user,
+          origin,
+        );
+        //TODO: Send notification to care giver if care giver is passed
+
+        return {
+          status: 'success',
+          message: 'Request awaiting payment',
+          data: {
+            request: createServiceDto,
+            paymentBreakdown: requestpaymentbreakdown,
+            checkoutUrl: response.data.checkoutUrl,
+          },
+        };
+      }
+      if (type === 'mobile') {
+        const response = await this.walletService.initiateMobile(payload, user);
+        return {
+          status: 'success',
+          message: 'Request awaiting payment',
+          data: {
+            request: createServiceDto,
+            paymentBreakdown: requestpaymentbreakdown,
+            checkoutUrl: response.data,
+          },
+        };
+      }
+    }
+
+    if (payment_method === 'wallet') {
+      const response = await this.walletService.initiate(payload, user, origin);
       return {
         status: 'success',
         message: 'Request awaiting payment',
@@ -152,18 +186,19 @@ export class ServiceRequestService {
         },
       };
     }
-    if (type === 'mobile') {
-      const response = await this.walletService.initiateMobile(payload, user);
-      return {
-        status: 'success',
-        message: 'Request awaiting payment',
-        data: {
-          request: createServiceDto,
-          paymentBreakdown: requestpaymentbreakdown,
-          checkoutUrl: response.data,
-        },
-      };
+
+    if (payment_method === 'googlePay') {
+      const response = await this.walletService.createMobilePaymentIntent(
+        payload,
+      );
     }
+
+    if (payment_method === 'applePay') {
+      const response = await this.walletService.createMobilePaymentIntent(
+        payload,
+      );
+    }
+
     throw new BadRequestException({
       status: 'error',
       message: 'Invalid type param, allowed values are: web or mobile',

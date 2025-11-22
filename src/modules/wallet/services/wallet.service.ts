@@ -703,6 +703,10 @@ export class WalletService {
     return;
   }
 
+  async createMobilePaymentIntent(payload: any) {
+    return this.stripeService.createMobilePaymentIntent(payload);
+  }
+
   async createStripeAccount(user: any, payload: StripeAccountDto) {
     return this.stripeService.createStripeAccount({
       user: user._id,

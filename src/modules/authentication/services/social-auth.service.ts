@@ -118,7 +118,7 @@ export class SocialAuthService {
         console.log('RESPON====', response?.data);
         if (
           (response.data?.data && response.data.data?.id) ||
-          (response.data && response.data.id)
+          (response.data && response.data.email)
         ) {
           return response.data?.data ?? response.data;
         } else {

@@ -89,6 +89,7 @@ export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
         'Completed',
         'Cancelled',
         'Rejected',
+        'Expired',
       ],
       default: 'Pending',
     },

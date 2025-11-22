@@ -110,6 +110,12 @@ export class CreateServiceRequestDto {
   @IsString()
   @IsOptional()
   path: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsEnum(['stripe', 'wallet', 'googlePay', 'applePay'])
+  @IsNotEmpty()
+  payment_method: 'stripe' | 'wallet' | 'googlePay' | 'applePay';
 }
 
 export class UpdateServiceRequestDto {
@@ -163,10 +169,26 @@ export class UpdateServiceRequestDto {
   care_giver?: string;
 
   @ApiProperty({
-    enum: ['Pending', 'Accepted', 'In Progress', 'Completed', 'Cancelled'],
+    enum: [
+      'Pending',
+      'Accepted',
+      'In Progress',
+      'Completed',
+      'Cancelled',
+      'Rejected',
+      'Expired',
+    ],
     required: false,
   })
-  @IsEnum(['Pending', 'Accepted', 'In Progress', 'Completed', 'Cancelled'])
+  @IsEnum([
+    'Pending',
+    'Accepted',
+    'In Progress',
+    'Completed',
+    'Cancelled',
+    'Rejected',
+    'Expired',
+  ])
   @IsOptional()
   status?: string;
 }

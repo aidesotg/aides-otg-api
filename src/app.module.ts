@@ -26,6 +26,7 @@ import { FaqModule } from './modules/faq/faq.module';
 import { LegalModule } from './modules/legal/legal.module';
 import { RateModule } from './modules/rate/rate.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { CronjobModule } from './cronjob/cronjob.module';
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ dotenv.config();
     ServiceRequestModule,
     FaqModule,
     DashboardModule,
+    CronjobModule,
   ],
   controllers: [],
   providers: [],
