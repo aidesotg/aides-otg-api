@@ -461,7 +461,7 @@ export class ServiceRequestService {
         user: user._id,
       });
       recepient_type = 'Beneficiary';
-      recepient_id = isBeneficiary._id;
+      recepient_id = isBeneficiary.beneficiary;
     }
     const dateList = date_list as any;
     for (const date of dateList) {

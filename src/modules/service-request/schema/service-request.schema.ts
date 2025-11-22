@@ -23,7 +23,7 @@ export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
     },
     beneficiary: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Beneficiary',
+      refPath: 'recepient_type',
     },
     details: {
       type: String,
