@@ -6,6 +6,7 @@ import { ServicesModule } from 'src/services/services.module';
 import { ServiceRequestController } from './controllers/service-request.controller';
 import { ServiceRequestService } from './services/service-request.service';
 import { UserBeneficiarySchema } from '../user/schema/user-beneficiary.schema';
+import { BeneficiarySchema } from '../user/schema/beneficiary.schema';
 import { ServiceRequestDayLogsSchema } from './schema/service-request-day-logs.schema';
 import { FavoriteSchema } from './schema/favortite.schema';
 import { NotificationModule } from '../notification/notification.module';
@@ -22,6 +23,7 @@ import { WalletModule } from '../wallet/wallet.module';
       { name: 'ServiceRequest', schema: ServiceRequestSchema },
       { name: 'ServiceCategory', schema: ServiceCategorySchema },
       { name: 'UserBeneficiary', schema: UserBeneficiarySchema },
+      { name: 'Beneficiary', schema: BeneficiarySchema },
       { name: 'ServiceRequestDayLogs', schema: ServiceRequestDayLogsSchema },
       { name: 'Favorite', schema: FavoriteSchema },
       { name: 'Review', schema: ReviewSchema },
