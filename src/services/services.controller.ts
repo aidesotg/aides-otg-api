@@ -116,6 +116,10 @@ export class ServicesController {
   @UseGuards(AuthGuard('jwt'))
   @UsePipes(ValidationPipe)
   async createTwilioCallWithTwiml(@Body() body: MakeCallWithTwimlDto) {
+    console.log(
+      '🚀 ~ ServicesController ~ createTwilioCallWithTwiml ~ body:',
+      body,
+    );
     const { to, twiml, from, statusCallback, statusCallbackMethod, record } =
       body;
 
