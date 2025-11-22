@@ -116,7 +116,7 @@ export class ServicesController {
   }
 
   @Post('twilio/calls/twiml')
-  @UseGuards(AuthGuard('jwt'))
+  // @UseGuards(AuthGuard('jwt'))
   @UsePipes(ValidationPipe)
   async createTwilioCallWithTwiml(@Body() body: MakeCallWithTwimlDto) {
     console.log(
