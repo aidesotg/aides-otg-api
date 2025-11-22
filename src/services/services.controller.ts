@@ -179,6 +179,7 @@ export class ServicesController {
    */
   @Post('twilio/call-handler')
   async handleTwilioCall(@Req() req: Request, @Res() res: Response) {
+    console.log('🚀 ~ ServicesController ~ handleTwilioCall ~ req:', req);
     try {
       // Extract call parameters from Twilio request
       const callSid = req.body?.CallSid || req.query?.CallSid;
