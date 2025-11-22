@@ -243,6 +243,18 @@ export class TwilioService {
           );
         }
 
+        // Validate TwiML App SID format (should start with AP)
+        if (!twimlAppSid.startsWith('AP')) {
+          this.logger.warn(
+            `TwiML App SID "${twimlAppSid}" may be invalid. TwiML App SIDs typically start with "AP".`,
+          );
+        }
+
+        // Log the TwiML App SID being used for debugging
+        this.logger.log(
+          `Using TwiML App SID: ${twimlAppSid} for Voice grant. Ensure this TwiML App exists in your Twilio Console and has a valid Voice URL configured.`,
+        );
+
         const voiceGrant = new VoiceGrant({
           outgoingApplicationSid: twimlAppSid,
           incomingAllow: grants.voice.incomingAllow ?? true,

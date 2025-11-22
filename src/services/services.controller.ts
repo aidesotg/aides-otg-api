@@ -10,9 +10,12 @@ import {
   ValidationPipe,
   Query,
   Put,
+  Res,
+  Req,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthUser } from 'src/framework/decorators/user.decorator';
+import { Response, Request } from 'express';
 
 import { AwsService } from './aws.service';
 import { PresignUrlDto } from './dto/presign-url.dto';
@@ -164,5 +167,60 @@ export class ServicesController {
       message: 'Call updated successfully',
       data: call,
     };
+  }
+
+  /**
+   * TwiML Voice URL handler for Twilio calls
+   * This endpoint must be publicly accessible (no auth) and return valid TwiML
+   * Configure this URL in your Twilio Console TwiML App settings:
+   * https://console.twilio.com/us1/develop/voice/manage/twiml-apps
+   *
+   * The Voice URL should be: https://your-domain.com/services/twilio/call-handler
+   */
+  @Post('twilio/call-handler')
+  @Get('twilio/call-handler')
+  async handleTwilioCall(@Req() req: Request, @Res() res: Response) {
+    try {
+      // Extract call parameters from Twilio request
+      const callSid = req.body?.CallSid || req.query?.CallSid;
+      const from = req.body?.From || req.query?.From;
+      const to = req.body?.To || req.query?.To;
+      const callStatus = req.body?.CallStatus || req.query?.CallStatus;
+
+      // Log the incoming TwiML request for debugging
+      console.log('TwiML Request:', {
+        callSid,
+        from,
+        to,
+        callStatus,
+        body: req.body,
+        query: req.query,
+      });
+
+      // Basic TwiML response for client-to-client calls
+      // Customize this based on your call flow requirements
+      const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="alice">Connecting your call.</Say>
+  <Dial>
+    <Client>
+      <Identity>${to || 'user'}</Identity>
+    </Client>
+  </Dial>
+</Response>`;
+
+      res.type('text/xml');
+      res.send(twiml);
+    } catch (error) {
+      console.error('Error in TwiML handler:', error);
+      // Return error TwiML
+      const errorTwiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="alice">Sorry, there was an error processing your call.</Say>
+  <Hangup/>
+</Response>`;
+      res.type('text/xml');
+      res.status(200).send(errorTwiml);
+    }
   }
 }
