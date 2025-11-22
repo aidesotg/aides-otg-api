@@ -178,7 +178,6 @@ export class ServicesController {
    * The Voice URL should be: https://your-domain.com/services/twilio/call-handler
    */
   @Post('twilio/call-handler')
-  @Get('twilio/call-handler')
   async handleTwilioCall(@Req() req: Request, @Res() res: Response) {
     try {
       // Extract call parameters from Twilio request
