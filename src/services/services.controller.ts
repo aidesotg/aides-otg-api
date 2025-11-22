@@ -199,14 +199,18 @@ export class ServicesController {
 
       // Basic TwiML response for client-to-client calls
       // Customize this based on your call flow requirements
+      // timeout: 30 seconds - how long to ring before giving up
+      // timeLimit: maximum call duration (optional, defaults to 4 hours)
       const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="alice">Connecting your call.</Say>
-  <Dial>
+  <Dial timeout="30" timeLimit="3600">
     <Client>
       <Identity>${to || 'user'}</Identity>
     </Client>
   </Dial>
+  <Say voice="alice">The call could not be completed. Please try again later.</Say>
+  <Hangup/>
 </Response>`;
 
       res.type('text/xml');
