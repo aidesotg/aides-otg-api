@@ -58,6 +58,7 @@ import {
 import { DeleteAccountDto } from '../dto/delete-account.dto';
 import { Kyc } from '../interface/kyc.interface';
 import { SubmitKycDto } from '../dto/submit-kyc.dto';
+import constants from 'src/framework/constants';
 
 @Injectable()
 export class UserService {
@@ -320,6 +321,7 @@ export class UserService {
   async getUser(user: any) {
     const userDetails: any = await this.userModel
       .findOne({ _id: user._id, isDeleted: false })
+      .select(constants.userPopulateFields)
       .populate('roles', ['name'])
       .populate('has_applied')
       .populate({

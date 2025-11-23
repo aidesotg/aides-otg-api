@@ -328,10 +328,84 @@ export class CaregiverService {
   }
 
   async getPendingCaregiverApplications(params) {
-    const { page = 1, pageSize = 50, ...rest } = params;
+    const {
+      page = 1,
+      pageSize = 50,
+      search,
+      startDate,
+      endDate,
+      ...rest
+    } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
     const query: any = await this.miscService.search(rest);
-    query.status = 'pending';
+    if (!query.status) query.status = 'pending';
+
+    // Filter by date range (createdAt)
+    if (startDate || endDate) {
+      const createdAtCondition: any = {};
+      if (startDate) {
+        createdAtCondition.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Set endDate to end of day to include the entire day
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        createdAtCondition.$lte = end;
+      }
+      if (Object.keys(createdAtCondition).length > 0) {
+        query.createdAt = createdAtCondition;
+      }
+    }
+
+    // Global search functionality
+    if (search) {
+      const searchConditions: any[] = [];
+      const searchRegex = new RegExp(search, 'i');
+
+      // Search by profile_id (application id)
+      // searchConditions.push({ _id: searchRegex });
+
+      // Search by _id if search term is a valid ObjectId
+      if (await this.miscService.IsObjectId(search)) {
+        searchConditions.push({ _id: search });
+      }
+
+      // Search by user names (first_name, last_name)
+      const userSearchRegex = new RegExp(search, 'i');
+      const matchingUsers = await this.userModel
+        .find({
+          $or: [
+            { first_name: userSearchRegex },
+            { last_name: userSearchRegex },
+          ],
+        })
+        .select('_id')
+        .exec();
+
+      if (matchingUsers.length > 0) {
+        const userIds = await Promise.all(matchingUsers.map((u) => u._id));
+        searchConditions.push({ user: { $in: userIds } });
+      }
+
+      // Combine search conditions with existing query using $or
+      if (query.$or) {
+        // If query already has $or, combine it with search conditions
+        if (query.$and) {
+          query.$and.push({ $or: searchConditions });
+        } else {
+          query.$and = [{ $or: query.$or }, { $or: searchConditions }];
+          delete query.$or;
+        }
+      } else if (query.$and) {
+        // If query already has $and (e.g., from date filtering), add search conditions
+        query.$and.push({ $or: searchConditions });
+      } else {
+        query.$or = searchConditions;
+      }
+    }
+
+    console.log(query);
+
     const applications = await this.professionalProfileModel
       .find(query)
       .populate('user')
@@ -414,7 +488,11 @@ export class CaregiverService {
         message: 'Caregiver application not found',
       });
     }
-    return application;
+    const user = await this.userService.getUserObject(application.user);
+    return {
+      ...application.toObject(),
+      user,
+    };
   }
 
   async suspendCaregiver(id: string, reason: string) {

@@ -116,6 +116,8 @@ export class MiscCLass {
         query[value] = false;
       } else if (value == 'category' || value == 'categories') {
         query[value] = { $in: params[value] };
+      } else if (value == 'rating' || value == 'ratings') {
+        query[value] = Number(params[value]);
       } else {
         const $regex = new RegExp(params[value]);
         const $options = 'i';
