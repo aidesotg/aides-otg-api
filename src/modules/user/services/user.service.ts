@@ -345,7 +345,15 @@ export class UserService {
   }
 
   async getUsers(params: any) {
-    const { page = 1, pageSize = 50, role, ...rest } = params;
+    const {
+      page = 1,
+      pageSize = 50,
+      role,
+      search,
+      startDate,
+      endDate,
+      ...rest
+    } = params;
 
     const pagination = await this.miscService.paginate({ page, pageSize });
 
@@ -353,6 +361,49 @@ export class UserService {
     query.isDeleted = false;
 
     if (role) query.roles = { $in: role };
+
+    // Add date filtering for createdAt field
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Set endDate to end of day to include the entire day
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
+    }
+
+    // Add search functionality for _id, name (first_name/last_name), and email
+    if (search) {
+      const searchConditions: any[] = [];
+      const searchRegex = new RegExp(search, 'i');
+
+      // Search by email
+      searchConditions.push({ email: searchRegex });
+
+      // Search by first_name
+      searchConditions.push({ first_name: searchRegex });
+
+      // Search by last_name
+      searchConditions.push({ last_name: searchRegex });
+
+      // Search by _id if search term is a valid ObjectId
+      if (await this.miscService.IsObjectId(search)) {
+        searchConditions.push({ _id: search });
+      }
+
+      // Combine search conditions with existing query using $or
+      if (query.$or) {
+        // If query already has $or, combine it with search conditions
+        query.$and = [{ $or: query.$or }, { $or: searchConditions }];
+        delete query.$or;
+      } else {
+        query.$or = searchConditions;
+      }
+    }
 
     const users = await this.userModel
       .find(query)

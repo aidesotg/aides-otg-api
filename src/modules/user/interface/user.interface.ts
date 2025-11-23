@@ -78,6 +78,7 @@ export interface User extends mongoose.Document {
       default: true;
     };
   };
+  last_login: Date;
   readonly createdAt: Date;
   updatedAt: Date;
 }

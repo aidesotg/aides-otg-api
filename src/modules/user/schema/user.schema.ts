@@ -191,6 +191,10 @@ export const UserSchema = new mongoose.Schema<User>(
         default: true,
       },
     },
+    last_login: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

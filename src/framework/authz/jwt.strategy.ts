@@ -34,6 +34,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           'Your account is currently suspended, please contact admin or customer support for more information',
       });
     }
+    user.last_login = new Date();
+    await user.save();
     return user;
   }
 }
