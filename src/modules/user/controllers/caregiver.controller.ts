@@ -77,6 +77,13 @@ export class CaregiverController {
     return this.caregiverService.getPendingCaregiverApplications(params);
   }
 
+  @Get('/applications/counts')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getApplicationCounts() {
+    return this.caregiverService.getApplicationCounts();
+  }
+
   @Get('/applications/:id')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)

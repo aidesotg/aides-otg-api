@@ -427,6 +427,32 @@ export class CaregiverService {
     };
   }
 
+  async getApplicationCounts() {
+    const [all, pending, approved, rejected] = await Promise.all([
+      this.professionalProfileModel.countDocuments().exec(),
+      this.professionalProfileModel
+        .countDocuments({ status: 'pending' })
+        .exec(),
+      this.professionalProfileModel
+        .countDocuments({ status: 'approved' })
+        .exec(),
+      this.professionalProfileModel
+        .countDocuments({ status: 'rejected' })
+        .exec(),
+    ]);
+
+    return {
+      status: 'success',
+      message: 'Application counts fetched successfully',
+      data: {
+        all,
+        pending,
+        approved,
+        rejected,
+      },
+    };
+  }
+
   async updateCaregiverApplicationStatus(
     id: string,
     body: { status: string; reason: string },
