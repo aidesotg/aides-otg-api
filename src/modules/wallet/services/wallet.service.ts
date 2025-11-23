@@ -436,12 +436,12 @@ export class WalletService {
     if (!wallet) {
       return { status: false, message: 'wallet not found' };
     }
-    if (wallet.tokens < amount) {
-      throw new ForbiddenException({
-        status: 'success',
-        message: 'Insufficient tokens',
-      });
-    }
+    // if (wallet.tokens < amount) {
+    //   throw new ForbiddenException({
+    //     status: 'success',
+    //     message: 'Insufficient tokens',
+    //   });
+    // }
     return true;
   }
 

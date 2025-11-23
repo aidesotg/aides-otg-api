@@ -6,7 +6,7 @@ export interface Wallet extends mongoose.Document {
   email: string;
   balance: number;
   ledger_balance: number;
-  tokens: number;
+  // tokens: number;
   type: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;

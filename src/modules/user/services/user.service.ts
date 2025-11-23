@@ -344,6 +344,15 @@ export class UserService {
     return userDetails;
   }
 
+  async getUserObject(user: any) {
+    const userDetails = await this.getUser(user);
+    const wallet = await this.walletService.getUserBalance(user);
+    return {
+      ...userDetails.toObject(),
+      wallet,
+    };
+  }
+
   async getUsers(params: any) {
     const {
       page = 1,

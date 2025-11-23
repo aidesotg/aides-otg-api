@@ -20,10 +20,10 @@ export const WalletSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    tokens: {
-      type: Number,
-      default: 0,
-    },
+    // tokens: {
+    //   type: Number,
+    //   default: 0,
+    // },
     type: {
       type: String,
       enum: ['organization', 'charity', 'individual'],

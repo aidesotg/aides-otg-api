@@ -54,7 +54,7 @@ export class UserController {
   @Get('')
   @UseGuards(AuthGuard('jwt'))
   async getUser(@AuthUser() user: any) {
-    const userDetails = await this.userService.getUser(user);
+    const userDetails = await this.userService.getUserObject(user);
     return {
       status: 'success',
       message: 'User details fetched',
@@ -135,7 +135,7 @@ export class UserController {
   @Get('/:id')
   @UseGuards(AuthGuard('jwt'))
   async getUserById(@Param('id') id: string) {
-    const userDetails = await this.userService.getUser({ _id: id });
+    const userDetails = await this.userService.getUserObject({ _id: id });
     return {
       status: 'success',
       message: 'User details fetched',
