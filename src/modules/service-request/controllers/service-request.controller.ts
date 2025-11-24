@@ -47,7 +47,10 @@ export class ServiceRequestController {
   @Get('/pool')
   @UseGuards(AuthGuard('jwt'))
   async getPoolRequests(@AuthUser() user: any, @Query() params: any) {
-    return this.serviceService.getRequests({ ...params, status: 'Pending' });
+    return this.serviceService.getRequestsPool({
+      ...params,
+      status: 'Pending',
+    });
   }
 
   @Get('/pending')

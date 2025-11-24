@@ -40,6 +40,24 @@ export const ServiceRequestDayLogsSchema =
           },
         },
       ],
+      care_giver: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+      },
+      status: {
+        type: String,
+        enum: [
+          'Pending',
+          'Accepted',
+          'In Progress',
+          'Completed',
+          'Cancelled',
+          'Rejected',
+          'Expired',
+        ],
+        default: 'Pending',
+      },
     },
     {
       timestamps: true,

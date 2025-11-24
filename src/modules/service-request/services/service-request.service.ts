@@ -488,6 +488,22 @@ export class ServiceRequestService {
 
     const newRequest = new this.serviceRequestModel(data);
     const request = await newRequest.save();
+    const days: any[] = [];
+    for (const date of request.date_list) {
+      days.push({
+        day_id: (date as any)._id,
+        request: request._id,
+        activity_trail: {
+          on_my_way: false,
+          arrived: false,
+          in_progress: false,
+          completed: false,
+        },
+        status: 'Pending',
+      });
+    }
+
+    await this.serviceRequestDayLogsModel.insertMany(days);
 
     //TODO: Send notification to care giver if care giver is passed
 
@@ -917,6 +933,280 @@ export class ServiceRequestService {
     };
   }
 
+  async getRequestsPool(params: any, user?: User) {
+    console.log('🚀 ~ ServiceRequestService ~ getRequests ~ user:', user);
+    const {
+      page = 1,
+      pageSize = 50,
+      status,
+      care_type,
+      startDate,
+      endDate,
+      search,
+      ...rest
+    } = params;
+    const pagination = await this.miscService.paginate({ page, pageSize });
+    const query: any = await this.miscService.search(rest);
+    if (user) {
+      query.created_by = user._id;
+    }
+
+    // Filter by status
+    if (status) {
+      // Handle special status "Unassigned" which means Pending and no caregiver
+      if (status === 'Unassigned') {
+        query.status = 'Pending';
+        query.care_giver = null;
+      } else {
+        query.status = status;
+      }
+    }
+
+    // Filter by care_type
+    if (care_type) {
+      // care_type is an array, so use $in to match any of the provided care types
+      const careTypeArray = Array.isArray(care_type) ? care_type : [care_type];
+      query.care_type = { $in: careTypeArray };
+    }
+
+    // Filter by date range (createdAt and date_list)
+    if (startDate || endDate) {
+      const dateConditions: any[] = [];
+
+      // Filter by createdAt
+      const createdAtCondition: any = {};
+      if (startDate) {
+        createdAtCondition.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Set endDate to end of day to include the entire day
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        createdAtCondition.$lte = end;
+      }
+      if (Object.keys(createdAtCondition).length > 0) {
+        dateConditions.push({ createdAt: createdAtCondition });
+      }
+
+      // Filter by date_list array using $elemMatch
+      const dateListMatchCondition: any = {};
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        dateListMatchCondition.$gte = start;
+      }
+      if (endDate) {
+        // Set endDate to end of day to include the entire day
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        dateListMatchCondition.$lte = end;
+      }
+      if (Object.keys(dateListMatchCondition).length > 0) {
+        dateConditions.push({
+          date_list: {
+            $elemMatch: {
+              date: dateListMatchCondition,
+            },
+          },
+        });
+      }
+
+      // Use $or to match either createdAt or date_list dates
+      if (dateConditions.length > 0) {
+        // Handle existing $or or $and in query
+        if (query.$or) {
+          // If query already has $or, combine it with date conditions using $and
+          if (query.$and) {
+            query.$and.push({ $or: dateConditions });
+          } else {
+            query.$and = [{ $or: query.$or }, { $or: dateConditions }];
+            delete query.$or;
+          }
+        } else if (query.$and) {
+          // If query already has $and, add date conditions to it
+          query.$and.push({ $or: dateConditions });
+        } else {
+          query.$or = dateConditions;
+        }
+      }
+    }
+
+    // Global search functionality
+    if (search) {
+      const searchConditions: any[] = [];
+      const searchRegex = new RegExp(search, 'i');
+
+      // Search by booking_id
+      searchConditions.push({ booking_id: searchRegex });
+
+      // Search by status
+      searchConditions.push({ status: searchRegex });
+
+      // Search by created_by or care_giver if search is a valid ObjectId
+      if (await this.miscService.IsObjectId(search)) {
+        searchConditions.push({ created_by: search });
+        searchConditions.push({ care_giver: search });
+        searchConditions.push({ beneficiary: search });
+      }
+
+      // Search by user names (caregiver, created_by)
+      const userSearchRegex = new RegExp(search, 'i');
+      const matchingUsers = await this.userModel
+        .find({
+          $or: [
+            { first_name: userSearchRegex },
+            { last_name: userSearchRegex },
+          ],
+        })
+        .select('_id')
+        .exec();
+
+      if (matchingUsers.length > 0) {
+        const userIds = matchingUsers.map((u) => u._id);
+        searchConditions.push({ created_by: { $in: userIds } });
+        searchConditions.push({ care_giver: { $in: userIds } });
+        // Also search beneficiary if it's a User
+        searchConditions.push({
+          $and: [{ recepient_type: 'User' }, { beneficiary: { $in: userIds } }],
+        });
+      }
+
+      // Search by beneficiary names (Beneficiary model)
+      const matchingBeneficiaries = await this.beneficiaryModel
+        .find({
+          $or: [
+            { first_name: userSearchRegex },
+            { last_name: userSearchRegex },
+          ],
+        })
+        .select('_id')
+        .exec();
+
+      if (matchingBeneficiaries.length > 0) {
+        const beneficiaryIds = matchingBeneficiaries.map((b) => b._id);
+        searchConditions.push({
+          $and: [
+            { recepient_type: 'Beneficiary' },
+            { beneficiary: { $in: beneficiaryIds } },
+          ],
+        });
+      }
+
+      // Combine search conditions with existing query using $or
+      if (query.$or) {
+        // If query already has $or, combine it with search conditions using $and
+        if (query.$and) {
+          query.$and.push({ $or: searchConditions });
+        } else {
+          query.$and = [{ $or: query.$or }, { $or: searchConditions }];
+          delete query.$or;
+        }
+      } else if (query.$and) {
+        // If query already has $and (e.g., from date filtering), add search conditions
+        query.$and.push({ $or: searchConditions });
+      } else {
+        query.$or = searchConditions;
+      }
+    }
+
+    const requests = await this.serviceRequestModel
+      .find(query)
+      .populate('beneficiary', [
+        'first_name',
+        'last_name',
+        'profile_picture',
+        'label',
+        'relationship',
+        'special_requirements',
+        'gender',
+        'date_of_birth',
+      ])
+      .populate('created_by', [
+        'first_name',
+        'last_name',
+        'profile_picture',
+        'phone',
+      ])
+      .populate('care_giver', [
+        'first_name',
+        'last_name',
+        'profile_picture',
+        'phone',
+      ])
+      .populate({
+        path: 'care_type',
+        select: 'name category price',
+        populate: {
+          path: 'category',
+          select: 'title',
+        },
+      })
+      // .skip(pagination.offset)
+      // .limit(pagination.limit)
+      // .sort({ createdAt: -1 })
+      .exec();
+    console.log(
+      '🚀 ~ ServiceRequestService ~ getRequestsPool ~ requests:',
+      requests,
+    );
+
+    const poolQuery = {
+      request: { $in: await Promise.all(requests.map((r) => r._id)) },
+      // $or: [{ status: 'Pending' }, { status: '' }],
+    };
+    console.log(
+      '🚀 ~ ServiceRequestService ~ getRequestsPool ~ poolQuery:',
+      poolQuery,
+    );
+
+    const requestPool = await this.serviceRequestDayLogsModel
+      .find(poolQuery)
+      .populate({
+        path: 'request',
+        populate: [
+          {
+            path: 'beneficiary',
+            select:
+              'first_name last_name profile_picture label relationship special_requirements gender date_of_birth',
+          },
+          {
+            path: 'created_by',
+            select: 'first_name last_name profile_picture phone',
+          },
+          {
+            path: 'care_giver',
+            select: 'first_name last_name profile_picture phone',
+          },
+          {
+            path: 'care_type',
+            select: 'name category price',
+            populate: {
+              path: 'category',
+              select: 'title',
+            },
+          },
+        ],
+      })
+      .skip(pagination.offset)
+      .limit(pagination.limit)
+      .sort({ createdAt: -1 })
+      .exec();
+
+    const count = await this.serviceRequestDayLogsModel
+      .countDocuments(poolQuery)
+      .exec();
+
+    return {
+      status: 'success',
+      message: 'Requests fetched',
+      pagination: {
+        ...(await this.miscService.pageCount({ count, page, pageSize })),
+        total: count,
+      },
+      data: requestPool,
+    };
+  }
+
   async getActiveRequests(params: any, user: User) {
     const { page = 1, pageSize = 50, ...rest } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
@@ -1201,7 +1491,7 @@ export class ServiceRequestService {
       .findOne({
         _id: id,
         // care_giver: user._id,
-        status: 'Pending',
+        // status: 'Pending',
       })
       .populate('created_by')
       .populate('care_type');
@@ -1212,10 +1502,22 @@ export class ServiceRequestService {
         message: 'Request not found',
       });
     }
+
+    const dayLog = await this.serviceRequestDayLogsModel.findOne({
+      request: request._id,
+      day_id: body.day_id,
+      status: 'Pending',
+    });
+    if (!dayLog) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Day not found',
+      });
+    }
     if (
-      (!request.care_giver && body.status === 'Rejected') ||
-      (request.care_giver &&
-        request.care_giver.toString() !== user._id.toString() &&
+      (!dayLog.care_giver && body.status === 'Rejected') ||
+      (dayLog.care_giver &&
+        dayLog.care_giver.toString() !== user._id.toString() &&
         body.status === 'Rejected')
     ) {
       throw new BadRequestException({
@@ -1224,30 +1526,39 @@ export class ServiceRequestService {
       });
     }
 
-    request.status = status;
-    request.status_history.push({
-      status: status,
-      created_at: new Date(),
-    });
-    request.care_giver = user._id;
-    await request.save();
+    dayLog.status = status;
+    dayLog.care_giver = user._id;
+    await dayLog.save();
 
-    const days: any[] = [];
-    for (const date of request.date_list) {
-      days.push({
-        day_id: (date as any)._id,
-        request: request._id,
-        activity_trail: {
-          on_my_way: false,
-          arrived: false,
-          in_progress: false,
-          completed: false,
-        },
+    const pendingDays = await this.serviceRequestDayLogsModel.find({
+      request: request._id,
+      status: 'Pending',
+    });
+    if (pendingDays.length === 0 && request.status === 'Pending') {
+      request.status = 'Accepted';
+      request.status_history.push({
+        status: 'Accepted',
+        created_at: new Date(),
       });
     }
+    await request.save();
 
-    await this.serviceRequestDayLogsModel.insertMany(days);
-    await this.serviceRequestDayLogsModel.insertMany(days);
+    // const days: any[] = [];
+    // for (const date of request.date_list) {
+    //   days.push({
+    //     day_id: (date as any)._id,
+    //     request: request._id,
+    //     activity_trail: {
+    //       on_my_way: false,
+    //       arrived: false,
+    //       in_progress: false,
+    //       completed: false,
+    //     },
+    //   });
+    // }
+
+    // await this.serviceRequestDayLogsModel.insertMany(days);
+    // await this.serviceRequestDayLogsModel.insertMany(days);
 
     //send notification to Caregiver and Client
 

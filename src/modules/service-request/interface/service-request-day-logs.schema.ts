@@ -14,6 +14,8 @@ export interface ServiceRequestDayLogs extends mongoose.Document {
     in_progress: boolean;
     completed: boolean;
   };
+  care_giver: mongoose.Schema.Types.ObjectId;
+  status: string;
   readonly createdAt: Date;
   updatedAt: Date;
 }
