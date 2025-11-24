@@ -90,7 +90,7 @@ export class UpdateEmailDto {
 export class UpdatePreferenceDto {
   @ApiProperty() @IsArray() @IsOptional() special_requirements?: string[];
   @ApiProperty() @IsArray() @IsOptional() health_conditions?: string[];
-  @ApiProperty() @IsString() @IsOptional() type_of_care?: string;
+  @ApiProperty() @IsArray() @IsOptional() type_of_care?: string[];
   @ValidateNested({ each: true })
   @IsOptional()
   @Type(() => InsuranceInfoDto)

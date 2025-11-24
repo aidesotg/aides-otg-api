@@ -23,7 +23,7 @@ export interface User extends mongoose.Document {
     state: string;
     country: string;
     zip_code?: string;
-    location?: Record<string, number>;
+    coordinates?: Record<string, any>;
   };
   profile_picture: string;
   gender: string;

@@ -138,6 +138,13 @@ export class ServiceRequestController {
     return this.serviceService.getReviewById(id);
   }
 
+  @Get('/counts')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getServiceRequestCounts() {
+    return this.serviceService.getServiceRequestCounts();
+  }
+
   @Get('/:id')
   @UseGuards(AuthGuard('jwt'))
   async getServiceById(@Param('id') id: string) {

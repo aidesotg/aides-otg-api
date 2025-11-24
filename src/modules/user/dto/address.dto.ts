@@ -10,7 +10,7 @@ import {
 export class LocationDto {
   @ApiProperty()
   @IsNumber()
-  latitude: number;
+  lat: number;
 
   @ApiProperty()
   @IsNumber()

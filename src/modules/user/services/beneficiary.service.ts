@@ -178,7 +178,7 @@ export class BeneficiaryService {
   }
 
   async getBeneficiaries(params?: any) {
-    const { page = 1, pageSize = 50, role, ownerId, ...rest } = params;
+    const { page = 1, pageSize = 50, role, ownerId, search, ...rest } = params;
 
     const pagination = await this.miscService.paginate({ page, pageSize });
 
@@ -191,6 +191,58 @@ export class BeneficiaryService {
         ).map(async (beneficiary) => beneficiary.beneficiary),
       );
       query._id = { $in: beneficiaryIds };
+    }
+
+    // Global search functionality
+    if (search) {
+      const searchConditions: any[] = [];
+      const searchRegex = new RegExp(search, 'i');
+
+      // Search by beneficiary first_name
+      searchConditions.push({ first_name: searchRegex });
+
+      // Search by beneficiary last_name
+      searchConditions.push({ last_name: searchRegex });
+
+      // Search by beneficiary _id if search term is a valid ObjectId
+      if (await this.miscService.IsObjectId(search)) {
+        searchConditions.push({ _id: search });
+        // Search by user id
+        searchConditions.push({ user: search });
+      }
+
+      // Search by user names (first_name, last_name)
+      const userSearchRegex = new RegExp(search, 'i');
+      const matchingUsers = await this.userModel
+        .find({
+          $or: [
+            { first_name: userSearchRegex },
+            { last_name: userSearchRegex },
+          ],
+        })
+        .select('_id')
+        .exec();
+
+      if (matchingUsers.length > 0) {
+        const userIds = matchingUsers.map((u) => u._id);
+        searchConditions.push({ user: { $in: userIds } });
+      }
+
+      // Combine search conditions with existing query using $or
+      if (query.$or) {
+        // If query already has $or, combine it with search conditions
+        if (query.$and) {
+          query.$and.push({ $or: searchConditions });
+        } else {
+          query.$and = [{ $or: query.$or }, { $or: searchConditions }];
+          delete query.$or;
+        }
+      } else if (query.$and) {
+        // If query already has $and, add search conditions
+        query.$and.push({ $or: searchConditions });
+      } else {
+        query.$or = searchConditions;
+      }
     }
 
     const beneficiaries = await this.beneficiaryModel
@@ -238,6 +290,7 @@ export class BeneficiaryService {
   async getBeneficaryById(beneficiaryId: string) {
     const beneficiary = await this.beneficiaryModel
       .findById(beneficiaryId)
+      .populate('user', 'first_name last_name email profile_picture')
       .populate({
         path: 'insurance',
         populate: {

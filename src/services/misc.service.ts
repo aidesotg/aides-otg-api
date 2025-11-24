@@ -3,6 +3,7 @@ import moment from 'moment';
 import fs from 'fs';
 import { ObjectId } from 'bson';
 import * as momentTz from 'moment-timezone';
+import { AddressDto, LocationDto } from 'src/modules/user/dto/address.dto';
 
 @Injectable()
 export class MiscCLass {
@@ -433,6 +434,15 @@ export class MiscCLass {
     format: string,
   ): Promise<string> {
     return this.formatTimeOnly(dateInput, format);
+  }
+  async formatCoordinates(address: AddressDto): Promise<Record<string, any>> {
+    return {
+      ...address,
+      coordinates: {
+        type: 'Point',
+        coordinates: [address.coordinates.lng, address.coordinates.lat],
+      },
+    };
   }
 }
 

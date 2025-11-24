@@ -474,6 +474,9 @@ export class ServiceRequestService {
     }
     const data = {
       ...createServiceDto,
+      location: await this.miscService.formatCoordinates(
+        createServiceDto.location,
+      ),
       beneficiary: recepient_id,
       recepient_type: recepient_type,
       booking_id: this.generateBookingId(),
@@ -1710,6 +1713,37 @@ export class ServiceRequestService {
       status: 'success',
       message: 'Review retrieved successfully',
       data: review,
+    };
+  }
+
+  async getServiceRequestCounts() {
+    const [all, pending, inProgress, unassigned, completed, cancelled, urgent] =
+      await Promise.all([
+        this.serviceRequestModel.countDocuments().exec(),
+        this.serviceRequestModel.countDocuments({ status: 'Pending' }).exec(),
+        this.serviceRequestModel
+          .countDocuments({ status: 'In Progress' })
+          .exec(),
+        this.serviceRequestModel
+          .countDocuments({ status: 'Pending', care_giver: null })
+          .exec(),
+        this.serviceRequestModel.countDocuments({ status: 'Completed' }).exec(),
+        this.serviceRequestModel.countDocuments({ status: 'Cancelled' }).exec(),
+        this.serviceRequestModel.countDocuments({ status: 'Urgent' }).exec(),
+      ]);
+
+    return {
+      status: 'success',
+      message: 'Service request counts fetched successfully',
+      data: {
+        all,
+        pending,
+        inProgress,
+        unassigned,
+        completed,
+        cancelled,
+        urgent,
+      },
     };
   }
 }

@@ -165,7 +165,10 @@ export class SocialAuthService {
         email: response.email || auth.email,
         firstName: auth.firstName || response.given_name,
         lastName: auth.lastName || response.family_name,
-        avatar: auth.avatar || response.picture ? response.picture : undefined,
+        avatar:
+          auth.profile_picture || response.picture
+            ? response.picture
+            : undefined,
       };
     }
     _.extend(auth, {
@@ -180,7 +183,7 @@ export class SocialAuthService {
         [socialType]: response.username ?? response.handle,
       },
       ...socialData,
-      profile_picture: auth.avatar ?? socialData.avatar,
+      profile_picture: auth.profile_picture ?? socialData.avatar,
     });
 
     if (socialData.email) {

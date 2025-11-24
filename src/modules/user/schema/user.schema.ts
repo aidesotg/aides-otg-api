@@ -74,7 +74,7 @@ export const UserSchema = new mongoose.Schema<User>(
       zip_code: {
         type: String,
       },
-      location: {},
+      coordinates: {},
     },
     profile_picture: {
       type: String,
@@ -101,7 +101,7 @@ export const UserSchema = new mongoose.Schema<User>(
     type_of_care: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Service',
+        ref: 'ServiceCategory',
       },
     ],
 

@@ -15,6 +15,7 @@ export interface ServiceRequest extends mongoose.Document {
     state: string;
     country: string;
     zip_code?: string;
+    coordinates?: Record<string, any>;
   };
   care_type: string[];
   notes: string;

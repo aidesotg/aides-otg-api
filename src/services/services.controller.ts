@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -26,6 +27,15 @@ import {
   MakeCallWithTwimlDto,
   UpdateCallStatusDto,
 } from './dto/twilio-call.dto';
+import { RedisService } from './redis.service';
+import {
+  FindCaregiversNearRequestDto,
+  FindNearbyCaregiversDto,
+  GetDistanceBetweenDto,
+  OnlineStatusQueryDto,
+  UpdateCaregiverLocationDto,
+  UpdateRequestLocationDto,
+} from './dto/redis.dto';
 
 @Controller('services')
 export class ServicesController {
@@ -33,6 +43,7 @@ export class ServicesController {
     private awsService: AwsService,
     private miscService: MiscCLass,
     private twilioService: TwilioService,
+    private redisService: RedisService,
   ) {}
 
   @Get('file/presign-url')
@@ -166,6 +177,186 @@ export class ServicesController {
       status: 'success',
       message: 'Call updated successfully',
       data: call,
+    };
+  }
+
+  /**
+   * Redis-powered caregiver location endpoints
+   */
+  @Post('redis/caregiver/location')
+  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(ValidationPipe)
+  async updateCaregiverLocation(@Body() body: UpdateCaregiverLocationDto) {
+    await this.redisService.updateCaregiverLocation(body);
+    return {
+      status: 'success',
+      message: 'Caregiver location updated',
+    };
+  }
+
+  @Get('redis/caregivers/nearby')
+  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(ValidationPipe)
+  async findNearbyCaregivers(@Query() query: FindNearbyCaregiversDto) {
+    const caregivers = await this.redisService.findNearbyCaregivers(
+      query.latitude,
+      query.longitude,
+      query.radius ?? 5,
+      query.unit ?? 'km',
+    );
+    return {
+      status: 'success',
+      message: 'Nearby caregivers fetched',
+      data: caregivers,
+    };
+  }
+
+  @Get('redis/caregivers/distance')
+  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(ValidationPipe)
+  async getDistanceBetweenCaregivers(@Query() query: GetDistanceBetweenDto) {
+    const unit = query.unit ?? 'km';
+    const distance = await this.redisService.getDistanceBetween(
+      query.caregiverId1,
+      query.caregiverId2,
+      unit,
+    );
+    return {
+      status: 'success',
+      message: 'Distance calculated successfully',
+      data: {
+        distance,
+        unit,
+      },
+    };
+  }
+
+  @Get('redis/caregiver/:id/location')
+  @UseGuards(AuthGuard('jwt'))
+  async getCaregiverLocation(@Param('id') caregiverId: string) {
+    const location = await this.redisService.getCaregiverLocation(caregiverId);
+    return {
+      status: 'success',
+      message: 'Caregiver location fetched',
+      data: location,
+    };
+  }
+
+  @Delete('redis/caregiver/:id/location')
+  @UseGuards(AuthGuard('jwt'))
+  async removeCaregiverLocation(@Param('id') caregiverId: string) {
+    await this.redisService.removeCaregiverLocation(caregiverId);
+    return {
+      status: 'success',
+      message: 'Caregiver location removed',
+    };
+  }
+
+  @Get('redis/caregiver/:id/online')
+  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(ValidationPipe)
+  async isCaregiverOnline(
+    @Param('id') caregiverId: string,
+    @Query() query: OnlineStatusQueryDto,
+  ) {
+    const isOnline = await this.redisService.isCaregiverOnline(
+      caregiverId,
+      query.maxAge ?? 600,
+    );
+    return {
+      status: 'success',
+      message: 'Caregiver online status fetched',
+      data: { isOnline },
+    };
+  }
+
+  @Get('redis/caregivers/online')
+  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(ValidationPipe)
+  async getOnlineCaregivers(@Query() query: OnlineStatusQueryDto) {
+    const caregivers = await this.redisService.getAllOnlineCaregivers(
+      query.maxAge ?? 600,
+    );
+    return {
+      status: 'success',
+      message: 'Online caregivers fetched',
+      data: caregivers,
+    };
+  }
+
+  @Post('redis/requests/:id/location')
+  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(ValidationPipe)
+  async updateRequestLocation(
+    @Param('id') requestId: string,
+    @Body() body: UpdateRequestLocationDto,
+  ) {
+    await this.redisService.updateClientLocationForRequest(
+      requestId,
+      body.latitude,
+      body.longitude,
+    );
+    return {
+      status: 'success',
+      message: 'Request location updated',
+    };
+  }
+
+  @Get('redis/requests/:id/location')
+  @UseGuards(AuthGuard('jwt'))
+  async getRequestLocation(@Param('id') requestId: string) {
+    const location = await this.redisService.getClientLocationForRequest(
+      requestId,
+    );
+    return {
+      status: 'success',
+      message: 'Request location fetched',
+      data: location,
+    };
+  }
+
+  @Delete('redis/requests/:id/location')
+  @UseGuards(AuthGuard('jwt'))
+  async removeRequestLocation(@Param('id') requestId: string) {
+    await this.redisService.removeRequestLocation(requestId);
+    return {
+      status: 'success',
+      message: 'Request location removed',
+    };
+  }
+
+  @Get('redis/requests/:id/caregivers')
+  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(ValidationPipe)
+  async findCaregiversNearRequest(
+    @Param('id') requestId: string,
+    @Query() query: FindCaregiversNearRequestDto,
+  ) {
+    const caregivers = await this.redisService.findCaregiversNearRequest(
+      requestId,
+      query.radius ?? 10,
+    );
+    return {
+      status: 'success',
+      message: 'Nearby caregivers for request fetched',
+      data: caregivers,
+    };
+  }
+
+  @Get('redis/requests/:requestId/caregivers/:caregiverId/distance')
+  @UseGuards(AuthGuard('jwt'))
+  async calculateDistanceToRequest(
+    @Param('requestId') requestId: string,
+    @Param('caregiverId') caregiverId: string,
+  ) {
+    const distance = await this.redisService.calculateDistanceToRequest(
+      caregiverId,
+      requestId,
+    );
+    return {
+      status: 'success',
+      message: 'Distance to request calculated',
+      data: { distance },
     };
   }
 

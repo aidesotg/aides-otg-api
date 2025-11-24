@@ -46,6 +46,7 @@ export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
         type: String,
         required: false,
       },
+      coordinates: {},
     },
     care_type: [
       {

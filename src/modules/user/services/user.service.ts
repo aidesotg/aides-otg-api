@@ -201,7 +201,8 @@ export class UserService {
   }
 
   async createProfile(user: User, body: CreateProfileDto) {
-    const { beneficiaries, insurance, emergency_contact, ...rest } = body;
+    const { beneficiaries, insurance, emergency_contact, address, ...rest } =
+      body;
     const session = await this.userModel.db.startSession();
     let userDetails: any;
     await session.startTransaction();
@@ -221,6 +222,7 @@ export class UserService {
         }
       }
       userDetails.client_id = await this.generateClientId(userDetails);
+      userDetails.address = await this.miscService.formatCoordinates(address);
       if (emergency_contact) {
         userDetails.emergency_contact = [emergency_contact];
       }

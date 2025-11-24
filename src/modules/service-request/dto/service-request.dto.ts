@@ -13,33 +13,7 @@ import {
   IsDateString,
   IsNumber,
 } from 'class-validator';
-
-export class LocationDto {
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
-  street?: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  city: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  state: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  country: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
-  zip_code?: string;
-}
+import { AddressDto } from 'src/modules/user/dto/address.dto';
 
 export class DateSlotDto {
   @ApiProperty()
@@ -73,11 +47,11 @@ export class CreateServiceRequestDto {
   @IsOptional()
   details?: string;
 
-  @ApiProperty({ type: LocationDto })
+  @ApiProperty({ type: AddressDto })
   @ValidateNested()
-  @Type(() => LocationDto)
+  @Type(() => AddressDto)
   @IsNotEmpty()
-  location: LocationDto;
+  location: AddressDto;
 
   @ApiProperty()
   @IsArray()
@@ -135,11 +109,11 @@ export class UpdateServiceRequestDto {
   @MinLength(10)
   details?: string;
 
-  @ApiProperty({ type: LocationDto, required: false })
+  @ApiProperty({ type: AddressDto, required: false })
   @ValidateNested()
-  @Type(() => LocationDto)
+  @Type(() => AddressDto)
   @IsOptional()
-  location?: LocationDto;
+  location?: AddressDto;
 
   @ApiProperty({ required: false })
   @IsArray()
