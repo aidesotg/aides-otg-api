@@ -639,10 +639,9 @@ export class ServiceRequestService {
     if (status == 'on_my_way' && request.status == 'Accepted') {
       request.status = 'In Progress';
       request.status_history.push({
-        status: 'In Progress',
+        status: 'On My Way',
         created_at: new Date(),
       });
-      await request.save();
     }
 
     //send notificartion to client
@@ -650,16 +649,31 @@ export class ServiceRequestService {
 
     if (status == 'arrived') {
       message = `Caregiver has arrived at the service location`;
+      request.status_history.push({
+        status: 'Arrived',
+        created_at: new Date(),
+      });
     }
     if (status == 'in_progress') {
       message = `Caregiver is providing service`;
+      request.status_history.push({
+        status: 'In Progress',
+        created_at: new Date(),
+      });
     }
     if (status == 'completed') {
       message = `Care session has ended successfully`;
+      request.status_history.push({
+        status: 'Completed',
+        created_at: new Date(),
+      });
+      request.status = 'Completed';
 
       // Clean up location data when service is completed
       await this.redisService.removeRequestLocation(id);
     }
+
+    await request.save();
     await this.notificationService.sendMessage({
       user: request.created_by,
       title: `Service Update: ${
