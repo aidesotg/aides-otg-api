@@ -440,7 +440,10 @@ export class MiscCLass {
       ...address,
       coordinates: {
         type: 'Point',
-        coordinates: [address.coordinates.lng, address.coordinates.lat],
+        coordinates: [
+          address.coordinates?.lng ?? 0,
+          address.coordinates?.lat ?? 0,
+        ],
       },
     };
   }
