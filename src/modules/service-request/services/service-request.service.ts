@@ -337,19 +337,26 @@ export class ServiceRequestService {
       },
     );
 
-    const totalPrice = requestedCareTypesServices.reduce((acc, service) => {
-      return acc + service.price;
-    }, 0);
+    const numberOfDays =
+      Array.isArray(request.date_list) && request.date_list.length > 0
+        ? request.date_list.length
+        : 1;
+
+    const totalPricePerDay = requestedCareTypesServices.reduce(
+      (acc, service) => acc + service.price,
+      0,
+    );
+    const totalPrice = totalPricePerDay * numberOfDays;
 
     const userCoveredCareTypesServicesPrice =
       userCoveredCareTypesServices.reduce((acc, service) => {
         return acc + service.price;
-      }, 0);
+      }, 0) * numberOfDays;
 
     const insuranceCoveredCareTypesServicesPrice =
       insuranceCoveredCareTypesServices.reduce((acc, service) => {
         return acc + service.price;
-      }, 0);
+      }, 0) * numberOfDays;
 
     return {
       insuranceCoveredCareTypes: insuranceCoveredCareTypesServices,

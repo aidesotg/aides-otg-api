@@ -238,7 +238,7 @@ UserSchema.virtual('professional_profile', {
   ref: 'ProfessionalProfile',
   localField: '_id',
   foreignField: 'user',
-  match: { status: 'approved' },
+  // match: { status: 'approved' },
   justOne: true,
 });
 
