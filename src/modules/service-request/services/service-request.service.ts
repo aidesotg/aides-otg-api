@@ -1285,44 +1285,79 @@ export class ServiceRequestService {
       delete query.status;
     }
 
-    const requests = await this.serviceRequestModel
+    // const requests = await this.serviceRequestModel
+    //   .find(query)
+    //   .populate('beneficiary', [
+    //     'first_name',
+    //     'last_name',
+    //     'profile_picture',
+    //     'label',
+    //     'relationship',
+    //     'special_requirements',
+    //     'gender',
+    //     'date_of_birth',
+    //   ])
+    //   .populate('created_by', [
+    //     'first_name',
+    //     'last_name',
+    //     'profile_picture',
+    //     'phone',
+    //   ])
+    //   .populate('care_giver', [
+    //     'first_name',
+    //     'last_name',
+    //     'profile_picture',
+    //     'phone',
+    //   ])
+    //   .populate({
+    //     path: 'care_type',
+    //     select: 'name category price',
+    //     populate: {
+    //       path: 'category',
+    //       select: 'title',
+    //     },
+    //   })
+    //   .skip(pagination.offset)
+    //   .limit(pagination.limit)
+    //   .sort({ createdAt: -1 })
+    //   .exec();
+
+    const requests = await this.serviceRequestDayLogsModel
       .find(query)
-      .populate('beneficiary', [
-        'first_name',
-        'last_name',
-        'profile_picture',
-        'label',
-        'relationship',
-        'special_requirements',
-        'gender',
-        'date_of_birth',
-      ])
-      .populate('created_by', [
-        'first_name',
-        'last_name',
-        'profile_picture',
-        'phone',
-      ])
-      .populate('care_giver', [
-        'first_name',
-        'last_name',
-        'profile_picture',
-        'phone',
-      ])
       .populate({
-        path: 'care_type',
-        select: 'name category price',
-        populate: {
-          path: 'category',
-          select: 'title',
-        },
+        path: 'request',
+        populate: [
+          {
+            path: 'beneficiary',
+            select:
+              'first_name last_name profile_picture label relationship special_requirements gender date_of_birth',
+          },
+          {
+            path: 'created_by',
+            select: 'first_name last_name profile_picture phone',
+          },
+          {
+            path: 'care_giver',
+            select: 'first_name last_name profile_picture phone',
+          },
+          {
+            path: 'care_type',
+            select: 'name category price',
+            populate: {
+              path: 'category',
+              select: 'title',
+            },
+          },
+        ],
       })
       .skip(pagination.offset)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
       .exec();
 
-    const count = await this.serviceRequestModel.countDocuments(query).exec();
+    const count = await this.serviceRequestDayLogsModel
+      .countDocuments(query)
+      .exec();
 
     return {
       status: 'success',
