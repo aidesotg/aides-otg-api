@@ -1385,12 +1385,22 @@ export class ServiceRequestService {
           .findOne({
             day_id: date._id,
           })
+          .populate('care_giver', [
+            'first_name',
+            'last_name',
+            'profile_picture',
+            'phone',
+          ])
           .lean()
           .exec();
 
         date.activity_trail = activityTrail?.activity_trail || {};
         date.history = activityTrail?.status_history || [];
-        return date;
+        return {
+          ...date,
+          status: activityTrail.status,
+          care_giver: activityTrail.care_giver,
+        };
       }),
     );
 
