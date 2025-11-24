@@ -337,6 +337,9 @@ export class UserService {
         path: 'type_of_care',
         select: '_id title',
       })
+      .populate({
+        path: 'professional_profile',
+      })
       .exec();
     if (!userDetails) {
       throw new HttpException(
