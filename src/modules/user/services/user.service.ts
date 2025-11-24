@@ -335,7 +335,7 @@ export class UserService {
       })
       .populate({
         path: 'type_of_care',
-        select: '_id name',
+        select: '_id title',
       })
       .exec();
     if (!userDetails) {
@@ -436,7 +436,7 @@ export class UserService {
       ])
       .populate({
         path: 'type_of_care',
-        select: '_id name',
+        select: '_id title',
       })
       .skip(pagination.offset)
       .limit(pagination.limit)
