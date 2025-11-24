@@ -861,6 +861,9 @@ export class ServiceRequestService {
         'profile_picture',
         'label',
         'relationship',
+        'special_requirements',
+        'gender',
+        'date_of_birth',
       ])
       .populate('created_by', [
         'first_name',
@@ -923,6 +926,9 @@ export class ServiceRequestService {
         'profile_picture',
         'label',
         'relationship',
+        'special_requirements',
+        'gender',
+        'date_of_birth',
       ])
       .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
       .populate('care_giver', [
@@ -983,6 +989,9 @@ export class ServiceRequestService {
         'profile_picture',
         'label',
         'relationship',
+        'special_requirements',
+        'gender',
+        'date_of_birth',
       ])
       .populate('created_by', [
         'first_name',
@@ -1032,6 +1041,9 @@ export class ServiceRequestService {
         'profile_picture',
         'label',
         'relationship',
+        'special_requirements',
+        'gender',
+        'date_of_birth',
       ])
       .populate('created_by', [
         'first_name',
