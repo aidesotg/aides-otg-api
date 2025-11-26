@@ -77,7 +77,7 @@ export class CaregiverService {
     return;
   }
 
-  async getCaregivers(params) {
+  async getCaregivers(params, user?: User) {
     const { page = 1, pageSize = 50, status, ...rest } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
     const query: any = await this.miscService.search(rest);
@@ -93,6 +93,12 @@ export class CaregiverService {
     const caregivers = await this.userModel
       .find({ _id: { $in: userIds } })
       .populate('professional_profile')
+      .populate({
+        path: 'favorited',
+        match: {
+          user: user ? user._id : null,
+        },
+      })
       .skip(pagination.offset)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
@@ -111,10 +117,16 @@ export class CaregiverService {
     };
   }
 
-  async getCaregiverById(id: string) {
+  async getCaregiverById(id: string, user?: User) {
     const caregiver = await this.professionalProfileModel
       .findOne({ $or: [{ _id: id }, { user: id }] })
-      .populate('user', ['first_name', 'last_name', 'profile_picture']);
+      .populate('user', ['first_name', 'last_name', 'profile_picture'])
+      .populate({
+        path: 'favorited',
+        match: {
+          user: user ? user._id : null,
+        },
+      });
     if (!caregiver) {
       throw new NotFoundException({
         status: 'error',

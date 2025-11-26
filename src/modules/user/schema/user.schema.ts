@@ -255,3 +255,10 @@ UserSchema.virtual('insurance', {
   foreignField: 'user',
   justOne: true,
 });
+
+UserSchema.virtual('favorited', {
+  ref: 'Favorite',
+  localField: '_id',
+  foreignField: 'care_giver',
+  count: true,
+});

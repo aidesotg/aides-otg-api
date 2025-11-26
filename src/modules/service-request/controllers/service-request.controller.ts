@@ -90,8 +90,8 @@ export class ServiceRequestController {
 
   @Get('/my-requests/:id')
   @UseGuards(AuthGuard('jwt'))
-  async getMyRequestById(@Param('id') id: string) {
-    const request = await this.serviceService.getRequestById(id);
+  async getMyRequestById(@Param('id') id: string, @AuthUser() user: any) {
+    const request = await this.serviceService.getRequestById(id, user);
     return {
       status: 'success',
       message: 'Request fetched',
@@ -150,8 +150,8 @@ export class ServiceRequestController {
 
   @Get('/:id')
   @UseGuards(AuthGuard('jwt'))
-  async getServiceById(@Param('id') id: string) {
-    const request = await this.serviceService.getRequestById(id);
+  async getServiceById(@Param('id') id: string, @AuthUser() user: any) {
+    const request = await this.serviceService.getRequestById(id, user);
     return {
       status: 'success',
       message: 'Request fetched',

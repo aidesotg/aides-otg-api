@@ -153,16 +153,15 @@ export class ServiceCategoryService {
   }
 
   async deleteServiceCategory(id: string) {
-    const category: any = await this.getServiceCategoryById(id);
-    if (category.no_of_services > 0) {
+    const category = await this.getServiceCategoryById(id);
+    if ((category as any).no_of_services > 0) {
       throw new BadRequestException({
         status: 'error',
         message: 'Service category cannot be deleted because it has services',
       });
     }
-    category.is_deleted = true;
-    await category.save();
 
+    await category.delete();
     return {
       status: 'success',
       message: 'Service category deleted successfully',

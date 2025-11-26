@@ -7,6 +7,7 @@ import { ServiceController } from './controllers/service.controller';
 import { ServiceService } from './services/service.service';
 import { UserBeneficiarySchema } from '../user/schema/user-beneficiary.schema';
 import { FavoriteSchema } from '../service-request/schema/favortite.schema';
+import { ServiceRequestSchema } from '../service-request/schema/service-request.schema';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { FavoriteSchema } from '../service-request/schema/favortite.schema';
       { name: 'ServiceCategory', schema: ServiceCategorySchema },
       { name: 'UserBeneficiary', schema: UserBeneficiarySchema },
       { name: 'Favorite', schema: FavoriteSchema },
+      { name: 'ServiceRequest', schema: ServiceRequestSchema },
     ]),
     ServicesModule,
   ],

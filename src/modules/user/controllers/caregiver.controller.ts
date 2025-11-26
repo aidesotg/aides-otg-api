@@ -30,8 +30,8 @@ export class CaregiverController {
   @Get('/list')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async getCaregivers(@Query() params: any) {
-    return this.caregiverService.getCaregivers(params);
+  async getCaregivers(@Query() params: any, @AuthUser() user: any) {
+    return this.caregiverService.getCaregivers(params, user);
   }
 
   @Get('/profile')
@@ -58,8 +58,8 @@ export class CaregiverController {
   @Get('/:id')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async getCaregiverById(@Param('id') id: string) {
-    const caregiver = await this.caregiverService.getCaregiverById(id);
+  async getCaregiverById(@Param('id') id: string, @AuthUser() user: any) {
+    const caregiver = await this.caregiverService.getCaregiverById(id, user);
     return {
       status: 'success',
       message: 'Caregiver fetched',

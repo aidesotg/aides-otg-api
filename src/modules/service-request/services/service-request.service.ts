@@ -908,18 +908,28 @@ export class ServiceRequestService {
         'profile_picture',
         'phone',
       ])
-      .populate('care_giver', [
-        'first_name',
-        'last_name',
-        'profile_picture',
-        'phone',
-      ])
+      .populate({
+        path: 'care_giver',
+        select: ['first_name', 'last_name', 'profile_picture', 'phone'],
+        populate: {
+          path: 'favorited',
+          match: {
+            user: user ? user._id : null,
+          },
+        },
+      })
       .populate({
         path: 'care_type',
         select: 'name category price',
         populate: {
           path: 'category',
           select: 'title',
+        },
+      })
+      .populate({
+        path: 'feedback_recorded',
+        match: {
+          user: user ? user._id : null,
         },
       })
       .skip(pagination.offset)
@@ -1134,12 +1144,16 @@ export class ServiceRequestService {
         'profile_picture',
         'phone',
       ])
-      .populate('care_giver', [
-        'first_name',
-        'last_name',
-        'profile_picture',
-        'phone',
-      ])
+      .populate({
+        path: 'care_giver',
+        select: ['first_name', 'last_name', 'profile_picture', 'phone'],
+        populate: {
+          path: 'favorited',
+          match: {
+            user: user ? user._id : null,
+          },
+        },
+      })
       .populate({
         path: 'care_type',
         select: 'name category price',
@@ -1194,6 +1208,12 @@ export class ServiceRequestService {
           },
         ],
       })
+      .populate({
+        path: 'feedback_recorded',
+        match: {
+          user: user ? user._id : null,
+        },
+      })
       .skip(pagination.offset)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
@@ -1242,18 +1262,28 @@ export class ServiceRequestService {
         'date_of_birth',
       ])
       .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
-      .populate('care_giver', [
-        'first_name',
-        'last_name',
-        'profile_picture',
-        'phone',
-      ])
+      .populate({
+        path: 'care_giver',
+        select: ['first_name', 'last_name', 'profile_picture', 'phone'],
+        populate: {
+          path: 'favorited',
+          match: {
+            user: user ? user._id : null,
+          },
+        },
+      })
       .populate({
         path: 'care_type',
         select: 'name category price',
         populate: {
           path: 'category',
           select: 'title',
+        },
+      })
+      .populate({
+        path: 'feedback_recorded',
+        match: {
+          user: user ? user._id : null,
         },
       })
       .skip(pagination.offset)
@@ -1378,7 +1408,7 @@ export class ServiceRequestService {
     };
   }
 
-  async getRequestById(id: string) {
+  async getRequestById(id: string, user?: User) {
     const request = await this.serviceRequestModel
       .findOne({ _id: id })
       .populate('beneficiary', [
@@ -1397,18 +1427,28 @@ export class ServiceRequestService {
         'profile_picture',
         'phone',
       ])
-      .populate('care_giver', [
-        'first_name',
-        'last_name',
-        'profile_picture',
-        'phone',
-      ])
+      .populate({
+        path: 'care_giver',
+        select: ['first_name', 'last_name', 'profile_picture', 'phone'],
+        populate: {
+          path: 'favorited',
+          match: {
+            user: user ? user._id : null,
+          },
+        },
+      })
       .populate({
         path: 'care_type',
         select: 'name category price',
         populate: {
           path: 'category',
           select: 'title',
+        },
+      })
+      .populate({
+        path: 'feedback_recorded',
+        match: {
+          user: user ? user._id : null,
         },
       })
       .lean()
@@ -1662,13 +1702,21 @@ export class ServiceRequestService {
       });
     }
 
-    const caregiver = await this.userModel.findOne({
-      _id: caregiverId,
-    });
+    const caregiver = await this.userModel
+      .findOne({
+        _id: caregiverId,
+      })
+      .populate('professional_profile');
     if (!caregiver) {
       throw new NotFoundException({
         status: 'error',
         message: 'Caregiver not found',
+      });
+    }
+    if ((caregiver as any).suspended) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Caregiver is suspended',
       });
     }
 

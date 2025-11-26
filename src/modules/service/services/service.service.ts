@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, HttpException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  HttpException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Service } from 'src/modules/service/interface/service.interface';
@@ -7,12 +12,15 @@ import {
   UpdateServiceDto,
 } from 'src/modules/service/dto/service.dto';
 import { MiscCLass } from 'src/services/misc.service';
+import { ServiceRequest } from 'src/modules/service-request/interface/service-request.interface';
 
 @Injectable()
 export class ServiceService {
   constructor(
     @InjectModel('Service')
     private readonly serviceModel: Model<Service>,
+    @InjectModel('ServiceRequest')
+    private readonly serviceRequestModel: Model<ServiceRequest>,
     private miscService: MiscCLass,
   ) {}
 
@@ -111,6 +119,15 @@ export class ServiceService {
 
   async deleteService(id: string) {
     const service = await this.getServiceById(id);
+    const requestCount = await this.serviceRequestModel.countDocuments({
+      care_type: { $in: [id] },
+    });
+    if (requestCount > 0) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Service cannot be deleted because it has active requests',
+      });
+    }
     await service.deleteOne();
 
     return {

@@ -137,3 +137,10 @@ ServiceRequestSchema.virtual('bookings', {
   localField: '_id',
   foreignField: 'service',
 });
+
+ServiceRequestSchema.virtual('feedback_recorded', {
+  ref: 'Review',
+  localField: '_id',
+  foreignField: 'request',
+  count: true,
+});
