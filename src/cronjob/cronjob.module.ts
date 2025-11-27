@@ -6,6 +6,7 @@ import { ServiceRequestSchema } from 'src/modules/service-request/schema/service
 import { UserSchema } from 'src/modules/user/schema/user.schema';
 import { RoleSchema } from 'src/modules/role/schema/role.schema';
 import { NotificationModule } from 'src/modules/notification/notification.module';
+import { ServicesModule } from 'src/services/services.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { NotificationModule } from 'src/modules/notification/notification.module
       { name: 'Role', schema: RoleSchema },
     ]),
     NotificationModule,
+    ServicesModule,
   ],
   providers: [CronjobService],
   controllers: [CronjobController],
