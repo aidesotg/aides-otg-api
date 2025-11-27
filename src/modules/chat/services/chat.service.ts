@@ -52,14 +52,16 @@ export class ChatService {
         });
       }
       serviceId = service._id;
+
       if (
-        service.beneficiary.toString() !== receiver_id.toString() &&
-        service.care_giver.toString() !== receiver_id.toString()
+        service.created_by?.toString() !== receiver_id.toString() &&
+        service.beneficiary?.toString() !== receiver_id.toString() &&
+        service.care_giver?.toString() !== receiver_id.toString()
       ) {
         throw new BadRequestException({
           status: 'error',
           message:
-            'Unable to to start channel, receiver must either be the beneficiary or the care giver',
+            'Unable to to start channel, receiver must either be the client, beneficiary or the care giver',
         });
       }
     }
