@@ -739,7 +739,7 @@ export class ServiceRequestService {
         query.status = 'Pending';
         query.care_giver = null;
       } else {
-        query.status = status;
+        query.status = await this.miscService.globalSearch(status);
       }
     }
 

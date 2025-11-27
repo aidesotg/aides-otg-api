@@ -119,6 +119,10 @@ export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
       inurance_covered_payments: { type: Number },
       claimed_insurance_payment: { type: Number },
     },
+    admin_first_day_reminder_sent: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

@@ -40,6 +40,7 @@ export interface ServiceRequest extends mongoose.Document {
     inurance_covered_payments: number;
     claimed_insurance_payment: number;
   };
+  admin_first_day_reminder_sent?: boolean;
   readonly createdAt: Date;
   updatedAt: Date;
 }
