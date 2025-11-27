@@ -890,6 +890,8 @@ export class ServiceRequestService {
       }
     }
 
+    console.log('🚀 ~ ServiceRequestService ~ getRequests ~ query:', query);
+
     const requests = await this.serviceRequestModel
       .find(query)
       .populate('beneficiary', [
@@ -1908,26 +1910,34 @@ export class ServiceRequestService {
     await request.save();
 
     //send notificartion to user
-    await this.notificationService.sendMessage({
-      user: user,
-      title: 'Request cancelled',
-      message: `Your request for the following service: ${
-        (request.care_type as unknown as Service)?.name
-      } has been cancelled r`,
-      resource: 'service_request',
-      resource_id: request._id.toString(),
-    });
+    try {
+      await this.notificationService.sendMessage({
+        user: user,
+        title: 'Request cancelled',
+        message: `Your request for the following service: ${
+          (request.care_type as unknown as Service)?.name
+        } has been cancelled r`,
+        resource: 'service_request',
+        resource_id: request._id.toString(),
+      });
 
-    //send notificartion to care giver
-    await this.notificationService.sendMessage({
-      user: request.care_giver,
-      title: 'Request cancelled',
-      message: `The client cancelled the following service: ${
-        (request.care_type as unknown as Service)?.name
-      }`,
-      resource: 'service_request',
-      resource_id: request._id.toString(),
-    });
+      //send notificartion to care giver
+      await this.notificationService.sendMessage({
+        user: request.care_giver,
+        title: 'Request cancelled',
+        message: `The client cancelled the following service: ${
+          (request.care_type as unknown as Service)?.name
+        }`,
+        resource: 'service_request',
+        resource_id: request._id.toString(),
+      });
+    } catch (error) {
+      console.log(
+        '🚀 ~ ServiceRequestService ~ cancelServiceRequestByClient ~ error:',
+        error,
+      );
+      // console.log(error);
+    }
 
     return {
       status: 'success',

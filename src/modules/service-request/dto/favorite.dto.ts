@@ -1,11 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsString, IsNotEmpty, IsMongoId } from 'class-validator';
+import { IsString, IsNotEmpty, IsMongoId, IsOptional } from 'class-validator';
 
 export class AddFavoriteDto {
   @ApiProperty()
   @IsMongoId()
-  @IsNotEmpty()
+  @IsOptional()
   request: string;
 
   @ApiProperty()
