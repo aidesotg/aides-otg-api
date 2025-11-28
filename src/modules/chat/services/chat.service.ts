@@ -59,7 +59,7 @@ export class ChatService {
       const assignedCaregivers = await Promise.all(
         (
           await this.serviceRequestDayLogsModel.find({
-            service_request: service._id,
+            request: service._id,
           })
         ).map((dayLog) => dayLog.care_giver.toString()),
       );

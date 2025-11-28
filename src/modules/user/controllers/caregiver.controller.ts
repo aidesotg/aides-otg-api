@@ -62,14 +62,17 @@ export class CaregiverController {
     @Query() params: any,
     @AuthUser() user: any,
   ) {
-    return this.caregiverService.getPendingCaregiverApplications(params);
+    return this.caregiverService.getCaregiverApplications({
+      ...params,
+      status: 'pending',
+    });
   }
 
   @Get('/applications/')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
   async getCaregiverApplications(@Query() params: any, @AuthUser() user: any) {
-    return this.caregiverService.getPendingCaregiverApplications(params);
+    return this.caregiverService.getCaregiverApplications(params);
   }
 
   @Get('/applications/counts')

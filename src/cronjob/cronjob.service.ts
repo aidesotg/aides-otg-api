@@ -13,7 +13,7 @@ import { User } from 'src/modules/user/interface/user.interface';
 import { Role } from 'src/modules/role/interface/role.interface';
 import { Mailer } from 'src/services/mailer.service';
 import PlainMail from 'src/services/mailers/templates/plain-mail';
-import { DEFAULT_TIMEZONE } from 'src/framework/constants';
+import constants, { DEFAULT_TIMEZONE } from 'src/framework/constants';
 
 @Injectable()
 export class CronjobService implements OnModuleInit, OnModuleDestroy {
@@ -309,7 +309,11 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
 
   private async getAdminUsers() {
     const adminRoles = await this.roleModel
-      .find({ name: { $in: ['admin', 'super_admin'] } })
+      .find({
+        name: {
+          $in: [constants.roles.SUPER_ADMIN, constants.roles.SUPPORT_ADMIN],
+        },
+      })
       .select('_id')
       .exec();
 

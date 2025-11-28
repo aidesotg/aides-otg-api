@@ -339,7 +339,7 @@ export class CaregiverService {
     };
   }
 
-  async getPendingCaregiverApplications(params) {
+  async getCaregiverApplications(params) {
     const {
       page = 1,
       pageSize = 50,
@@ -350,7 +350,7 @@ export class CaregiverService {
     } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
     const query: any = await this.miscService.search(rest);
-    if (!query.status) query.status = 'pending';
+    // if (!query.status) query.status = 'pending';
 
     // Filter by date range (createdAt)
     if (startDate || endDate) {
