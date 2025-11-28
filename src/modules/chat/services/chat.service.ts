@@ -20,6 +20,7 @@ import { DeleteMessageDto } from 'src/modules/chat/dto/delete-messages.dto';
 import { Service } from 'aws-sdk';
 import fbaseadmin from 'src/services/config/firebase.config';
 import { ServiceRequest } from 'src/modules/service-request/interface/service-request.interface';
+import { ServiceRequestDayLogs } from 'src/modules/service-request/interface/service-request-day-logs.schema';
 // import { db } from '../services/firebase/config';
 
 @Injectable()
@@ -34,6 +35,8 @@ export class ChatService {
     private readonly entityChannelStatusModel: Model<EntityChannelStatus>,
     @InjectModel('ServiceRequest')
     private readonly serviceRequestModel: Model<ServiceRequest>,
+    @InjectModel('ServiceRequestDayLogs')
+    private readonly serviceRequestDayLogsModel: Model<ServiceRequestDayLogs>,
     private miscService: MiscCLass,
     private notificationService: NotificationService,
   ) {}
@@ -53,10 +56,19 @@ export class ChatService {
       }
       serviceId = service._id;
 
+      const assignedCaregivers = await Promise.all(
+        (
+          await this.serviceRequestDayLogsModel.find({
+            service_request: service._id,
+          })
+        ).map((dayLog) => dayLog.care_giver.toString()),
+      );
+
       if (
         service.created_by?.toString() !== receiver_id.toString() &&
         service.beneficiary?.toString() !== receiver_id.toString() &&
-        service.care_giver?.toString() !== receiver_id.toString()
+        service.care_giver?.toString() !== receiver_id.toString() &&
+        !assignedCaregivers.includes(receiver_id.toString())
       ) {
         throw new BadRequestException({
           status: 'error',
