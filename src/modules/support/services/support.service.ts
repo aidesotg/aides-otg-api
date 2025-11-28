@@ -73,12 +73,14 @@ export class SupportService {
     const query: any = { is_deleted: false };
 
     // If user is not admin/support, only show their tickets
-    if (
-      user.role !== constants.roles.SUPER_ADMIN &&
-      user.role !== constants.roles.SUPPORT_ADMIN
-    ) {
-      query.created_by = user._id;
-    }
+    // if (
+    //   user.role !== constants.roles.SUPER_ADMIN &&
+    //   user.role !== constants.roles.SUPPORT_ADMIN
+    // ) {
+    //   query.created_by = user._id;
+    // }
+
+    if (user) query.created_by = user._id;
 
     if (rest.status) query.status = rest.status;
     if (rest.category) query.category = rest.category;
@@ -90,6 +92,8 @@ export class SupportService {
       if (rest.start_date) query.createdAt.$gte = new Date(rest.start_date);
       if (rest.end_date) query.createdAt.$lte = new Date(rest.end_date);
     }
+
+    console.log(query);
 
     const tickets = await this.ticketModel
       .find(query)
