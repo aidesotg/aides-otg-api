@@ -13,6 +13,7 @@ import { User } from 'src/modules/user/interface/user.interface';
 import { Role } from 'src/modules/role/interface/role.interface';
 import { Mailer } from 'src/services/mailer.service';
 import PlainMail from 'src/services/mailers/templates/plain-mail';
+import { DEFAULT_TIMEZONE } from 'src/framework/constants';
 
 @Injectable()
 export class CronjobService implements OnModuleInit, OnModuleDestroy {
@@ -60,7 +61,7 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
       },
       null,
       true,
-      'UTC',
+      DEFAULT_TIMEZONE,
     );
 
     // Run once immediately
@@ -89,7 +90,7 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
       },
       null,
       true,
-      'UTC',
+      DEFAULT_TIMEZONE,
     );
 
     this.sendUpcomingRequestReminders().catch((error) => {
@@ -235,14 +236,15 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
       const message = `Service request ${bookingLabel} starts at ${readableTime}. Please ensure all logistics are in place.`;
 
       await Promise.all(
-        adminUsers.map((admin) => {
-          this.notificationService.sendMessage({
-            user: admin,
-            title: 'Upcoming service request',
-            message,
-            resource: 'service_request',
-            resource_id: reminder.requestId,
-          }),
+        adminUsers.map((admin) =>
+          Promise.all([
+            this.notificationService.sendMessage({
+              user: admin,
+              title: 'Upcoming service request',
+              message,
+              resource: 'service_request',
+              resource_id: reminder.requestId,
+            }),
             this.mailerService.send(
               new PlainMail(
                 admin.email,
@@ -251,8 +253,9 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
                 admin,
                 message,
               ),
-            );
-        }),
+            ),
+          ]),
+        ),
       );
 
       await this.serviceRequestModel.updateOne(

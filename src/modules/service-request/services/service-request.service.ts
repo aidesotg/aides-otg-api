@@ -34,6 +34,8 @@ import { Insurance } from 'src/modules/insurance/interface/insurance.interface';
 import { UserService } from 'src/modules/user/services/user.service';
 import { WalletService } from 'src/modules/wallet/services/wallet.service';
 import { Transaction } from 'src/modules/wallet/interface/transaction.interface';
+import moment from 'moment-timezone';
+import { DEFAULT_TIMEZONE } from 'src/framework/constants';
 
 @Injectable()
 export class ServiceRequestService {
@@ -62,6 +64,56 @@ export class ServiceRequestService {
     const timestamp = Date.now().toString().slice(-6);
     const random = Math.random().toString(36).substr(2, 4).toUpperCase();
     return `BKNG-${timestamp}-${random}`;
+  }
+
+  private getDayStartDate(dateValue: string | Date): Date {
+    const momentObj =
+      dateValue instanceof Date
+        ? moment(dateValue).tz(DEFAULT_TIMEZONE)
+        : moment.tz(
+            dateValue,
+            ['YYYY-MM-DD', moment.ISO_8601],
+            DEFAULT_TIMEZONE,
+          );
+
+    if (!momentObj.isValid()) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Invalid date provided',
+      });
+    }
+
+    return momentObj.startOf('day').toDate();
+  }
+
+  private getSlotStartDateTime(slot: {
+    date: string | Date;
+    start_time?: string;
+  }) {
+    const baseMoment = moment(this.getDayStartDate(slot.date)).tz(
+      DEFAULT_TIMEZONE,
+    );
+    const timeParts = (slot.start_time ?? '00:00').split(':');
+    const [hoursStr, minutesStr = '0', secondsStr = '0'] = timeParts;
+    const hours = Number.parseInt(hoursStr ?? '0', 10) || 0;
+    const minutes = Number.parseInt(minutesStr ?? '0', 10) || 0;
+    const seconds = Number.parseInt(secondsStr ?? '0', 10) || 0;
+
+    baseMoment.set({
+      hour: hours,
+      minute: minutes,
+      second: seconds,
+      millisecond: 0,
+    });
+
+    if (!baseMoment.isValid()) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Invalid date or time provided',
+      });
+    }
+
+    return baseMoment.toDate();
   }
 
   async initiateCreateServiceRequest(
@@ -111,7 +163,8 @@ export class ServiceRequestService {
 
     const dateList = date_list as any;
     for (const date of dateList) {
-      if (new Date(date.date) < new Date()) {
+      const slotDateTime = this.getSlotStartDateTime(date);
+      if (slotDateTime < new Date()) {
         throw new BadRequestException({
           status: 'error',
           message: 'Dates in the date list cannot be in the past',
@@ -475,9 +528,11 @@ export class ServiceRequestService {
     }
     const dateList = date_list as any;
     for (const date of dateList) {
+      const normalizedDate = this.getDayStartDate(date.date);
       date.day_of_week = await this.miscService.getDayOfWeek(
-        date.date.toString(),
+        normalizedDate.toISOString(),
       );
+      date.date = normalizedDate;
     }
     const data = {
       ...createServiceDto,
@@ -1529,15 +1584,18 @@ export class ServiceRequestService {
     if (date_list && date_list.length > 0) {
       const dateList = date_list as any;
       for (const date of dateList) {
-        if (new Date(date.date) < new Date()) {
+        const slotDateTime = this.getSlotStartDateTime(date);
+        if (slotDateTime < new Date()) {
           throw new BadRequestException({
             status: 'error',
             message: 'Dates in the date list cannot be in the past',
           });
         }
+        const normalizedDate = this.getDayStartDate(date.date);
         date.day_of_week = await this.miscService.getDayOfWeek(
-          date.date.toString(),
+          normalizedDate.toISOString(),
         );
+        date.date = normalizedDate;
       }
       data.date_list = dateList;
     }

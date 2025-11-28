@@ -225,6 +225,8 @@ export const STRIPE_SUPPORTED_COUNTRIES = [
 const userPopulateFields =
   ' -__v -password -device_token -stripeConnect -ssn -twoFactorSecret -twoFactorSmsToken -activation_code -activation_expires_in';
 
+export const DEFAULT_TIMEZONE = 'America/New_York';
+
 const constants = {
   transactionTypes,
   transactionStatus,
@@ -235,6 +237,7 @@ const constants = {
   STRIPE_SUPPORTED_COUNTRIES,
   FLUTTERWAVE_SUPPORTED_COUNTRIES,
   userPopulateFields,
+  DEFAULT_TIMEZONE,
 };
 
 export default constants;
