@@ -342,9 +342,10 @@ export class ServiceRequestService {
     }
 
     if (payment_method === 'wallet') {
+      await this.walletService.canTransact(payload.amount, user._id);
       await this.walletService.debit({
         id: user._id,
-        amount: totals.totalPrice,
+        amount: payload.amount,
         description: `Service request payment for ${booking_id}`,
         genus: constants.transactionGenus.PAYMENT,
       });
