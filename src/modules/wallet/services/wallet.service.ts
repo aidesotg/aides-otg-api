@@ -448,25 +448,11 @@ export class WalletService {
   async requestWithdraw(body: WithdrawDto, user: any) {
     await this.canTransact(body.amount, user._id);
 
-    if (body.processor.toLowerCase() == 'flutterwave') {
-      if (!body.account_number || !body.bank_code) {
-        throw new BadRequestException({
-          status: 'error',
-          message: 'Please provide account number and bank code',
-        });
-      }
-    }
-
-    if (body.processor.toLowerCase() == 'stripe') {
-      if (
-        !user.stripeConnect?.stripeCustomerId ||
-        !user.stripeConnect?.active
-      ) {
-        throw new BadRequestException({
-          status: 'error',
-          message: 'Please connect your stripe account to proceed',
-        });
-      }
+    if (!user.stripeConnect?.stripeCustomerId || !user.stripeConnect?.active) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Please connect your stripe account to proceed',
+      });
     }
 
     const code = otpGenerator.generate(6, {
@@ -475,7 +461,7 @@ export class WalletService {
       specialChars: false,
       upperCase: false,
     });
-    const expires = moment().add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
+    const expires = moment().add(10, 'minutes').format('YYYY-MM-DD HH:mm:ss');
 
     await this.withdrawalOtpModel.updateMany(
       { user: user._id },

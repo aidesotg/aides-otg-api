@@ -59,6 +59,8 @@ import { DeleteAccountDto } from '../dto/delete-account.dto';
 import { Kyc } from '../interface/kyc.interface';
 import { SubmitKycDto } from '../dto/submit-kyc.dto';
 import constants from 'src/framework/constants';
+import { StripeService } from 'src/services/stripe.service';
+import { StripeAccountDto } from 'src/modules/wallet/dto/stripe-account.dto';
 
 @Injectable()
 export class UserService {
@@ -82,7 +84,7 @@ export class UserService {
     private googleService: GoogleService,
     @Inject(forwardRef(() => InsuranceService))
     private insuranceService: InsuranceService,
-
+    private stripeService: StripeService,
     @Inject(forwardRef(() => WalletService))
     private walletService: WalletService,
   ) {}
@@ -1344,6 +1346,25 @@ export class UserService {
     return {
       status: 'success',
       message: 'Two-factor authentication via sms disabled successfully',
+    };
+  }
+
+  async manageStripeAccount(user: User, body: StripeAccountDto) {
+    const userDetails = await this.userModel.findOne({ _id: user._id });
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+    const url = await this.stripeService.createStripeAccount({
+      user: userDetails._id,
+      ...body,
+    });
+    return {
+      status: 'success',
+      message: 'Stripe account management successful',
+      data: { url },
     };
   }
 }

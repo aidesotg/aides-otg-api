@@ -45,6 +45,7 @@ import {
 } from '../dto/two-factor-auth.dto';
 import { DeleteAccountDto } from '../dto/delete-account.dto';
 import { SubmitKycDto } from '../dto/submit-kyc.dto';
+import { StripeAccountDto } from 'src/modules/wallet/dto/stripe-account.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -194,6 +195,16 @@ export class UserController {
     @AuthUser() user: any,
   ) {
     return this.userService.updateBank(id, body, user);
+  }
+
+  @Put('/account/manage')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async manageStripeAccount(
+    @AuthUser() user: any,
+    @Body() body: StripeAccountDto,
+  ) {
+    return this.userService.manageStripeAccount(user, body);
   }
 
   @Put('/profile/update')
