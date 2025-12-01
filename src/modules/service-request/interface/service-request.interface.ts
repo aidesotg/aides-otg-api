@@ -39,8 +39,14 @@ export interface ServiceRequest extends mongoose.Document {
     user_covered_payments: number;
     inurance_covered_payments: number;
     claimed_insurance_payment: number;
+    total_service_hours: number;
+    fee_per_hour: number;
+    platform_commission: number;
+    caregiver_payout: number;
   };
-  admin_first_day_reminder_sent?: boolean;
+  admin_first_day_reminder_sent: boolean;
+  payment_method: 'client' | 'insurance' | 'both';
+  payment_status: 'pending' | 'paid' | 'failed' | 'partially_paid';
   readonly createdAt: Date;
   updatedAt: Date;
 }

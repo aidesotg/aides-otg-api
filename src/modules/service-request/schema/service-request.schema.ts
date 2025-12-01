@@ -118,10 +118,23 @@ export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
       user_covered_payments: { type: Number },
       inurance_covered_payments: { type: Number },
       claimed_insurance_payment: { type: Number },
+      total_service_hours: { type: Number },
+      fee_per_hour: { type: Number },
+      platform_commission: { type: Number },
+      caregiver_payout: { type: Number },
     },
     admin_first_day_reminder_sent: {
       type: Boolean,
       default: false,
+    },
+    payment_method: {
+      type: String,
+      enum: ['client', 'insurance', 'both'],
+    },
+    payment_status: {
+      type: String,
+      enum: ['pending', 'paid', 'failed', 'partially_paid'],
+      default: 'pending',
     },
   },
   {

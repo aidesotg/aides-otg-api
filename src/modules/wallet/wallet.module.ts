@@ -11,6 +11,9 @@ import { WalletSchema } from './schema/wallet.schema';
 import { NotificationModule } from 'src/modules/notification/notification.module';
 import { WithdrawalOtpSchema } from './schema/withdrawal-otp.schema';
 import { ServiceRequestModule } from '../service-request/service-request.module';
+import { PoolWalletSchema } from './schema/pool-wallet.schema';
+import { PoolWalletTransactionSchema } from './schema/pool-wallet-transactions.schema';
+import { PoolWalletService } from './services/pool-wallet.service';
 
 @Module({
   imports: [
@@ -19,7 +22,8 @@ import { ServiceRequestModule } from '../service-request/service-request.module'
       { name: 'Transaction', schema: TransactionSchema },
       { name: 'Wallet', schema: WalletSchema },
       { name: 'WalletTransaction', schema: WalletTransactionSchema },
-
+      { name: 'PoolWallet', schema: PoolWalletSchema },
+      { name: 'PoolWalletTransaction', schema: PoolWalletTransactionSchema },
       { name: 'WithdrawalOtp', schema: WithdrawalOtpSchema },
     ]),
     forwardRef(() => UserModule),
@@ -27,8 +31,8 @@ import { ServiceRequestModule } from '../service-request/service-request.module'
     NotificationModule,
     forwardRef(() => ServiceRequestModule),
   ],
-  providers: [WalletService],
+  providers: [WalletService, PoolWalletService],
   controllers: [WalletController],
-  exports: [WalletModule, WalletService],
+  exports: [WalletModule, WalletService, PoolWalletService],
 })
 export class WalletModule {}

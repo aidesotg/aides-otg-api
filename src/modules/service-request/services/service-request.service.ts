@@ -35,7 +35,8 @@ import { UserService } from 'src/modules/user/services/user.service';
 import { WalletService } from 'src/modules/wallet/services/wallet.service';
 import { Transaction } from 'src/modules/wallet/interface/transaction.interface';
 import moment from 'moment-timezone';
-import { DEFAULT_TIMEZONE } from 'src/framework/constants';
+import constants, { DEFAULT_TIMEZONE } from 'src/framework/constants';
+import { PoolWalletService } from 'src/modules/wallet/services/pool-wallet.service';
 
 @Injectable()
 export class ServiceRequestService {
@@ -58,12 +59,112 @@ export class ServiceRequestService {
     private redisService: RedisService,
     @Inject(forwardRef(() => WalletService))
     private walletService: WalletService,
+    @Inject(forwardRef(() => PoolWalletService))
+    private poolWalletService: PoolWalletService,
   ) {}
 
   private generateBookingId() {
     const timestamp = Date.now().toString().slice(-6);
     const random = Math.random().toString(36).substr(2, 4).toUpperCase();
     return `BKNG-${timestamp}-${random}`;
+  }
+
+  /**
+   * Calculate total hours from all date slots in the date_list
+   * @param dateList - Array of date slots with start_time and end_time
+   * @returns Total number of hours across all slots
+   */
+  private calculateTotalHours(
+    dateList: Array<{ start_time?: string; end_time?: string }>,
+  ): number {
+    if (!Array.isArray(dateList) || dateList.length === 0) {
+      return 1; // Default to 1 hour if no date list provided
+    }
+
+    let totalHours = 0;
+
+    for (const slot of dateList) {
+      if (!slot.start_time || !slot.end_time) {
+        continue; // Skip slots without both times
+      }
+
+      try {
+        // Parse time strings (format: "HH:mm" or "HH:mm:ss")
+        const startTime = moment(slot.start_time, ['HH:mm', 'HH:mm:ss']);
+        const endTime = moment(slot.end_time, ['HH:mm', 'HH:mm:ss']);
+
+        if (!startTime.isValid() || !endTime.isValid()) {
+          continue; // Skip invalid times
+        }
+
+        // Calculate difference in hours
+        const hours = endTime.diff(startTime, 'hours', true);
+        if (hours > 0) {
+          totalHours += hours;
+        }
+      } catch (error) {
+        // Skip slots with parsing errors
+        continue;
+      }
+    }
+
+    // Return at least 1 hour if calculation resulted in 0
+    return totalHours > 0 ? totalHours : 1;
+  }
+
+  /**
+   * Calculate caregiver payout for a single day based on start_time and end_time
+   * @param dateSlot - Single date slot with start_time and end_time
+   * @param careTypeIds - Array of care type service IDs
+   * @returns Caregiver payout amount for that single day
+   */
+  private async calculateSingleDayPrice(
+    dateSlot: { start_time?: string; end_time?: string },
+    careTypeIds: string[],
+  ): Promise<{ caregiverPayoutForDay: number; hoursForDay: number }> {
+    if (!dateSlot.start_time || !dateSlot.end_time) {
+      return { caregiverPayoutForDay: 0, hoursForDay: 0 }; // Return 0 if times are missing
+    }
+
+    try {
+      // Calculate hours for this single day
+      const startTime = moment(dateSlot.start_time, ['HH:mm', 'HH:mm:ss']);
+      const endTime = moment(dateSlot.end_time, ['HH:mm', 'HH:mm:ss']);
+
+      if (!startTime.isValid() || !endTime.isValid()) {
+        return { caregiverPayoutForDay: 0, hoursForDay: 0 }; // Return 0 for invalid times
+      }
+
+      const hoursForDay = endTime.diff(startTime, 'hours', true);
+      if (hoursForDay <= 0) {
+        return { caregiverPayoutForDay: 0, hoursForDay: 0 };
+      }
+
+      // Fetch services with their commission percentages
+      const services = await this.serviceModel
+        .find({
+          _id: { $in: careTypeIds },
+          status: 'active',
+        })
+        .select('price care_giver_commission');
+
+      if (!services || services.length === 0) {
+        return { caregiverPayoutForDay: 0, hoursForDay: 0 };
+      }
+
+      // Calculate caregiver payout for this day
+      // For each service: (price * commission / 100) * hoursForDay
+      const caregiverPayoutForDay = services.reduce((acc, service) => {
+        const payoutPerHour =
+          service.price * ((service.care_giver_commission || 0) / 100);
+        return acc + payoutPerHour * hoursForDay;
+      }, 0);
+
+      return { caregiverPayoutForDay, hoursForDay };
+    } catch (error) {
+      console.error('Error calculating single day price:', error);
+      return { caregiverPayoutForDay: 0, hoursForDay: 0 };
+    }
   }
 
   private getDayStartDate(dateValue: string | Date): Date {
@@ -192,6 +293,10 @@ export class ServiceRequestService {
         user_covered_payments: totals.userCoveredCarePrice,
         inurance_covered_payments: totals.insuranceCoveredCarePrice,
         claimed_insurance_payment: 0,
+        total_service_hours: totals.totalServiceHours,
+        fee_per_hour: totals.feePerHour,
+        platform_commission: totals.platformCommission,
+        caregiver_payout: totals.caregiverPayout,
       },
     };
 
@@ -371,7 +476,7 @@ export class ServiceRequestService {
         _id: { $in: request.care_type },
         status: 'active',
       })
-      .select('name price');
+      .select('name price care_giver_commission');
 
     // Filter the fetched services based on coverage types
     const userCoveredCareTypesServices = requestedCareTypesServices.filter(
@@ -390,26 +495,36 @@ export class ServiceRequestService {
       },
     );
 
-    const numberOfDays =
-      Array.isArray(request.date_list) && request.date_list.length > 0
-        ? request.date_list.length
-        : 1;
+    // Calculate total hours from all date slots
+    const numberOfHours = this.calculateTotalHours(request.date_list);
 
-    const totalPricePerDay = requestedCareTypesServices.reduce(
+    const totalPricePerHour = requestedCareTypesServices.reduce(
       (acc, service) => acc + service.price,
       0,
     );
-    const totalPrice = totalPricePerDay * numberOfDays;
+    const totalPrice = totalPricePerHour * numberOfHours;
 
     const userCoveredCareTypesServicesPrice =
       userCoveredCareTypesServices.reduce((acc, service) => {
         return acc + service.price;
-      }, 0) * numberOfDays;
+      }, 0) * numberOfHours;
 
     const insuranceCoveredCareTypesServicesPrice =
       insuranceCoveredCareTypesServices.reduce((acc, service) => {
         return acc + service.price;
-      }, 0) * numberOfDays;
+      }, 0) * numberOfHours;
+
+    // Calculate caregiver payout based on each service's commission percentage
+    const careGiverPayout = requestedCareTypesServices.reduce(
+      (acc, service) => {
+        // Calculate payout per hour for this service: price * commission percentage
+        const payoutPerHour =
+          service.price * ((service.care_giver_commission || 0) / 100);
+        // Multiply by total hours
+        return acc + payoutPerHour * numberOfHours;
+      },
+      0,
+    );
 
     return {
       insuranceCoveredCareTypes: insuranceCoveredCareTypesServices,
@@ -418,6 +533,10 @@ export class ServiceRequestService {
         totalPrice,
         userCoveredCarePrice: userCoveredCareTypesServicesPrice,
         insuranceCoveredCarePrice: insuranceCoveredCareTypesServicesPrice,
+        totalServiceHours: numberOfHours,
+        feePerHour: totalPricePerHour,
+        platformCommission: totalPrice - careGiverPayout,
+        caregiverPayout: careGiverPayout,
       },
     };
   }
@@ -499,6 +618,13 @@ export class ServiceRequestService {
   async updateServiceRequestPayment(user: User, transaction: Transaction) {
     const requestBody = JSON.parse(transaction.details);
 
+    await this.poolWalletService.credit({
+      amount: transaction.amount,
+      description: `Service request payment for ${requestBody.request.booking_id}`,
+      genus: constants.transactionGenus.PAYMENT,
+      user: user._id,
+    });
+
     await this.createServiceRequest(
       requestBody.request,
       user,
@@ -552,6 +678,8 @@ export class ServiceRequestService {
     const request = await newRequest.save();
     const days: any[] = [];
     for (const date of request.date_list) {
+      const { caregiverPayoutForDay, hoursForDay } =
+        await this.calculateSingleDayPrice(date, createServiceDto.care_type);
       days.push({
         day_id: (date as any)._id,
         request: request._id,
@@ -562,6 +690,12 @@ export class ServiceRequestService {
           completed: false,
         },
         status: 'Pending',
+        payment: {
+          fee_per_hour: payments.fee_per_hour,
+          total_service_hours: hoursForDay,
+          caregiver_payout: caregiverPayoutForDay,
+        },
+        payment_status: 'pending',
       });
     }
 
@@ -712,7 +846,7 @@ export class ServiceRequestService {
       created_at: new Date(),
     });
     dayLogs.activity_trail[status.toLowerCase()] = true;
-    await dayLogs.save();
+    // await dayLogs.save();
 
     if (status == 'on_my_way' && request.status == 'Accepted') {
       request.status = 'In Progress';
@@ -745,17 +879,31 @@ export class ServiceRequestService {
         status: 'Completed',
         created_at: new Date(),
       });
-      request.status = 'Completed';
+      // request.status = 'Completed';
+
+      const response = await this.completeServiceRequestDayPayment(id, day_id);
+      dayLogs.payment_status = response;
+      request.payment_status = 'partially_paid';
 
       // Clean up location data when service is completed
       await this.redisService.removeRequestLocation(id);
     }
-
+    await dayLogs.save();
+    //check if all days are paid
+    const pendingPayments = await this.serviceRequestDayLogsModel.find({
+      request: request._id,
+      payment_status: { $ne: 'paid' },
+    });
+    if (pendingPayments.length === 0) {
+      request.payment_status = 'paid';
+    }
     await request.save();
+
     await this.notificationService.sendMessage({
       user: request.created_by,
-      title: `Service Update: ${
-        (request.care_type as unknown as Service)?.name
+      title: `Service Update for day: ${
+        (request as any).date_list.find((date) => date.day_id === day_id)
+          ?.day_of_week
       }`,
       message,
       resource: 'service_request',
@@ -2058,6 +2206,63 @@ export class ServiceRequestService {
       message: 'Request cancelled successfully',
       data: request,
     };
+  }
+
+  async completeServiceRequestDayPayment(requestId: string, dayId: string) {
+    let status = 'paid';
+    try {
+      const dayLog = await this.serviceRequestDayLogsModel
+        .findOne({
+          request: requestId,
+          day_id: dayId,
+        })
+        .populate('request');
+      if (!dayLog) {
+        throw new NotFoundException({
+          status: 'error',
+          message: 'Day log not found',
+        });
+      }
+      const careGiver = await this.userModel.findOne({
+        _id: dayLog.care_giver,
+      });
+      if (!careGiver) {
+        throw new NotFoundException({
+          status: 'error',
+          message: 'Care giver not found',
+        });
+      }
+      const wallet = await this.walletService.getBalance(careGiver);
+      if (!wallet) {
+        throw new NotFoundException({
+          status: 'error',
+          message: 'Care giver wallet not found',
+        });
+      }
+      await this.walletService.credit({
+        id: careGiver._id,
+        amount: dayLog.payment.caregiver_payout,
+        description: `Service request day payment for ${
+          (dayLog.request as any as ServiceRequest).booking_id
+        }`,
+        genus: constants.transactionGenus.EARNED,
+      });
+    } catch (error) {
+      console.log(
+        '🚀 ~ ServiceRequestService ~ completeServiceRequestDayPayment ~ error:',
+        error,
+      );
+      status = 'failed';
+    }
+
+    // await this.walletService.debit({
+    //   id: careGiver._id,
+    //   amount: dayLog.payment.caregiver_payout,
+    //   description: `Service request day payment for ${dayLog.day_id}`,
+    // });
+    // dayLog.payment_status = 'paid';
+    // await dayLog.save();
+    return status;
   }
 
   async addFavorite(addFavoriteDto: AddFavoriteDto, user: User) {

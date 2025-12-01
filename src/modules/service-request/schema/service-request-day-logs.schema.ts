@@ -58,6 +58,16 @@ export const ServiceRequestDayLogsSchema =
         ],
         default: 'Pending',
       },
+      payment: {
+        fee_per_hour: { type: Number },
+        total_service_hours: { type: Number },
+        caregiver_payout: { type: Number },
+      },
+      payment_status: {
+        type: String,
+        enum: ['pending', 'paid', 'failed'],
+        default: 'pending',
+      },
     },
     {
       timestamps: true,

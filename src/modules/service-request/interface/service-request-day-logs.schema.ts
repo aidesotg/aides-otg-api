@@ -16,6 +16,12 @@ export interface ServiceRequestDayLogs extends mongoose.Document {
   };
   care_giver: mongoose.Schema.Types.ObjectId;
   status: string;
+  payment: {
+    fee_per_hour: number;
+    total_service_hours: number;
+    caregiver_payout: number;
+  };
+  payment_status: string;
   readonly createdAt: Date;
   updatedAt: Date;
 }

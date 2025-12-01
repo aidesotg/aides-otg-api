@@ -10,6 +10,8 @@ import { RolePermissionSeeder } from './modules/role-permissions/seeder/role-per
 import { RolePermissionSchema } from './modules/role-permissions/schema/role-permissions.schema';
 import { UserSchema } from './modules/user/schema/user.schema';
 import { SuperAdminSeeder } from './modules/user/seeds/superadmin.seed';
+import { PoolWalletSchema } from './modules/wallet/schema/pool-wallet.schema';
+import { PoolWalletSeeder } from './modules/wallet/seeds/pool-wallet.seed';
 
 dotenv.config();
 
@@ -21,7 +23,14 @@ seeder({
       { name: 'Role', schema: RoleSchema },
       { name: 'RolePermission', schema: RolePermissionSchema },
       { name: 'User', schema: UserSchema },
+      { name: 'PoolWallet', schema: PoolWalletSchema },
     ]),
     ConfigModule.forRoot(),
   ],
-}).run([PermissionSeeder, RoleSeeder, RolePermissionSeeder, SuperAdminSeeder]);
+}).run([
+  PermissionSeeder,
+  RoleSeeder,
+  RolePermissionSeeder,
+  SuperAdminSeeder,
+  PoolWalletSeeder,
+]);
