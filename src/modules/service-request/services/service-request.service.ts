@@ -622,7 +622,7 @@ export class ServiceRequestService {
       amount: transaction.amount,
       description: `Service request payment for ${requestBody.request.booking_id}`,
       genus: constants.transactionGenus.PAYMENT,
-      user: user._id,
+      id: user._id,
     });
 
     await this.createServiceRequest(
