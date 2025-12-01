@@ -129,7 +129,6 @@ export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
     },
     payment_method: {
       type: String,
-      enum: ['client', 'insurance', 'both'],
     },
     payment_status: {
       type: String,
