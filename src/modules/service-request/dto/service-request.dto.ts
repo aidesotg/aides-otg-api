@@ -90,6 +90,11 @@ export class CreateServiceRequestDto {
   @IsEnum(['stripe', 'wallet', 'googlePay', 'applePay'])
   @IsNotEmpty()
   payment_method: 'stripe' | 'wallet' | 'googlePay' | 'applePay';
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  booking_id: string;
 }
 
 export class UpdateServiceRequestDto {

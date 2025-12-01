@@ -54,6 +54,8 @@ export class ServiceRequestService {
     @InjectModel('UserBeneficiary')
     private readonly userBeneficiaryModel: Model<UserBeneficiary>,
     @InjectModel('Favorite') private readonly favoriteModel: Model<Favorite>,
+    @InjectModel('Transaction')
+    private readonly transactionModel: Model<Transaction>,
     private miscService: MiscCLass,
     private notificationService: NotificationService,
     private redisService: RedisService,
@@ -282,11 +284,15 @@ export class ServiceRequestService {
       requestpaymentbreakdown,
     );
     const { totals } = requestpaymentbreakdown;
+    const booking_id = this.generateBookingId();
     const payload = {
       amount: totals.userCoveredCarePrice,
       payment_method: createServiceDto.payment_method,
       type: 'serviceRequest',
-      request: createServiceDto,
+      request: {
+        ...createServiceDto,
+        booking_id: booking_id,
+      },
       path: createServiceDto.path,
       payments: {
         total: totals.totalPrice,
@@ -315,7 +321,7 @@ export class ServiceRequestService {
           status: 'success',
           message: 'Request awaiting payment',
           data: {
-            request: createServiceDto,
+            request: payload.request,
             paymentBreakdown: requestpaymentbreakdown,
             checkoutUrl: response.data.checkoutUrl,
           },
@@ -327,7 +333,7 @@ export class ServiceRequestService {
           status: 'success',
           message: 'Request awaiting payment',
           data: {
-            request: createServiceDto,
+            request: payload.request,
             paymentBreakdown: requestpaymentbreakdown,
             checkoutUrl: response.data,
           },
@@ -336,14 +342,33 @@ export class ServiceRequestService {
     }
 
     if (payment_method === 'wallet') {
-      const response = await this.walletService.initiate(payload, user, origin);
+      await this.walletService.debit({
+        id: user._id,
+        amount: totals.totalPrice,
+        description: `Service request payment for ${booking_id}`,
+        genus: constants.transactionGenus.PAYMENT,
+      });
+
+      const transaction = new this.transactionModel({
+        tx_ref: await this.miscService.referenceGenerator(),
+        user: user._id,
+        email: user.email,
+        fullname: `${user.first_name} ${user.last_name}`,
+        currency: process.env.CURRENCY ?? 'USD',
+        amount: payload.amount,
+        status: 'successful',
+        type: 'serviceRequest',
+        details: JSON.stringify(payload),
+        payment_method: 'wallet',
+      });
+      await transaction.save();
+      await this.updateServiceRequestPayment(user, transaction);
       return {
         status: 'success',
-        message: 'Request awaiting payment',
+        message: 'Payment successful',
         data: {
-          request: createServiceDto,
+          request: payload.request,
           paymentBreakdown: requestpaymentbreakdown,
-          checkoutUrl: response.data.checkoutUrl,
         },
       };
     }
@@ -667,7 +692,7 @@ export class ServiceRequestService {
       ),
       beneficiary: recepient_id,
       recepient_type: recepient_type,
-      booking_id: this.generateBookingId(),
+      booking_id: createServiceDto.booking_id ?? this.generateBookingId(),
       transaction_id: transactionId,
       date_list: dateList,
       created_by: user._id,

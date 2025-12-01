@@ -316,6 +316,7 @@ export class WalletService {
       type: body.type ?? user.details?.type ?? 'wallet',
       details: JSON.stringify(body),
       group: body.group ?? false,
+      payment_method: payment_method,
     });
 
     await transaction.save();

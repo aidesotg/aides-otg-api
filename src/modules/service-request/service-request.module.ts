@@ -16,6 +16,7 @@ import { UserSchema } from '../user/schema/user.schema';
 import { InsuranceSchema } from '../insurance/schema/insurance.schema';
 import { ServiceSchema } from '../service/schema/service.schema';
 import { WalletModule } from '../wallet/wallet.module';
+import { TransactionSchema } from '../wallet/schema/transaction.schema';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { WalletModule } from '../wallet/wallet.module';
       { name: 'User', schema: UserSchema },
       { name: 'Insurance', schema: InsuranceSchema },
       { name: 'Service', schema: ServiceSchema },
+      { name: 'Transaction', schema: TransactionSchema },
     ]),
     ServicesModule,
     NotificationModule,
