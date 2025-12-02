@@ -31,8 +31,8 @@ export interface Transaction extends mongoose.Document {
   customer: string;
   card: string;
   type: string;
-  group: boolean;
-  groupId: string;
+  // group: boolean;
+  // groupId: string;
   readonly createdAt: Date;
   updatedAt: Date;
 }

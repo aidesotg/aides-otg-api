@@ -684,6 +684,58 @@ export class WalletService {
     };
   }
 
+  async getUserGeneralTransactions(params: any, user?: any) {
+    const { page = 1, pageSize = 50, startDate, endDate, ...rest } = params;
+    const pagination = await this.miscService.paginate({ page, pageSize });
+
+    const query: any = await this.miscService.search(rest);
+    if (user && Object.keys(user).length) {
+      query.user = user._id;
+    }
+
+    // Add date range filtering for createdAt field
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Set endDate to end of day to include the entire day
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
+    }
+
+    const transactions = await this.transactionModel
+      .find(query)
+      .select(
+        ' -device_fingerprint -merchant_fee -processor_response -auth_model -ip -auth_url -plan -fraud_status -card',
+      )
+      .populate({
+        path: 'user',
+        select: constants.userPopulateFields,
+      })
+      .select('-updatedAt')
+      .sort({ createdAt: -1 })
+      .skip(pagination.offset)
+      .limit(pagination.limit)
+      .exec();
+
+    const count = await this.transactionModel.countDocuments(query).exec();
+    return {
+      status: 'success',
+      message: 'transactions fetched',
+      data: {
+        pagination: {
+          ...(await this.miscService.pageCount({ count, page, pageSize })),
+          total: count,
+        },
+        transactions,
+      },
+    };
+  }
+
   async deleteWallet(user: string) {
     const wallet = await this.walletModel.findOne({ user });
     await wallet.remove();

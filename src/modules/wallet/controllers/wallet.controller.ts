@@ -64,6 +64,13 @@ export class WalletController {
     return this.walletService.getUserBalance(user);
   }
 
+  @Get('/general-transactions')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getGeneralTransactions(@Query() query: any, @AuthUser() user: any) {
+    return this.walletService.getUserGeneralTransactions(query, user);
+  }
+
   @Get('/transactions/all')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)

@@ -28,6 +28,10 @@ export class CreateLegalDocumentDto {
   agreement_type: 'signature' | 'click_to_agree';
 
   @ApiProperty()
+  @IsEnum(['terms', 'policy', 'others'])
+  type: 'terms' | 'policy' | 'others';
+
+  @ApiProperty()
   @IsArray()
   @IsMongoId({ each: true })
   @IsOptional()
@@ -67,6 +71,11 @@ export class UpdateLegalDocumentDto {
   @IsEnum(['signature', 'click_to_agree'])
   @IsOptional()
   agreement_type?: 'signature' | 'click_to_agree';
+
+  @ApiProperty()
+  @IsEnum(['terms', 'policy', 'others'])
+  @IsOptional()
+  type?: 'terms' | 'policy' | 'others';
 
   @ApiProperty()
   @IsArray()

@@ -46,6 +46,7 @@ import {
 import { DeleteAccountDto } from '../dto/delete-account.dto';
 import { SubmitKycDto } from '../dto/submit-kyc.dto';
 import { StripeAccountDto } from 'src/modules/wallet/dto/stripe-account.dto';
+import { LocationUpdate } from 'src/services/redis.service';
 
 @ApiTags('user')
 @Controller('user')
@@ -115,6 +116,21 @@ export class UserController {
     return this.userService.getUserCountByRoles();
   }
 
+  @Get('/nearby-caregivers')
+  @UseGuards(AuthGuard('jwt'))
+  async getNearbyCaregivers(@AuthUser() user: any, @Query() params: any) {
+    const { latitude, longitude } = params;
+    const caregivers = await this.userService.getNearbyCaregivers(user, {
+      latitude,
+      longitude,
+    });
+    return {
+      status: 'success',
+      message: 'Nearby caregivers fetched',
+      data: caregivers,
+    };
+  }
+
   // @Get('/counsellors')
   // @UseGuards(AuthGuard('jwt'))
   // async getCouncellor(@Query() params: any) {
@@ -156,6 +172,16 @@ export class UserController {
   @UseFilters(ExceptionsLoggerFilter)
   async submitKyc(@Body() body: SubmitKycDto, @AuthUser() user: any) {
     return this.userService.submitKyc(user, body);
+  }
+
+  @Post('/caregiver/location')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async updateCaregiverLocation(
+    @Body() body: LocationUpdate,
+    @AuthUser() user: any,
+  ) {
+    return this.userService.updateCaregiverLocation(user, body);
   }
 
   @Put('/kyc/:id')

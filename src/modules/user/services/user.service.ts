@@ -61,6 +61,7 @@ import { SubmitKycDto } from '../dto/submit-kyc.dto';
 import constants from 'src/framework/constants';
 import { StripeService } from 'src/services/stripe.service';
 import { StripeAccountDto } from 'src/modules/wallet/dto/stripe-account.dto';
+import { LocationUpdate, RedisService } from 'src/services/redis.service';
 
 @Injectable()
 export class UserService {
@@ -85,6 +86,7 @@ export class UserService {
     @Inject(forwardRef(() => InsuranceService))
     private insuranceService: InsuranceService,
     private stripeService: StripeService,
+    private redisService: RedisService,
     @Inject(forwardRef(() => WalletService))
     private walletService: WalletService,
   ) {}
@@ -342,6 +344,10 @@ export class UserService {
       .populate({
         path: 'professional_profile',
       })
+      .populate({
+        path: 'completed_requests',
+        match: { status: 'completed' },
+      })
       .exec();
     if (!userDetails) {
       throw new HttpException(
@@ -355,7 +361,12 @@ export class UserService {
 
   async getUserObject(user: any) {
     const userDetails = await this.getUser(user);
-    const wallet = await this.walletService.getUserBalance(user);
+    let wallet = null;
+    try {
+      const wallet = await this.walletService.getUserBalance(user);
+    } catch (error) {
+      console.log('Error getting user balance:', error);
+    }
     return {
       ...userDetails.toObject(),
       wallet,
@@ -1365,6 +1376,35 @@ export class UserService {
       status: 'success',
       message: 'Stripe account management successful',
       data: { url },
+    };
+  }
+
+  async getNearbyCaregivers(user: User, params: any) {
+    const { latitude, longitude } = params;
+    const caregivers = await this.redisService.findNearbyCaregivers(
+      latitude,
+      longitude,
+    );
+    const caregiversDetails = await this.userModel.find({
+      _id: { $in: caregivers.map((caregiver) => caregiver.userId) },
+    });
+    const caregiversWithDistance = caregiversDetails.map((caregiver) => ({
+      ...caregiver,
+      distance: caregivers.find((c) => c.userId === caregiver._id.toString())
+        ?.distance,
+    }));
+    return {
+      status: 'success',
+      message: 'Nearby caregivers fetched',
+      data: caregiversWithDistance,
+    };
+  }
+
+  async updateCaregiverLocation(user: User, location: LocationUpdate) {
+    await this.redisService.updateCaregiverLocation(location);
+    return {
+      status: 'success',
+      message: 'Caregiver location updated successfully',
     };
   }
 }

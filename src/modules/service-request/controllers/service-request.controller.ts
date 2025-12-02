@@ -102,8 +102,8 @@ export class ServiceRequestController {
   @Get('/favorites')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
-  async getFavorites(@AuthUser() user: any) {
-    return this.serviceService.getFavorites(user);
+  async getFavorites(@AuthUser() user: any, @Query() params: any) {
+    return this.serviceService.getFavorites(user, params);
   }
 
   @Get('/favorites/:id')

@@ -163,6 +163,7 @@ export class AuthenticationService {
       .populate('roles', ['name'])
       .populate('has_applied')
       .populate('insurance')
+      .populate('completed_requests')
       .exec();
     if (!user) {
       throw new HttpException(

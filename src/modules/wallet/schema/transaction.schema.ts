@@ -101,14 +101,14 @@ export const TransactionSchema = new mongoose.Schema(
       enum: ['wallet', 'subscription', 'serviceRequest'],
       default: 'wallet',
     },
-    group: {
-      type: Boolean,
-      default: false,
-    },
-    groupId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Charity',
-    },
+    // group: {
+    //   type: Boolean,
+    //   default: false,
+    // },
+    // groupId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: 'Charity',
+    // },
   },
 
   { timestamps: true },

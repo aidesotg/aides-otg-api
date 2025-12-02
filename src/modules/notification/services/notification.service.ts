@@ -304,4 +304,6 @@ export class NotificationService {
       message: 'Broadcast deleted',
     };
   }
+
+  async fetchNotificationTypes() {}
 }

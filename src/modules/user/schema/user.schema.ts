@@ -262,3 +262,11 @@ UserSchema.virtual('favorited', {
   foreignField: 'care_giver',
   count: true,
 });
+
+UserSchema.virtual('completed_requests', {
+  ref: 'ServiceRequest',
+  localField: '_id',
+  foreignField: 'user',
+  match: { status: 'completed' },
+  count: true,
+});

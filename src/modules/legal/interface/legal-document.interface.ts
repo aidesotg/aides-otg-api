@@ -9,6 +9,7 @@ export interface LegalDocument extends mongoose.Document {
   version: number;
   is_active: boolean;
   is_deleted: boolean;
+  type: 'terms' | 'policy' | 'others';
   created_by: string;
   parent_document: string;
   readonly createdAt: Date;

@@ -38,6 +38,11 @@ export const LegalDocumentSchema = new mongoose.Schema<LegalDocument>(
       type: Boolean,
       default: false,
     },
+    type: {
+      type: String,
+      enum: ['terms', 'policy', 'others'],
+      default: 'others',
+    },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

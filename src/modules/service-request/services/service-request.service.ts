@@ -2323,11 +2323,104 @@ export class ServiceRequestService {
     };
   }
 
-  async getFavorites(user: any) {
+  async getFavorites(user: any, params?: any) {
+    const { search, startDate, endDate, ...rest } = params || {};
+    const query: any = { user: user._id };
+
+    // Filter by date range (createdAt)
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Set endDate to end of day to include the entire day
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
+    }
+
+    // Global search functionality
+    if (search) {
+      const searchConditions: any[] = [];
+      const searchRegex = new RegExp(search, 'i');
+
+      // Search by request id or favorite _id if search is a valid ObjectId
+      if (await this.miscService.IsObjectId(search)) {
+        searchConditions.push({ request: search });
+        searchConditions.push({ _id: search });
+        searchConditions.push({ care_giver: search });
+      }
+
+      // Search by care_giver names (first_name, last_name)
+      const userSearchRegex = new RegExp(search, 'i');
+      const matchingCaregivers = await this.userModel
+        .find({
+          $or: [
+            { first_name: userSearchRegex },
+            { last_name: userSearchRegex },
+          ],
+        })
+        .select('_id')
+        .exec();
+
+      if (matchingCaregivers.length > 0) {
+        const caregiverIds = matchingCaregivers.map((u) => u._id);
+        searchConditions.push({ care_giver: { $in: caregiverIds } });
+      }
+
+      // Search by user names (first_name, last_name)
+      const matchingUsers = await this.userModel
+        .find({
+          $or: [
+            { first_name: userSearchRegex },
+            { last_name: userSearchRegex },
+          ],
+        })
+        .select('_id')
+        .exec();
+
+      if (matchingUsers.length > 0) {
+        const userIds = matchingUsers.map((u) => u._id);
+        searchConditions.push({ user: { $in: userIds } });
+      }
+
+      // Search by request booking_id
+      const matchingRequests = await this.serviceRequestModel
+        .find({ booking_id: searchRegex })
+        .select('_id')
+        .exec();
+
+      if (matchingRequests.length > 0) {
+        const requestIds = matchingRequests.map((r) => r._id);
+        searchConditions.push({ request: { $in: requestIds } });
+      }
+
+      // Combine search conditions with existing query using $or
+      if (searchConditions.length > 0) {
+        if (query.$or) {
+          // If query already has $or, combine it with search conditions
+          if (query.$and) {
+            query.$and.push({ $or: searchConditions });
+          } else {
+            query.$and = [{ $or: query.$or }, { $or: searchConditions }];
+            delete query.$or;
+          }
+        } else if (query.$and) {
+          // If query already has $and, add search conditions
+          query.$and.push({ $or: searchConditions });
+        } else {
+          query.$or = searchConditions;
+        }
+      }
+    }
+
     const favorites = await this.favoriteModel
-      .find({ user: user._id })
+      .find(query)
       .populate('request')
       .populate('care_giver', ['first_name', 'last_name', 'profile_picture'])
+      .sort({ createdAt: -1 })
       .exec();
     return {
       status: 'success',
