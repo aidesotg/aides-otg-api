@@ -22,6 +22,7 @@ import { StripeAccountDto } from 'src/modules/wallet/dto/stripe-account.dto';
 import { WithdrawDto } from 'src/modules/wallet/dto/withdrawal.dto';
 import { ExceptionsLoggerFilter } from 'src/framework/exceptions/exceptionLogger.filter';
 import { AuthUser } from 'src/framework/decorators/user.decorator';
+import Chat from 'twilio/lib/rest/Chat';
 
 @ApiTags('wallet')
 @Controller('wallet')

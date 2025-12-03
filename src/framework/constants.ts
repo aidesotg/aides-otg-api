@@ -227,6 +227,53 @@ const userPopulateFields =
 
 export const DEFAULT_TIMEZONE = 'America/New_York';
 
+export const notificationResourceTypes = {
+  LEAVE_A_REVIEW: 'leave_a_review',
+  NEW_FEATURE_UPDATES: 'new_feature_updates',
+  SECURITY_ALERT: 'security_alert',
+  PROFILE_UPDATED: 'profile_updated',
+  CARE_IN_PROGRESS: 'care_in_progress',
+  CARE_COMPLETED: 'care_completed',
+  PAYMENT_CONFIRMED: 'payment_confirmed',
+  PAYMENT_FAILED: 'payment_failed',
+  INVOICE_RECEIPT: 'invoice_receipt',
+  REQUEST_ACCEPTED: 'request_accepted',
+  REQUEST_DECLINED: 'request_declined',
+  NO_RESPONSE: 'no_response',
+  REQUEST_CANCELED: 'request_canceled',
+  REQUEST_EDITED: 'request_edited',
+  ON_MY_WAY: 'on_my_way',
+  CAREGIVER_ARRIVED: 'caregiver_arrived',
+};
+
+// Mapping of filter categories to notification resource types
+export const notificationFilterCategories = {
+  REQUESTS: [
+    notificationResourceTypes.REQUEST_ACCEPTED,
+    notificationResourceTypes.REQUEST_DECLINED,
+    notificationResourceTypes.NO_RESPONSE,
+    notificationResourceTypes.REQUEST_CANCELED,
+    notificationResourceTypes.REQUEST_EDITED,
+  ],
+  PAYMENTS: [
+    notificationResourceTypes.PAYMENT_CONFIRMED,
+    notificationResourceTypes.PAYMENT_FAILED,
+    notificationResourceTypes.INVOICE_RECEIPT,
+  ],
+  CAREGIVER_UPDATES: [
+    notificationResourceTypes.ON_MY_WAY,
+    notificationResourceTypes.CAREGIVER_ARRIVED,
+    notificationResourceTypes.CARE_IN_PROGRESS,
+    notificationResourceTypes.CARE_COMPLETED,
+  ],
+  SYSTEM_SECURITY: [
+    notificationResourceTypes.SECURITY_ALERT,
+    notificationResourceTypes.PROFILE_UPDATED,
+    notificationResourceTypes.NEW_FEATURE_UPDATES,
+    notificationResourceTypes.LEAVE_A_REVIEW,
+  ],
+};
+
 const constants = {
   transactionTypes,
   transactionStatus,
@@ -238,6 +285,8 @@ const constants = {
   FLUTTERWAVE_SUPPORTED_COUNTRIES,
   userPopulateFields,
   DEFAULT_TIMEZONE,
+  notificationResourceTypes,
+  notificationFilterCategories,
 };
 
 export default constants;

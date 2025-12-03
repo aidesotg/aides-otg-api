@@ -7,6 +7,10 @@ import { FirebaseService } from 'src/services/firebase.service';
 import { MiscCLass } from 'src/services/misc.service';
 import { CreateBroadcastDto } from 'src/modules/notification/dto/broadcast.dto';
 import { Broadcast } from 'src/modules/notification/interface/broadcast.interface';
+import {
+  notificationFilterCategories,
+  notificationResourceTypes,
+} from 'src/framework/constants';
 
 @Injectable()
 export class NotificationService {
@@ -49,13 +53,55 @@ export class NotificationService {
   }
 
   async fetchUserNotifications(user: any, params?: any) {
-    const { page = 1, pageSize = 10 } = params;
+    const { page = 1, pageSize = 10, sortBy, filter, ...rest } = params || {};
+
     const pagination = await this.miscService.paginate({ page, pageSize });
-    const searchQuery = await this.miscService.search(params);
+    const searchQuery = await this.miscService.search(rest);
+
+    // Build base query
+    const baseQuery: any = {
+      ...searchQuery,
+      $or: [{ user: user._id }, { isGeneral: true }],
+    };
+
+    // Filter by category (requests, payments, caregiverUpdates, systemSecurity)
+    // const resourceTypes: string[] = [];
+    // if (requests === 'true' || requests === true) {
+    //   resourceTypes.push(...notificationFilterCategories.REQUESTS);
+    // }
+    // if (payments === 'true' || payments === true) {
+    //   resourceTypes.push(...notificationFilterCategories.PAYMENTS);
+    // }
+    // if (caregiverUpdates === 'true' || caregiverUpdates === true) {
+    //   resourceTypes.push(...notificationFilterCategories.CAREGIVER_UPDATES);
+    // }
+    // if (systemSecurity === 'true' || systemSecurity === true) {
+    //   resourceTypes.push(...notificationFilterCategories.SYSTEM_SECURITY);
+    // }
+
+    // if (resourceTypes.length > 0) {
+    //   baseQuery.resource = { $in: resourceTypes };
+    // }
+    if (filter) {
+      baseQuery.resource = { $in: [filter] };
+    }
+
+    // Filter by unread only
+    if (sortBy === 'unreadOnly') {
+      baseQuery.is_read = false;
+    }
+
+    // Determine sort order
+    let sortOrder: any = { createdAt: -1 }; // Default: newest first
+    if (sortBy === 'oldest') {
+      sortOrder = { createdAt: 1 }; // Oldest first
+    } else if (sortBy === 'newest') {
+      sortOrder = { createdAt: -1 }; // Newest first
+    }
 
     const notifications = await this.notificationModel
-      .find({ ...searchQuery, $or: [{ user: user._id }, { isGeneral: true }] })
-      .sort({ createdAt: -1 })
+      .find(baseQuery)
+      .sort(sortOrder)
       .skip(pagination.offset)
       .limit(pagination.limit)
       .exec();
@@ -67,12 +113,7 @@ export class NotificationService {
       .countDocuments({ user: user._id, is_read: false })
       .exec();
 
-    const count = await this.notificationModel
-      .countDocuments({
-        ...searchQuery,
-        $or: [{ user: user._id }, { isGeneral: true }],
-      })
-      .exec();
+    const count = await this.notificationModel.countDocuments(baseQuery).exec();
 
     return {
       status: 'success',
