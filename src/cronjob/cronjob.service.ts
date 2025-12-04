@@ -205,6 +205,7 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
       requestId: string;
       slotTime: Date;
       bookingId?: string;
+      request: any;
     }[] = [];
 
     for (const request of candidateRequests) {
@@ -223,6 +224,7 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
         requestId: request._id.toString(),
         slotTime: firstSlotTime,
         bookingId: request.booking_id,
+        request: request,
       });
     }
 
@@ -233,14 +235,21 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
     for (const reminder of remindersToSend) {
       const readableTime = reminder.slotTime.toISOString();
       const bookingLabel = reminder.bookingId ?? reminder.requestId;
-      const message = `Service request ${bookingLabel} starts at ${readableTime}. Please ensure all logistics are in place.`;
+      const message = `Service request with booking ID:${bookingLabel} is due to start in 2 hours at ${readableTime}. No Caregiver has been assigned yet.`;
+      const details = `Care Types: ${reminder.request.care_type.join(
+        ', ',
+      )}, Location: ${reminder.request.location.street}, ${
+        reminder.request.location.city
+      }, ${reminder.request.location.state}, ${
+        reminder.request.location.country
+      }`;
 
       await Promise.all(
         adminUsers.map((admin) =>
           Promise.all([
             this.notificationService.sendMessage({
               user: admin,
-              title: 'Upcoming service request',
+              title: 'Service request reminder: URGENT!',
               message,
               resource: 'service_request',
               resource_id: reminder.requestId,
@@ -248,8 +257,8 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
             this.mailerService.send(
               new PlainMail(
                 admin.email,
-                'Upcoming service request',
-                '',
+                'Service request reminder: URGENT!',
+                details,
                 admin,
                 message,
               ),
