@@ -1204,4 +1204,24 @@ export class WalletService {
   async getSupportedCountries() {
     return [...STRIPE_SUPPORTED_COUNTRIES, ...FLUTTERWAVE_SUPPORTED_COUNTRIES];
   }
+
+  async getUserSavedPaymentMethods(user: any) {
+    let paymentMethod;
+    try {
+      paymentMethod = this.stripeService.listCustomerPaymentMethods(
+        user.stripeCustomerId,
+      );
+    } catch (error) {
+      console.log(error);
+      throw new ForbiddenException({
+        status: 'error',
+        message: 'Failed to fetch payment methods',
+      });
+    }
+    return {
+      status: 'success',
+      message: 'Payment methods fetched successfully',
+      data: paymentMethod,
+    };
+  }
 }

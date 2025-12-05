@@ -40,6 +40,7 @@ export interface User extends mongoose.Document {
   health_conditions: string[];
   firebase_uid: string;
   docId: string;
+  stripeCustomerId: string;
   stripeConnect: { stripeCustomerId: string; active: boolean };
   twoFactorEnabled: {
     sms: boolean;

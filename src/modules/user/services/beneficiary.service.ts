@@ -178,7 +178,16 @@ export class BeneficiaryService {
   }
 
   async getBeneficiaries(params?: any) {
-    const { page = 1, pageSize = 50, role, ownerId, search, ...rest } = params;
+    const {
+      page = 1,
+      pageSize = 50,
+      role,
+      ownerId,
+      search,
+      hasInsurance,
+      insuranceActive,
+      ...rest
+    } = params;
 
     const pagination = await this.miscService.paginate({ page, pageSize });
 
@@ -242,6 +251,90 @@ export class BeneficiaryService {
         query.$and.push({ $or: searchConditions });
       } else {
         query.$or = searchConditions;
+      }
+    }
+
+    // Insurance status filtering
+    if (hasInsurance !== undefined || insuranceActive !== undefined) {
+      const insuranceQuery: any = { is_deleted: false };
+
+      if (insuranceActive !== undefined) {
+        insuranceQuery.is_active =
+          insuranceActive === true || insuranceActive === 'true';
+      }
+
+      const matchingInsurances = await this.insuranceModel
+        .find(insuranceQuery)
+        .select('beneficiary')
+        .exec();
+
+      const beneficiaryIdsWithInsurance = matchingInsurances.map(
+        (insurance) => insurance.beneficiary,
+      );
+
+      // Get current query beneficiary IDs to intersect with insurance filter
+      const currentQueryIds = query._id?.$in || [];
+      const hasExistingIdFilter = !!query._id?.$in;
+
+      if (hasInsurance === true || hasInsurance === 'true') {
+        // Filter to only beneficiaries with insurance
+        if (hasExistingIdFilter) {
+          // Intersect existing IDs with those that have insurance
+          const filteredIds = currentQueryIds.filter((id) =>
+            beneficiaryIdsWithInsurance.some(
+              (insuranceId) => insuranceId.toString() === id.toString(),
+            ),
+          );
+          query._id =
+            filteredIds.length > 0 ? { $in: filteredIds } : { $in: [] };
+        } else {
+          query._id = { $in: beneficiaryIdsWithInsurance };
+        }
+      } else if (hasInsurance === false || hasInsurance === 'false') {
+        // Filter to only beneficiaries without insurance
+        if (hasExistingIdFilter) {
+          // Intersect existing IDs with those that don't have insurance
+          const filteredIds = currentQueryIds.filter(
+            (id) =>
+              !beneficiaryIdsWithInsurance.some(
+                (insuranceId) => insuranceId.toString() === id.toString(),
+              ),
+          );
+          query._id =
+            filteredIds.length > 0 ? { $in: filteredIds } : { $in: [] };
+        } else {
+          // Get all beneficiary IDs and filter out those with insurance
+          const allBeneficiaryIds = await this.beneficiaryModel
+            .find(query)
+            .select('_id')
+            .exec();
+          const beneficiaryIdsWithoutInsurance = allBeneficiaryIds
+            .map((b) => b._id)
+            .filter(
+              (id) =>
+                !beneficiaryIdsWithInsurance.some(
+                  (insuranceId) => insuranceId.toString() === id.toString(),
+                ),
+            );
+          query._id =
+            beneficiaryIdsWithoutInsurance.length > 0
+              ? { $in: beneficiaryIdsWithoutInsurance }
+              : { $in: [] };
+        }
+      } else if (insuranceActive !== undefined) {
+        // Only filter by insurance active status (hasInsurance not specified)
+        // This implies hasInsurance = true (only active/inactive insurance matters)
+        if (hasExistingIdFilter) {
+          const filteredIds = currentQueryIds.filter((id) =>
+            beneficiaryIdsWithInsurance.some(
+              (insuranceId) => insuranceId.toString() === id.toString(),
+            ),
+          );
+          query._id =
+            filteredIds.length > 0 ? { $in: filteredIds } : { $in: [] };
+        } else {
+          query._id = { $in: beneficiaryIdsWithInsurance };
+        }
       }
     }
 

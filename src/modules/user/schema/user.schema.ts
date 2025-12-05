@@ -123,6 +123,10 @@ export const UserSchema = new mongoose.Schema<User>(
       type: String,
       default: null,
     },
+    stripeCustomerId: {
+      type: String,
+      default: null,
+    },
     stripeConnect: {
       stripeCustomerId: {
         type: String,

@@ -58,6 +58,13 @@ export class WalletController {
     return this.walletService.getUserBalance({ _id: id });
   }
 
+  @Get('/payment-methods')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async getUserPaymentMethods(@AuthUser() user: any) {
+    return this.walletService.getUserSavedPaymentMethods(user);
+  }
+
   @Get('/balance')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)

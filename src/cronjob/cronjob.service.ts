@@ -269,7 +269,7 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
 
       await this.serviceRequestModel.updateOne(
         { _id: reminder.requestId },
-        { admin_first_day_reminder_sent: true },
+        { admin_first_day_reminder_sent: true, status: 'Urgent' },
       );
     }
   }

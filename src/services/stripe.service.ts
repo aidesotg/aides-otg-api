@@ -76,16 +76,40 @@ export class StripeService {
     );
 
     let customer;
+    let customerId = user.stripeCustomerId;
 
-    if (!user.stripeCustomerId) {
+    // Validate that stripeCustomerId is a valid customer ID (starts with 'cus_')
+    // If it's an account ID (starts with 'acct_') or invalid, treat as missing
+    if (customerId && !customerId.startsWith('cus_')) {
+      console.warn(
+        `Invalid customer ID format: ${customerId}. Expected customer ID (cus_*), got account ID or invalid format. Creating new customer.`,
+      );
+      customerId = null;
+    }
+
+    // Verify customer exists in Stripe if we have a customer ID
+    if (customerId) {
+      try {
+        await this.stripe.customers.retrieve(customerId);
+      } catch (error) {
+        console.warn(
+          `Customer ${customerId} not found in Stripe. Creating new customer.`,
+        );
+        customerId = null;
+      }
+    }
+
+    if (!customerId) {
       customer = await this.stripe.customers.create({
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
       });
 
+      customerId = customer.id;
+
       await this.userModel.updateOne(
         { _id: user._id },
-        { stripeCustomerId: user.stripeCustomerId ?? customer?.id },
+        { stripeCustomerId: customerId },
         {
           upsert: true,
           setDefaultsOnInsert: true,
@@ -104,7 +128,7 @@ export class StripeService {
     const session = await this.stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'] as any, // Allows Apple Pay and Google Pay to be enabled automatically
-      customer: String(user.stripeCustomerId ?? customer?.id),
+      customer: String(customerId),
       client_reference_id: reference,
       metadata,
       line_items,
@@ -119,16 +143,40 @@ export class StripeService {
     const { user, ...rest } = payload;
 
     let customer;
+    let customerId = user.stripeCustomerId;
 
-    if (!user.stripeCustomerId) {
+    // Validate that stripeCustomerId is a valid customer ID (starts with 'cus_')
+    // If it's an account ID (starts with 'acct_') or invalid, treat as missing
+    if (customerId && !customerId.startsWith('cus_')) {
+      console.warn(
+        `Invalid customer ID format: ${customerId}. Expected customer ID (cus_*), got account ID or invalid format. Creating new customer.`,
+      );
+      customerId = null;
+    }
+
+    // Verify customer exists in Stripe if we have a customer ID
+    if (customerId) {
+      try {
+        await this.stripe.customers.retrieve(customerId);
+      } catch (error) {
+        console.warn(
+          `Customer ${customerId} not found in Stripe. Creating new customer.`,
+        );
+        customerId = null;
+      }
+    }
+
+    if (!customerId) {
       customer = await this.stripe.customers.create({
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
       });
 
+      customerId = customer.id;
+
       await this.userModel.updateOne(
         { _id: user._id },
-        { stripeCustomerId: user.stripeCustomerId ?? customer?.id },
+        { stripeCustomerId: customerId },
         {
           upsert: true,
           setDefaultsOnInsert: true,
@@ -141,7 +189,7 @@ export class StripeService {
     // Stripe will automatically enable Apple Pay and Google Pay if available
     const paymentIntentConfig: Stripe.PaymentIntentCreateParams = {
       ...rest,
-      customer: String(user.stripeCustomerId ?? customer?.id),
+      customer: String(customerId),
       // payment_method_types: ['automatic_payment_methods'],
       // payment_method_types: rest.payment_method_types || ['card'],
       automatic_payment_methods: {
@@ -385,16 +433,40 @@ export class StripeService {
     const { user, amount, currency, metadata, return_url } = payload;
 
     let customer;
+    let customerId = user.stripeCustomerId;
 
-    if (!user.stripeCustomerId) {
+    // Validate that stripeCustomerId is a valid customer ID (starts with 'cus_')
+    // If it's an account ID (starts with 'acct_') or invalid, treat as missing
+    if (customerId && !customerId.startsWith('cus_')) {
+      console.warn(
+        `Invalid customer ID format: ${customerId}. Expected customer ID (cus_*), got account ID or invalid format. Creating new customer.`,
+      );
+      customerId = null;
+    }
+
+    // Verify customer exists in Stripe if we have a customer ID
+    if (customerId) {
+      try {
+        await this.stripe.customers.retrieve(customerId);
+      } catch (error) {
+        console.warn(
+          `Customer ${customerId} not found in Stripe. Creating new customer.`,
+        );
+        customerId = null;
+      }
+    }
+
+    if (!customerId) {
       customer = await this.stripe.customers.create({
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
       });
 
+      customerId = customer.id;
+
       await this.userModel.updateOne(
         { _id: user._id },
-        { stripeCustomerId: user.stripeCustomerId ?? customer?.id },
+        { stripeCustomerId: customerId },
         {
           upsert: true,
           setDefaultsOnInsert: true,
@@ -405,7 +477,7 @@ export class StripeService {
     const paymentIntent = await this.stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Convert to cents
       currency: currency.toLowerCase(),
-      customer: String(user.stripeCustomerId ?? customer?.id),
+      customer: String(customerId),
       payment_method_types: ['card'],
       automatic_payment_methods: {
         enabled: true,
