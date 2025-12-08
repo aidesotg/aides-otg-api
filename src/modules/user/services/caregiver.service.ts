@@ -540,9 +540,9 @@ export class CaregiverService {
     profile.suspension_reason = reason;
     await profile.save();
 
-    await this.userModel.findByIdAndUpdate(profile.user, {
-      $pull: { roles: constants.roles.CARE_GIVER },
-    });
+    // await this.userModel.findByIdAndUpdate(profile.user, {
+    //   $pull: { roles: constants.roles.CARE_GIVER },
+    // });
 
     await this.notificationService.sendMessage({
       user: profile.user,

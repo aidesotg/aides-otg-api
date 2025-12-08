@@ -5,6 +5,7 @@ import { UserModule } from '../../modules/user/user.module';
 import { JwtStrategy } from './jwt.strategy';
 import * as dotenv from 'dotenv';
 import { UserSchema } from 'src/modules/user/schema/user.schema';
+import { SessionSchema } from 'src/modules/authentication/schema/session.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 
 dotenv.config();
@@ -22,7 +23,10 @@ dotenv.config();
         expiresIn: process.env.EXPIRESIN,
       },
     }),
-    MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: 'User', schema: UserSchema },
+      { name: 'Session', schema: SessionSchema },
+    ]),
   ],
   providers: [JwtStrategy],
   exports: [PassportModule, JwtModule],

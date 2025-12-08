@@ -40,6 +40,7 @@ import {
 import { SocialSignInDto } from '../dto/social-signin.dto';
 import { SocialAuthService } from './social-auth.service';
 import PlainMail from 'src/services/mailers/templates/plain-mail';
+import { Session } from '../interface/session.interface';
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ export class AuthenticationService {
     @InjectModel('AdminLogin') private adminLoginModel: Model<AdminLogin>,
     @InjectModel('ServiceRequest')
     private serviceRequestModel: Model<ServiceRequest>,
+    @InjectModel('Session') private sessionModel: Model<Session>,
     private roleService: RoleService,
     private mailerService: Mailer,
     private firebaseService: FirebaseService,
@@ -153,7 +155,7 @@ export class AuthenticationService {
     };
   }
 
-  async login(loginDto: LoginDto, route?: string) {
+  async login(loginDto: LoginDto, request: any, route?: string) {
     const { email, password, device_token } = loginDto;
     const user: any = await this.userModel
       .findOne({
@@ -271,6 +273,8 @@ export class AuthenticationService {
         { expiresIn: expire },
       );
 
+      await this.createOrUpdateSession(user, token, request);
+
       // Check if user is a caregiver and get completed requests count
       let completedRequestsCount = 0;
       const isCaregiver = user.roles?.some(
@@ -364,7 +368,10 @@ export class AuthenticationService {
     }
   }
 
-  async twoFactorLoginVerification(body: TwoFactorLoginVerificationDto) {
+  async twoFactorLoginVerification(
+    body: TwoFactorLoginVerificationDto,
+    request: any,
+  ) {
     const user = await this.userModel
       .findOne({ _id: body.userId })
       .populate('roles', ['name'])
@@ -399,6 +406,8 @@ export class AuthenticationService {
       process.env.SECRET,
       { expiresIn: expire },
     );
+
+    await this.createOrUpdateSession(user, token, request);
 
     // Check if user is a caregiver and get completed requests count
     let completedRequestsCount = 0;
@@ -767,5 +776,189 @@ export class AuthenticationService {
       message: 'Roles fetched',
       data: roles,
     };
+  }
+
+  async createOrUpdateSession(user: User, token: string, request: any) {
+    try {
+      // Extract token without Bearer prefix if present
+      const jwtToken = token.replace('Bearer ', '');
+
+      // Extract information from request headers
+      const userAgent = request?.headers?.['user-agent'] || '';
+      const ipAddress = this.extractIpAddress(request);
+      const location =
+        request?.headers?.['x-location'] ||
+        request?.headers?.['location'] ||
+        null;
+
+      // Parse browser and device from user-agent
+      const { browser, device } = this.parseUserAgent(userAgent);
+
+      // Find existing session for this user and token
+      const existingSession = await this.sessionModel
+        .findOne({
+          user: user._id,
+          jwt_token: jwtToken,
+        })
+        .exec();
+
+      const sessionData: any = {
+        user: user._id,
+        jwt_token: jwtToken,
+        last_login: new Date(),
+      };
+
+      if (device) {
+        sessionData.device = device;
+      }
+      if (browser) {
+        sessionData.browser = browser;
+      }
+      if (location) {
+        sessionData.location = location;
+      }
+      if (ipAddress) {
+        sessionData.ip_address = ipAddress;
+      }
+
+      if (existingSession) {
+        // Update existing session
+        Object.assign(existingSession, sessionData);
+        await existingSession.save();
+        return existingSession;
+      } else {
+        // Create new session
+        const newSession = new this.sessionModel(sessionData);
+        await newSession.save();
+        return newSession;
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: 'error',
+          message: 'Failed to create or update session',
+          error: error.message,
+        },
+        500,
+      );
+    }
+  }
+
+  private extractIpAddress(request: any): string | null {
+    // Check various headers for IP address (considering proxies and load balancers)
+    const forwardedFor = request?.headers?.['x-forwarded-for'];
+    if (forwardedFor) {
+      // x-forwarded-for can contain multiple IPs, take the first one
+      return forwardedFor.split(',')[0].trim();
+    }
+
+    const realIp = request?.headers?.['x-real-ip'];
+    if (realIp) {
+      return realIp;
+    }
+
+    // Fallback to request IP
+    if (request?.ip) {
+      return request.ip;
+    }
+
+    // Check socket remote address
+    if (request?.socket?.remoteAddress) {
+      return request.socket.remoteAddress;
+    }
+
+    return null;
+  }
+
+  private parseUserAgent(userAgent: string): {
+    browser: string | null;
+    device: string | null;
+  } {
+    if (!userAgent) {
+      return { browser: null, device: null };
+    }
+
+    let browser: string | null = null;
+    let device: string | null = null;
+
+    // Detect browser
+    if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) {
+      browser = 'Chrome';
+    } else if (userAgent.includes('Firefox')) {
+      browser = 'Firefox';
+    } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+      browser = 'Safari';
+    } else if (userAgent.includes('Edg')) {
+      browser = 'Edge';
+    } else if (userAgent.includes('Opera') || userAgent.includes('OPR')) {
+      browser = 'Opera';
+    } else if (userAgent.includes('MSIE') || userAgent.includes('Trident')) {
+      browser = 'Internet Explorer';
+    }
+
+    // Detect device type
+    if (
+      userAgent.includes('Mobile') ||
+      userAgent.includes('Android') ||
+      userAgent.includes('iPhone') ||
+      userAgent.includes('iPad')
+    ) {
+      if (userAgent.includes('iPhone')) {
+        device = 'iPhone';
+      } else if (userAgent.includes('iPad')) {
+        device = 'iPad';
+      } else if (userAgent.includes('Android')) {
+        device = 'Android Mobile';
+      } else {
+        device = 'Mobile Device';
+      }
+    } else if (userAgent.includes('Tablet')) {
+      device = 'Tablet';
+    } else if (userAgent.includes('Windows')) {
+      device = 'Windows PC';
+    } else if (userAgent.includes('Mac')) {
+      device = 'Mac';
+    } else if (userAgent.includes('Linux')) {
+      device = 'Linux PC';
+    } else {
+      device = 'Desktop';
+    }
+
+    return { browser, device };
+  }
+
+  async terminateSession(userId: string, token?: string) {
+    try {
+      const query: any = { user: userId };
+
+      if (token) {
+        // Extract token without Bearer prefix if present
+        const jwtToken = token.replace('Bearer ', '');
+        query.jwt_token = jwtToken;
+      }
+
+      await this.sessionModel.deleteMany(query).exec();
+
+      return {
+        status: 'success',
+        message: token
+          ? 'Session terminated successfully'
+          : 'All sessions terminated successfully',
+        // deletedCount: result.deletedCount,
+      };
+    } catch (error) {
+      console.log(
+        '🚀 ~ AuthenticationService ~ terminateSession ~ error:',
+        error,
+      );
+      // throw new HttpException(
+      //   {
+      //     status: 'error',
+      //     message: 'Failed to terminate session',
+      //     error: error.message,
+      //   },
+      //   500,
+      // );
+    }
   }
 }

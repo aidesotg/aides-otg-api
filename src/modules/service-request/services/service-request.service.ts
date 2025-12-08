@@ -1195,12 +1195,13 @@ export class ServiceRequestService {
       autoAdjustRadius,
       sortBy,
     } = await this.miscService.buildServiceRequestPoolQuery(
-      { ...rest, page, pageSize },
+      { ...rest },
       {
         beneficiaryModel: this.beneficiaryModel,
         userModel: this.userModel,
       },
     );
+    console.log('🚀 ~ ServiceRequestService ~ getRequestsPool ~ query:', query);
 
     const requests = await this.serviceRequestModel
       .find(query)
@@ -1239,17 +1240,15 @@ export class ServiceRequestService {
         },
       })
       .exec();
-    console.log(
-      '🚀 ~ ServiceRequestService ~ getRequestsPool ~ requests:',
-      requests,
-    );
 
     const requestIds = await Promise.all(requests.map((r) => r._id));
 
     const poolQuery: any = {
-      request: { $in: requestIds },
       // $or: [{ status: 'Pending' }, { status: '' }],
     };
+    if (requestIds.length > 0) {
+      poolQuery.request = { $in: requestIds };
+    }
 
     // Price range filter (offered price per hour)
     if (minPrice || maxPrice) {
@@ -1303,16 +1302,20 @@ export class ServiceRequestService {
       .exec();
 
     // Time of day filter (Morning, Afternoon, Evening, Night)
-    requestPool = this.miscService.filterPoolByTimeOfDay(
-      requestPool,
-      timeOfDay,
-    );
+    if (timeOfDay) {
+      requestPool = this.miscService.filterPoolByTimeOfDay(
+        requestPool,
+        timeOfDay,
+      );
+    }
 
     // Quick filters: Today, This week, Urgent
-    requestPool = this.miscService.filterPoolByQuickFilters(
-      requestPool,
-      quickFilters,
-    );
+    if (quickFilters) {
+      requestPool = this.miscService.filterPoolByQuickFilters(
+        requestPool,
+        quickFilters,
+      );
+    }
 
     // Distance filter and nearest sorting (requires caregiver user)
     let poolWithDistance: any[] = requestPool;

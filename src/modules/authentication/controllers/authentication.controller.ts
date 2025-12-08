@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  Req,
   UseFilters,
   UseGuards,
 } from '@nestjs/common';
@@ -52,8 +53,8 @@ export class AuthenticationController {
 
   @Post('/login')
   @UseFilters(ExceptionsLoggerFilter)
-  async login(@Body() loginDto: LoginDto) {
-    return this.authenticationService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Req() request: any) {
+    return this.authenticationService.login(loginDto, request);
   }
   @Post('/login/two-factor')
   @UseFilters(ExceptionsLoggerFilter)
@@ -65,8 +66,9 @@ export class AuthenticationController {
   @UseFilters(ExceptionsLoggerFilter)
   async twoFactorLoginVerification(
     @Body() body: TwoFactorLoginVerificationDto,
+    @Req() request: any,
   ) {
-    return this.authenticationService.twoFactorLoginVerification(body);
+    return this.authenticationService.twoFactorLoginVerification(body, request);
   }
 
   @Post('/social')

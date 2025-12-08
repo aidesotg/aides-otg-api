@@ -15,6 +15,7 @@ import { UserModule } from '../user/user.module';
 import { SocialAuthTokenSchema } from './schema/social-auth.schema';
 import { SocialAuthService } from './services/social-auth.service';
 import { AuthzModule } from 'src/framework/authz/authz.module';
+import { SessionSchema } from './schema/session.schema';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AuthzModule } from 'src/framework/authz/authz.module';
       { name: 'AdminLogin', schema: AdminLoginSchema },
       { name: 'SocialAuthToken', schema: SocialAuthTokenSchema },
       { name: 'ServiceRequest', schema: ServiceRequestSchema },
+      { name: 'Session', schema: SessionSchema },
     ]),
     forwardRef(() => RoleModule),
     ServicesModule,
