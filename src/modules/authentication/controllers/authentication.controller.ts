@@ -93,8 +93,8 @@ export class AuthenticationController {
 
   @Post('/admin/login/')
   @UseFilters(ExceptionsLoggerFilter)
-  async loginAdmin(@Body() loginDto: LoginDto) {
-    return this.authenticationService.login(loginDto, 'admin');
+  async loginAdmin(@Body() loginDto: LoginDto, @Req() request: any) {
+    return this.authenticationService.login(loginDto, request, 'admin');
   }
 
   @Get('/verify/:token')
