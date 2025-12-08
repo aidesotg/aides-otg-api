@@ -8,6 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CronJob } from 'cron';
 import { ServiceRequest } from 'src/modules/service-request/interface/service-request.interface';
+import { ServiceRequestDayLogs } from 'src/modules/service-request/interface/service-request-day-logs.schema';
 import { NotificationService } from 'src/modules/notification/services/notification.service';
 import { User } from 'src/modules/user/interface/user.interface';
 import { Role } from 'src/modules/role/interface/role.interface';
@@ -20,10 +21,13 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CronjobService.name);
   private expiredRequestsJob: CronJob;
   private upcomingRequestReminderJob: CronJob;
+  private expiredDayLogsJob: CronJob;
 
   constructor(
     @InjectModel('ServiceRequest')
     private readonly serviceRequestModel: Model<ServiceRequest>,
+    @InjectModel('ServiceRequestDayLogs')
+    private readonly serviceRequestDayLogsModel: Model<ServiceRequestDayLogs>,
     @InjectModel('User') private readonly userModel: Model<User>,
     @InjectModel('Role') private readonly roleModel: Model<Role>,
     private readonly notificationService: NotificationService,
@@ -33,6 +37,7 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     this.startExpiredRequestJob();
     this.startUpcomingRequestReminderJob();
+    this.startExpiredDayLogsJob();
   }
 
   onModuleDestroy() {
@@ -41,6 +46,9 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
     }
     if (this.upcomingRequestReminderJob) {
       this.upcomingRequestReminderJob.stop();
+    }
+    if (this.expiredDayLogsJob) {
+      this.expiredDayLogsJob.stop();
     }
   }
 
@@ -99,6 +107,106 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
         error?.stack,
       );
     });
+  }
+
+  private startExpiredDayLogsJob() {
+    this.logger.log(
+      'Starting expired day logs cron job (runs every 15 minutes)',
+    );
+
+    this.expiredDayLogsJob = new CronJob(
+      '*/15 * * * *',
+      () => {
+        this.handleExpiredDayLogs().catch((error) => {
+          this.logger.error(
+            'Failed to update expired service request day logs',
+            error?.stack,
+          );
+        });
+      },
+      null,
+      true,
+      DEFAULT_TIMEZONE,
+    );
+
+    // Run once immediately
+    this.handleExpiredDayLogs().catch((error) => {
+      this.logger.error(
+        'Failed to update expired service request day logs on startup',
+        error?.stack,
+      );
+    });
+  }
+
+  private async handleExpiredDayLogs() {
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const candidateLogs = await this.serviceRequestDayLogsModel
+      .find({
+        status: { $nin: ['Completed', 'Cancelled', 'Rejected', 'Expired'] },
+      })
+      .select(['_id', 'day_id', 'request'])
+      .lean();
+
+    if (!candidateLogs.length) {
+      return;
+    }
+
+    const logsToExpire: string[] = [];
+
+    for (const log of candidateLogs) {
+      const request = await this.serviceRequestModel
+        .findOne(
+          { _id: log.request, 'date_list._id': log.day_id },
+          { date_list: 1 },
+        )
+        .lean();
+
+      if (!request?.date_list?.length) {
+        continue;
+      }
+
+      const dayEntry = request.date_list.find(
+        (d: any) => d._id?.toString() === log.day_id.toString(),
+      );
+
+      if (!dayEntry?.date) {
+        continue;
+      }
+
+      const dayDate = new Date(dayEntry.date);
+      if (Number.isNaN(dayDate.getTime())) {
+        continue;
+      }
+
+      if (dayDate.getTime() < startOfToday.getTime()) {
+        logsToExpire.push(log._id.toString());
+      }
+    }
+
+    if (!logsToExpire.length) {
+      return;
+    }
+
+    await this.serviceRequestDayLogsModel.bulkWrite(
+      logsToExpire.map((id) => ({
+        updateOne: {
+          filter: { _id: id },
+          update: {
+            $set: { status: 'Expired' },
+            $push: {
+              status_history: { status: 'Expired', created_at: now },
+            },
+          },
+        },
+      })),
+    );
+
+    this.logger.log(
+      `Marked ${logsToExpire.length} service request day log(s) as expired`,
+    );
   }
 
   private getLatestScheduledDate(dateList: any[]): Date | null {

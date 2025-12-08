@@ -1246,6 +1246,9 @@ export class ServiceRequestService {
     const poolQuery: any = {
       // $or: [{ status: 'Pending' }, { status: '' }],
     };
+    if (query.status) {
+      poolQuery.status = query.status;
+    }
     if (requestIds.length > 0) {
       poolQuery.request = { $in: requestIds };
     }
