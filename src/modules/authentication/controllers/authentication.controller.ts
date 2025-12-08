@@ -105,8 +105,8 @@ export class AuthenticationController {
 
   @Get('/verify-admin/:token')
   @UseFilters(ExceptionsLoggerFilter)
-  async verifyAdmin(@Param('token') token: string) {
-    return this.authenticationService.verifyAdmin(token);
+  async verifyAdmin(@Param('token') token: string, @Req() request: any) {
+    return this.authenticationService.verifyAdmin(token, request);
   }
 
   @Put('/resend-verification')

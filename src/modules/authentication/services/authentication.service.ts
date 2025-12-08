@@ -437,7 +437,7 @@ export class AuthenticationService {
     };
   }
 
-  async verifyAdmin(token: string) {
+  async verifyAdmin(token: string, request: any) {
     const loginAttempt = await this.adminLoginModel
       .findOne({ token, used: false })
       .exec();
@@ -476,6 +476,8 @@ export class AuthenticationService {
       process.env.SECRET,
       { expiresIn: expire },
     );
+
+    await this.createOrUpdateSession(user, jwtToken, request);
 
     const data = {
       user,
