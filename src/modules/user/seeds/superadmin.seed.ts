@@ -7,6 +7,7 @@ import * as bcrypt from 'bcryptjs';
 import { User } from '../interface/user.interface';
 import { Role } from 'src/modules/role/interface/role.interface';
 import Admin from './admin.json';
+import constants from 'src/framework/constants';
 @Injectable()
 export class SuperAdminSeeder implements Seeder {
   constructor(
@@ -20,25 +21,22 @@ export class SuperAdminSeeder implements Seeder {
     const admin = Admin;
     const adminRoles = [];
     const roles = await this.roleModel
-      .find({
-        $or: [{ name: 'admin' }, { name: 'customer' }, { name: 'vendor' }],
-      })
+      .findOne({ name: constants.roles.SUPER_ADMIN })
       .exec();
-    if (roles.length) {
-      for (const role of roles) adminRoles.push(role._id);
-      await this.userModel.updateOne(
+    if (roles) {
+      await this.userModel.findOneAndUpdate(
         { email: admin.email },
         {
-          fullname: admin.fullname,
-          username: admin.username,
+          first_name: admin.first_name,
+          last_name: admin.last_name,
+          phone: admin.phone,
           email: admin.email,
           password: await bcrypt.hash(admin.password, 11),
-          country: admin.country,
-          isActive: true,
-          roles: adminRoles,
+          roles: [roles._id],
         },
         {
           upsert: true,
+          new: true,
           setDefaultsOnInsert: true,
         },
       );

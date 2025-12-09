@@ -33,9 +33,12 @@ export class AuthenticationController {
 
   @Post('/social/login')
   @HttpCode(HttpStatus.OK)
-  public async socialLogin(@Body() socialSignInDto: SocialSignInDto) {
+  public async socialLogin(
+    @Body() socialSignInDto: SocialSignInDto,
+    @Req() request: any,
+  ) {
     try {
-      return this.authenticationService.signInSocial(socialSignInDto);
+      return this.authenticationService.signInSocial(socialSignInDto, request);
     } catch (err) {
       console.log('🚀 ~ AuthController ~ err:', err);
       throw new ForbiddenException({
@@ -73,9 +76,12 @@ export class AuthenticationController {
 
   @Post('/social')
   @HttpCode(HttpStatus.OK)
-  public async social(@Body() socialSignInDto: SocialSignInDto) {
+  public async social(
+    @Body() socialSignInDto: SocialSignInDto,
+    @Req() request: any,
+  ) {
     try {
-      return this.authenticationService.signInSocial(socialSignInDto);
+      return this.authenticationService.signInSocial(socialSignInDto, request);
     } catch (err) {
       console.log('🚀 ~ AuthController ~ err:', err);
       throw new ForbiddenException({
@@ -99,8 +105,8 @@ export class AuthenticationController {
 
   @Get('/verify/:token')
   @UseFilters(ExceptionsLoggerFilter)
-  async verify(@Param('token') token: string) {
-    return this.authenticationService.verify(token);
+  async verify(@Param('token') token: string, @Req() request: any) {
+    return this.authenticationService.verify(token, request);
   }
 
   @Get('/verify-admin/:token')

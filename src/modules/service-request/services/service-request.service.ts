@@ -1320,6 +1320,17 @@ export class ServiceRequestService {
       );
     }
 
+    // Helper to attach the matched day entry from the request.date_list
+    const addDayDetails = (log: any) => {
+      const doc = log.toObject();
+      const dayDetails =
+        doc?.request?.date_list?.find(
+          (entry: any) => String(entry._id) === String(doc.day_id),
+        ) || null;
+
+      return { ...doc, day_details: dayDetails };
+    };
+
     // Distance filter and nearest sorting (requires caregiver user)
     let poolWithDistance: any[] = requestPool;
     const shouldComputeDistance =
@@ -1364,15 +1375,12 @@ export class ServiceRequestService {
         }
       }
 
-      poolWithDistance = filtered.map((item) => {
-        const doc = item.log.toObject();
-        return {
-          ...doc,
-          distance: item.distance,
-        };
-      });
+      poolWithDistance = filtered.map((item) => ({
+        ...addDayDetails(item.log),
+        distance: item.distance,
+      }));
     } else {
-      poolWithDistance = requestPool.map((log: any) => log.toObject());
+      poolWithDistance = requestPool.map((log: any) => addDayDetails(log));
     }
 
     // Sorting and pagination (DRY via misc service)

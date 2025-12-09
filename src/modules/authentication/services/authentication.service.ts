@@ -66,11 +66,11 @@ export class AuthenticationService {
     private socialAuthService: SocialAuthService,
   ) {}
 
-  async signInSocial(payload: SocialSignInDto) {
+  async signInSocial(payload: SocialSignInDto, request: any) {
     try {
       const { auth, socialPayload, newUser } =
         await this.socialAuthService.socialSignIn(payload);
-      return await this.signInUser(auth, payload, newUser);
+      return await this.signInUser(auth, payload, request, newUser);
     } catch (error) {
       throw error;
     }
@@ -79,6 +79,7 @@ export class AuthenticationService {
   async signInUser(
     user: User,
     data: LoginDto | SocialSignInDto,
+    request: any,
     newUser?: boolean,
   ) {
     // user.last_login = new Date();
@@ -95,6 +96,8 @@ export class AuthenticationService {
       process.env.SECRET,
       { expiresIn: expire },
     );
+
+    await this.createOrUpdateSession(user, token, request);
 
     return {
       status: 'success',
@@ -492,7 +495,7 @@ export class AuthenticationService {
     };
   }
 
-  async verify(token: string) {
+  async verify(token: string, request: any) {
     const user = await this.userModel
       .findOne({ activation_code: token, isDeleted: false })
       .populate('role')
@@ -527,6 +530,8 @@ export class AuthenticationService {
       process.env.SECRET,
       { expiresIn: expire },
     );
+
+    await this.createOrUpdateSession(user, jwtToken, request);
 
     const data = {
       user,

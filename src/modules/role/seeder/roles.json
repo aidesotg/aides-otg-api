@@ -3,5 +3,6 @@
   { "name": "Support Admin" },
   { "name": "Customer" },
   { "name": "Insurance Admin" },
-  { "name": "Care Giver" }
+  { "name": "Care Giver" },
+  { "name": "Client" }
 ]
