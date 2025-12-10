@@ -36,6 +36,7 @@ import {
   UpdateCaregiverLocationDto,
   UpdateRequestLocationDto,
 } from './dto/redis.dto';
+import * as twilio from 'twilio';
 
 @Controller('services')
 export class ServicesController {
@@ -361,6 +362,37 @@ export class ServicesController {
   }
 
   /**
+   * Public Voice webhook for Twilio client calls
+   * Mirrors the example from Twilio docs:
+   * - Reads the destination number from `To`
+   * - Uses your verified caller ID
+   * - Returns valid TwiML
+   */
+  @Post('twilio/call-handler')
+  async handleVoiceWebhook(@Req() req: Request, @Res() res: Response) {
+    console.log(
+      '🚀 ~ ServicesController ~ handleVoiceWebhook ~ req:',
+      req.body,
+    );
+    const to = req.body?.To || req.query?.To;
+    const callerId =
+      process.env.TWILIO_CALLER_ID || process.env.TWILIO_PHONE_NUMBER;
+
+    const vr = new twilio.twiml.VoiceResponse();
+
+    if (to) {
+      const dial = vr.dial({ callerId });
+      dial.number(to as string);
+    } else {
+      vr.say('No destination number was provided.');
+      vr.hangup();
+    }
+
+    res.type('text/xml');
+    res.send(vr.toString());
+  }
+
+  /**
    * TwiML Voice URL handler for Twilio calls
    * This endpoint must be publicly accessible (no auth) and return valid TwiML
    * Configure this URL in your Twilio Console TwiML App settings:
@@ -368,9 +400,9 @@ export class ServicesController {
    *
    * The Voice URL should be: https://your-domain.com/services/twilio/call-handler
    */
-  @Post('twilio/call-handler')
+  @Post('voice')
   async handleTwilioCall(@Req() req: Request, @Res() res: Response) {
-    console.log('🚀 ~ ServicesController ~ handleTwilioCall ~ req:', req);
+    console.log('🚀 ~ ServicesController ~ handleTwilioCall ~ req:', req.body);
     try {
       // Extract call parameters from Twilio request
       const callSid = req.body?.CallSid || req.query?.CallSid;
