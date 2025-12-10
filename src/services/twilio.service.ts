@@ -19,7 +19,7 @@ export class TwilioService {
     try {
       const response = await this.twilioClient.messages.create({
         body: message,
-        from: process.env.TWILIO_PHONE_NUMBER,
+        from: process.env.TWILIO_WHATSAPP_NUMBER,
         to: to,
       });
 
@@ -85,7 +85,7 @@ export class TwilioService {
     try {
       const callOptions: any = {
         to: to,
-        from: from || process.env.TWILIO_PHONE_NUMBER,
+        from: from || process.env.TWILIO_WHATSAPP_NUMBER,
       };
 
       // If URL is provided, use it for TwiML instructions
@@ -141,7 +141,7 @@ export class TwilioService {
     try {
       const callOptions: any = {
         to: to,
-        from: from || process.env.TWILIO_PHONE_NUMBER,
+        from: from || process.env.TWILIO_WHATSAPP_NUMBER,
         twiml: twiml,
       };
 
