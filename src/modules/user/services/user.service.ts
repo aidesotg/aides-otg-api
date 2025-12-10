@@ -363,7 +363,7 @@ export class UserService {
     const userDetails = await this.getUser(user);
     let wallet = null;
     try {
-      const wallet = await this.walletService.getUserBalance(user);
+      wallet = await this.walletService.getUserBalance(user);
     } catch (error) {
       console.log('Error getting user balance:', error);
     }
