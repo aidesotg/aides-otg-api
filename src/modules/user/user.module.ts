@@ -23,6 +23,7 @@ import { BankSchema } from './schema/bank.schema';
 import { ReviewSchema } from '../service-request/schema/review.schema';
 import { ServiceRequestSchema } from '../service-request/schema/service-request.schema';
 import { KycSchema } from './schema/kyc.schema';
+import { ServiceRequestDayLogsSchema } from '../service-request/schema/service-request-day-logs.schema';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { KycSchema } from './schema/kyc.schema';
       { name: 'Review', schema: ReviewSchema },
       { name: 'ServiceRequest', schema: ServiceRequestSchema },
       { name: 'Kyc', schema: KycSchema },
+      { name: 'ServiceRequestDayLogs', schema: ServiceRequestDayLogsSchema },
     ]),
     ServicesModule,
     RoleModule,

@@ -28,6 +28,7 @@ import { Bank } from '../interface/bank.interface';
 import { Review } from 'src/modules/service-request/interface/review.interface';
 import { ServiceRequest } from 'src/modules/service-request/interface/service-request.interface';
 import constants from 'src/framework/constants';
+import { ServiceRequestDayLogs } from 'src/modules/service-request/interface/service-request-day-logs.schema';
 
 @Injectable()
 export class CaregiverService {
@@ -39,6 +40,8 @@ export class CaregiverService {
     @InjectModel('Insurance') private readonly insuranceModel: Model<Insurance>,
     @InjectModel('ServiceRequest')
     private readonly serviceRequestModel: Model<ServiceRequest>,
+    @InjectModel('ServiceRequestDayLogs')
+    private readonly serviceRequestDayLogsModel: Model<ServiceRequestDayLogs>,
     @InjectModel('UserBeneficiary')
     private readonly userBeneficiaryModel: Model<UserBeneficiary>,
     @InjectModel('Bank') private readonly bankModel: Model<Bank>,
@@ -534,7 +537,38 @@ export class CaregiverService {
   }
 
   async suspendCaregiver(id: string, reason: string) {
-    const profile = await this.professionalProfileModel.findById(id);
+    const careGiver = await this.userModel.findById(id);
+    if (!careGiver) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Caregiver not found',
+      });
+    }
+    const profile = await this.professionalProfileModel.findOne({
+      user: careGiver._id,
+    });
+    if (!profile) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Caregiver profile not found',
+      });
+    }
+
+    //check if caregiver has active requests
+    const activeRequests = await this.serviceRequestDayLogsModel.find({
+      care_giver: careGiver._id,
+      $or: [
+        { status: 'Pending' },
+        { status: 'Accepted' },
+        { status: 'In Progress' },
+      ],
+    });
+    if (activeRequests.length > 0) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Cannot suspend caregiver. Caregiver has active requests',
+      });
+    }
 
     profile.suspended = true;
     profile.suspension_reason = reason;
@@ -545,7 +579,7 @@ export class CaregiverService {
     // });
 
     await this.notificationService.sendMessage({
-      user: profile.user,
+      user: careGiver,
       title: 'Caregiver profile suspended',
       message: `Your caregiver profile has been suspended: ${reason}`,
       resource: 'professional-profile',
