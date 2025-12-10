@@ -362,37 +362,6 @@ export class ServicesController {
   }
 
   /**
-   * Public Voice webhook for Twilio client calls
-   * Mirrors the example from Twilio docs:
-   * - Reads the destination number from `To`
-   * - Uses your verified caller ID
-   * - Returns valid TwiML
-   */
-  @Post('twilio/call-handler')
-  async handleVoiceWebhook(@Req() req: Request, @Res() res: Response) {
-    console.log(
-      '🚀 ~ ServicesController ~ handleVoiceWebhook ~ req:',
-      req.body,
-    );
-    const to = req.body?.To || req.query?.To;
-    const callerId =
-      process.env.TWILIO_CALLER_ID || process.env.TWILIO_PHONE_NUMBER;
-
-    const vr = new twilio.twiml.VoiceResponse();
-
-    if (to) {
-      const dial = vr.dial({ callerId });
-      dial.number(to as string);
-    } else {
-      vr.say('No destination number was provided.');
-      vr.hangup();
-    }
-
-    res.type('text/xml');
-    res.send(vr.toString());
-  }
-
-  /**
    * TwiML Voice URL handler for Twilio calls
    * This endpoint must be publicly accessible (no auth) and return valid TwiML
    * Configure this URL in your Twilio Console TwiML App settings:
@@ -449,5 +418,53 @@ export class ServicesController {
       res.type('text/xml');
       res.status(200).send(errorTwiml);
     }
+  }
+
+  /**
+   * Public Voice webhook for Twilio client or PSTN calls (default target)
+   * - If `To` looks like a phone number, dials it with your verified caller ID
+   * - Otherwise, treats `To` as a Twilio Client identity
+   * Point your TwiML App Voice URL to: https://your-domain.com/services/voice
+   */
+  @Post('twilio/call-handler')
+  async handleVoiceWebhook(@Req() req: Request, @Res() res: Response) {
+    console.log(
+      '🚀 ~ ServicesController ~ handleVoiceWebhook ~ req:',
+      req.body || req.query,
+    );
+
+    const toRaw = (req.body?.To || req.query?.To || '').toString();
+    const to = toRaw.replace(/^client:/i, '');
+
+    const callerId =
+      process.env.TWILIO_CALLER_ID || process.env.TWILIO_WHATSAPP_NUMBER;
+
+    const vr = new twilio.twiml.VoiceResponse();
+
+    if (!to) {
+      vr.say('No destination number was provided.');
+      return res.type('text/xml').send(vr.toString());
+    }
+
+    const looksLikeNumber = /^[\d\+\(\)\-\s]+$/.test(to);
+
+    if (looksLikeNumber) {
+      const dial = vr.dial({
+        callerId,
+        answerOnBridge: true,
+        timeout: 30,
+      });
+      dial.number(to);
+    } else {
+      const dial = vr.dial({
+        callerId,
+        answerOnBridge: true,
+        timeout: 30,
+      });
+      dial.client(to);
+    }
+
+    res.type('text/xml');
+    res.send(vr.toString());
   }
 }

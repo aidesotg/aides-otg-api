@@ -1377,7 +1377,7 @@ export class ServiceRequestService {
 
       poolWithDistance = filtered.map((item) => ({
         ...addDayDetails(item.log),
-        distance: item.distance,
+          distance: item.distance,
       }));
     } else {
       poolWithDistance = requestPool.map((log: any) => addDayDetails(log));
