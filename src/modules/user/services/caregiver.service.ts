@@ -537,16 +537,18 @@ export class CaregiverService {
   }
 
   async suspendCaregiver(id: string, reason: string) {
-    const careGiver = await this.userModel.findById(id);
-    if (!careGiver) {
-      throw new NotFoundException({
-        status: 'error',
-        message: 'Caregiver not found',
-      });
-    }
-    const profile = await this.professionalProfileModel.findOne({
-      user: careGiver._id,
-    });
+    // const careGiver = await this.userModel.findById(id);
+    // if (!careGiver) {
+    //   throw new NotFoundException({
+    //     status: 'error',
+    //     message: 'Caregiver not found',
+    //   });
+    // }
+    const profile: any = await this.professionalProfileModel
+      .findOne({
+        _id: id,
+      })
+      .populate('user');
     if (!profile) {
       throw new NotFoundException({
         status: 'error',
@@ -556,7 +558,7 @@ export class CaregiverService {
 
     //check if caregiver has active requests
     const activeRequests = await this.serviceRequestDayLogsModel.find({
-      care_giver: careGiver._id,
+      care_giver: profile.user._id,
       $or: [
         { status: 'Pending' },
         { status: 'Accepted' },
@@ -579,7 +581,7 @@ export class CaregiverService {
     // });
 
     await this.notificationService.sendMessage({
-      user: careGiver,
+      user: profile.user,
       title: 'Caregiver profile suspended',
       message: `Your caregiver profile has been suspended: ${reason}`,
       resource: 'professional-profile',
