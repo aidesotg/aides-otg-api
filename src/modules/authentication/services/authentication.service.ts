@@ -15,7 +15,7 @@ import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import * as dotenv from 'dotenv';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User } from 'src/modules/user/interface/user.interface';
 import { RoleService } from 'src/modules/role/services/role.service';
 import { Mailer } from 'src/services/mailer.service';
@@ -939,20 +939,18 @@ export class AuthenticationService {
       const query: any = { user: userId };
 
       if (token) {
-        // Extract token without Bearer prefix if present
-        const jwtToken = token.replace('Bearer ', '');
-        query.jwt_token = jwtToken;
+        if (Types.ObjectId.isValid(token)) {
+          query._id = token;
+        } else {
+          // Extract token without Bearer prefix if present
+          const jwtToken = token.replace('Bearer ', '');
+
+          // Check if token is a valid ObjectId, otherwise use as string
+          query.jwt_token = jwtToken;
+        }
       }
 
       await this.sessionModel.deleteMany(query).exec();
-
-      return {
-        status: 'success',
-        message: token
-          ? 'Session terminated successfully'
-          : 'All sessions terminated successfully',
-        // deletedCount: result.deletedCount,
-      };
     } catch (error) {
       console.log(
         '🚀 ~ AuthenticationService ~ terminateSession ~ error:',
@@ -967,5 +965,24 @@ export class AuthenticationService {
       //   500,
       // );
     }
+    return {
+      status: 'success',
+      message: token
+        ? 'Session terminated successfully'
+        : 'All sessions terminated successfully',
+      // deletedCount: result.deletedCount,
+    };
+  }
+
+  async getSessions(userId: string) {
+    const sessions = await this.sessionModel
+      .find({ user: userId })
+      .select('user browser device location ip_address last_login')
+      .exec();
+    return {
+      status: 'success',
+      message: 'Sessions fetched',
+      data: sessions,
+    };
   }
 }

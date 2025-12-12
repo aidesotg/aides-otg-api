@@ -37,5 +37,6 @@ import { SessionSchema } from './schema/session.schema';
   ],
   controllers: [AuthenticationController],
   providers: [AuthenticationService, SocialAuthService],
+  exports: [AuthenticationService, AuthenticationModule],
 })
 export class AuthenticationModule {}

@@ -9,6 +9,8 @@ import {
   UseFilters,
   Query,
   Delete,
+  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from '../services/user.service';
@@ -47,11 +49,15 @@ import { DeleteAccountDto } from '../dto/delete-account.dto';
 import { SubmitKycDto } from '../dto/submit-kyc.dto';
 import { StripeAccountDto } from 'src/modules/wallet/dto/stripe-account.dto';
 import { LocationUpdate } from 'src/services/redis.service';
+import { AuthenticationService } from 'src/modules/authentication/services/authentication.service';
 
 @ApiTags('user')
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly authenticationService: AuthenticationService,
+  ) {}
 
   @Get('')
   @UseGuards(AuthGuard('jwt'))
@@ -143,6 +149,23 @@ export class UserController {
     return this.userService.getUserReferrals(user);
   }
 
+  @Get('/sessions')
+  @UseGuards(AuthGuard('jwt'))
+  async getSessions(@AuthUser() user: any) {
+    return this.authenticationService.getSessions(user._id);
+  }
+
+  @Get('/sessions/:id')
+  @UseGuards(AuthGuard('jwt'))
+  async getSessionById(@Param('id') id: string, @AuthUser() user: any) {
+    if (!this.userService.isAdmin(user)) {
+      throw new ForbiddenException(
+        'You are not authorized to access this resource',
+      );
+    }
+    return this.authenticationService.getSessions(id);
+  }
+
   @Get('/:id/referrals')
   @UseGuards(AuthGuard('jwt'))
   async getReferralsById(@AuthUser() user: any, @Param() params: string) {
@@ -158,6 +181,12 @@ export class UserController {
       message: 'User details fetched',
       data: { user: userDetails },
     };
+  }
+
+  @Put('/sessions/terminate/:id')
+  @UseGuards(AuthGuard('jwt'))
+  async terminateSessions(@AuthUser() user: any, @Param('id') id: string) {
+    return this.authenticationService.terminateSession(user._id, id);
   }
 
   @Post('/profile')

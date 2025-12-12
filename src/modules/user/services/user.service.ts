@@ -1407,4 +1407,17 @@ export class UserService {
       message: 'Caregiver location updated successfully',
     };
   }
+
+  async isAdmin(user: User) {
+    const userDetails: any = await this.userModel
+      .findOne({ _id: user._id })
+      .populate('roles');
+    if (!userDetails) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'user not found',
+      });
+    }
+    return userDetails.roles.some((role) => role.name === 'admin');
+  }
 }

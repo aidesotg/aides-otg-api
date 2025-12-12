@@ -24,6 +24,7 @@ import { ReviewSchema } from '../service-request/schema/review.schema';
 import { ServiceRequestSchema } from '../service-request/schema/service-request.schema';
 import { KycSchema } from './schema/kyc.schema';
 import { ServiceRequestDayLogsSchema } from '../service-request/schema/service-request-day-logs.schema';
+import { AuthenticationModule } from '../authentication/authentication.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ServiceRequestDayLogsSchema } from '../service-request/schema/service-r
     forwardRef(() => NotificationModule),
     forwardRef(() => InsuranceModule),
     forwardRef(() => WalletModule),
+    forwardRef(() => AuthenticationModule),
   ],
   controllers: [BeneficiaryController, CaregiverController, UserController],
   providers: [
