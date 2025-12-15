@@ -61,7 +61,7 @@ export class ChatService {
           await this.serviceRequestDayLogsModel.find({
             request: service._id,
           })
-        ).map((dayLog) => dayLog.care_giver.toString()),
+        ).map((dayLog) => dayLog.care_giver?.toString() ?? ''),
       );
 
       if (

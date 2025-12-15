@@ -1377,7 +1377,7 @@ export class ServiceRequestService {
 
       poolWithDistance = filtered.map((item) => ({
         ...addDayDetails(item.log),
-          distance: item.distance,
+        distance: item.distance,
       }));
     } else {
       poolWithDistance = requestPool.map((log: any) => addDayDetails(log));
@@ -1402,6 +1402,28 @@ export class ServiceRequestService {
       },
       data: paginatedPool,
     };
+  }
+
+  async getPoolRequestById(id: string) {
+    const request = await this.serviceRequestDayLogsModel
+      .findOne({ _id: id })
+      .populate('request')
+      .exec();
+    if (!request) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Request not found',
+      });
+    }
+    // Helper to attach the matched day entry from the request.date_list
+
+    const doc: any = request.toObject();
+    const dayDetails =
+      doc?.request?.date_list?.find(
+        (entry: any) => String(entry._id) === String(doc.day_id),
+      ) || null;
+
+    return { ...doc, day_details: dayDetails };
   }
 
   async getActiveRequests(params: any, user: User) {
@@ -1566,15 +1588,28 @@ export class ServiceRequestService {
       .countDocuments(query)
       .exec();
 
+    // Helper to attach the matched day entry from the request.date_list
+    const addDayDetails = (log: any) => {
+      const doc = log.toObject();
+      const dayDetails =
+        doc?.request?.date_list?.find(
+          (entry: any) => String(entry._id) === String(doc.day_id),
+        ) || null;
+
+      return { ...doc, day_details: dayDetails };
+    };
+
+    const formatedRequests = await Promise.all(
+      requests.map((request) => addDayDetails(request)),
+    );
     return {
       status: 'success',
-      message: 'Requests fetched',
-
+      message: 'Caregiver schedule fetched',
       pagination: {
         ...(await this.miscService.pageCount({ count, page, pageSize })),
         total: count,
       },
-      data: requests,
+      data: formatedRequests,
     };
   }
 

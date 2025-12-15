@@ -151,6 +151,17 @@ export class ServiceRequestController {
     return this.serviceService.getServiceRequestCounts();
   }
 
+  @Get('/pool/:id')
+  @UseGuards(AuthGuard('jwt'))
+  async getPoolRequestById(@Param('id') id: string) {
+    const request = await this.serviceService.getPoolRequestById(id);
+    return {
+      status: 'success',
+      message: 'Request fetched',
+      data: request,
+    };
+  }
+
   @Get('/:id')
   @UseGuards(AuthGuard('jwt'))
   async getServiceById(@Param('id') id: string, @AuthUser() user: any) {
