@@ -12,7 +12,7 @@ export class MiscCLass {
     const time = moment().format('YYYY-MM-DD hh:mm:ss');
     const rand = Math.floor(Math.random() * Date.now());
 
-    return `CNFDNT-${time.replace(/[\-]|[\s]|[\:]/g, '')}-${rand}`;
+    return `AIDESOTG-${time.replace(/[\-]|[\s]|[\:]/g, '')}-${rand}`;
   }
 
   async paginate({ page, pageSize }) {
