@@ -61,6 +61,10 @@ export const BeneficiarySchema = new mongoose.Schema<Beneficiary>(
         },
       },
     ],
+    show_label: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,

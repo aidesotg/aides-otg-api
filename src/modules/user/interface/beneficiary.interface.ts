@@ -19,6 +19,7 @@ export interface Beneficiary extends mongoose.Document {
     phone: string;
     relationship: string;
   }[];
+  show_label: boolean;
   readonly createdAt: Date;
   updatedAt: Date;
 }

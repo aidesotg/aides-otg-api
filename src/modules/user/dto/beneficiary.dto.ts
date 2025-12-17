@@ -9,6 +9,7 @@ import {
   IsArray,
   IsIn,
   ValidateNested,
+  IsBoolean,
 } from 'class-validator';
 import { InsuranceInfoDto } from 'src/modules/insurance/dto/insurance.dto';
 import { EmergencyContactDto } from './profile.dto';
@@ -69,6 +70,11 @@ export class CreateBeneficiaryDto {
   @ApiProperty()
   @IsString()
   ssn: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  @IsOptional()
+  show_label?: boolean;
 }
 
 export class UpdateBeneficiaryDto {
