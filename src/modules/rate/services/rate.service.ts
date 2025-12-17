@@ -56,7 +56,7 @@ export class RateService {
         caregiver_max_cancellations: 3,
         client_max_cancellations: 10,
       },
-      tax_percentage: 0,
+      tax_percentage: 5,
       currency: 'USD',
       // created_by: 'system', // This would be the system user ID
     });

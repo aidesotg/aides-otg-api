@@ -68,7 +68,7 @@ export const RateSettingsSchema = new mongoose.Schema<RateSettings>(
       type: Number,
       min: 0,
       max: 100,
-      default: 0,
+      default: 5,
     },
     is_active: {
       type: Boolean,
