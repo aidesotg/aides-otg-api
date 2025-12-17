@@ -1,5 +1,6 @@
 import { ProfessionalProfile } from '../interface/professional-profile.interface';
 import * as mongoose from 'mongoose';
+import { UserSchema } from './user.schema';
 
 export const ProfessionalProfileSchema =
   new mongoose.Schema<ProfessionalProfile>(
@@ -127,3 +128,11 @@ export const ProfessionalProfileModel = mongoose.model<ProfessionalProfile>(
   'ProfessionalProfile',
   ProfessionalProfileSchema,
 );
+
+ProfessionalProfileSchema.virtual('total_care_given', {
+  ref: 'ServiceRequestDayLogs',
+  localField: 'user',
+  foreignField: 'care_giver',
+  match: { status: 'Completed' },
+  count: true,
+});

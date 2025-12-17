@@ -1203,6 +1203,10 @@ export class ServiceRequestService {
     );
     console.log('🚀 ~ ServiceRequestService ~ getRequestsPool ~ query:', query);
 
+    if (user) {
+      query.user = { $ne: user._id };
+    }
+
     const requests = await this.serviceRequestModel
       .find(query)
       .populate('beneficiary', [

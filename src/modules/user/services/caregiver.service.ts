@@ -95,7 +95,10 @@ export class CaregiverService {
 
     const caregivers = await this.userModel
       .find({ _id: { $in: userIds } })
-      .populate('professional_profile')
+      .populate({
+        path: 'professional_profile',
+        populate: { path: 'total_care_given' },
+      })
       .populate({
         path: 'favorited',
         match: {
@@ -129,7 +132,8 @@ export class CaregiverService {
         match: {
           user: user ? user._id : null,
         },
-      });
+      })
+      .populate('total_care_given');
     if (!caregiver) {
       throw new NotFoundException({
         status: 'error',
@@ -216,9 +220,11 @@ export class CaregiverService {
   }
 
   async getProfessionalProfile(user: User) {
-    const profile = await this.professionalProfileModel.findOne({
-      user: user._id,
-    });
+    const profile = await this.professionalProfileModel
+      .findOne({
+        user: user._id,
+      })
+      .populate('total_care_given');
     return {
       status: 'success',
       message: 'Professional profile fetched',
@@ -303,19 +309,22 @@ export class CaregiverService {
       },
     ]);
 
-    const completedRequests = await this.serviceRequestModel.countDocuments({
-      care_giver: user._id,
-      status: 'Completed',
-    });
-    const cancelledRequests = await this.serviceRequestModel.countDocuments({
-      care_giver: user._id,
-      status: 'Cancelled',
-    });
-    const acceptedRequests = await this.serviceRequestModel.countDocuments({
-      care_giver: user._id,
-      status: 'Accepted',
-    });
-    const totalRequests = await this.serviceRequestModel.countDocuments({
+    const completedRequests =
+      await this.serviceRequestDayLogsModel.countDocuments({
+        care_giver: user._id,
+        status: 'Completed',
+      });
+    const cancelledRequests =
+      await this.serviceRequestDayLogsModel.countDocuments({
+        care_giver: user._id,
+        status: 'Cancelled',
+      });
+    const acceptedRequests =
+      await this.serviceRequestDayLogsModel.countDocuments({
+        care_giver: user._id,
+        status: 'Accepted',
+      });
+    const totalRequests = await this.serviceRequestDayLogsModel.countDocuments({
       care_giver: user._id,
     });
 

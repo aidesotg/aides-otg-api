@@ -343,6 +343,9 @@ export class UserService {
       })
       .populate({
         path: 'professional_profile',
+        populate: {
+          path: 'total_care_given',
+        },
       })
       .populate({
         path: 'completed_requests',
