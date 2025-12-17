@@ -96,6 +96,11 @@ export class UpdateBeneficiaryDto {
   label?: string;
 
   @ApiProperty()
+  @IsBoolean()
+  @IsOptional()
+  show_label?: boolean;
+
+  @ApiProperty()
   @IsDateString()
   @IsOptional()
   date_of_birth?: string;
