@@ -64,6 +64,12 @@ export const RateSettingsSchema = new mongoose.Schema<RateSettings>(
       type: String,
       default: 'NGN',
     },
+    tax_percentage: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0,
+    },
     is_active: {
       type: Boolean,
       default: true,

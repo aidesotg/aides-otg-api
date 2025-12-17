@@ -19,6 +19,7 @@ export interface RateSettings extends mongoose.Document {
     caregiver_max_cancellations: number;
     client_max_cancellations: number;
   };
+  tax_percentage: number;
   currency: string;
   is_active: boolean;
   is_deleted: boolean;

@@ -120,6 +120,13 @@ export class UpdateRateSettingsDto {
   currency?: string;
 
   @ApiProperty()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  tax_percentage?: number;
+
+  @ApiProperty()
   @IsOptional()
   is_active?: boolean;
 }
