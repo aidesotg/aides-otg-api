@@ -285,12 +285,17 @@ export class ServiceRequestService {
     );
     const { totals } = requestpaymentbreakdown;
     const booking_id = this.generateBookingId();
+    const beneficiaryDetails = await this.beneficiaryModel
+      .findById(createServiceDto.beneficiary)
+      .lean()
+      .exec();
     const payload = {
       amount: totals.userCoveredCarePrice,
       payment_method: createServiceDto.payment_method,
       type: 'serviceRequest',
       request: {
         ...createServiceDto,
+        beneficiary: beneficiaryDetails,
         booking_id: booking_id,
       },
       path: createServiceDto.path,
@@ -831,7 +836,7 @@ export class ServiceRequestService {
     const { status, day_id } = body;
     const request = await this.serviceRequestModel.findOne({
       _id: id,
-      care_giver: user._id,
+      // care_giver: user._id,
     });
     if (!request) {
       throw new NotFoundException({
@@ -857,12 +862,13 @@ export class ServiceRequestService {
     const dayLogs = await this.serviceRequestDayLogsModel.findOne({
       request: request._id,
       day_id: day_id,
+      care_giver: user._id,
     });
 
     if (!dayLogs) {
       throw new NotFoundException({
         status: 'error',
-        message: 'This request has no scheduled service for this day',
+        message: 'This request is not on your schedule for this day',
       });
     }
     dayLogs.status_history.push({
@@ -1288,7 +1294,14 @@ export class ServiceRequestService {
           },
           {
             path: 'care_giver',
-            select: 'first_name last_name profile_picture phone',
+            select:
+              'first_name last_name profile_picture phone professional_profile',
+            populate: {
+              path: 'professional_profile',
+              populate: {
+                path: 'toal_care_given',
+              },
+            },
           },
           {
             path: 'care_type',
@@ -1412,6 +1425,17 @@ export class ServiceRequestService {
     const request = await this.serviceRequestDayLogsModel
       .findOne({ _id: id })
       .populate('request')
+      .populate({
+        path: 'care_giver',
+        select:
+          'first_name last_name profile_picture phone professional_profile',
+        populate: {
+          path: 'professional_profile',
+          populate: {
+            path: 'toal_care_given',
+          },
+        },
+      })
       .exec();
     if (!request) {
       throw new NotFoundException({
@@ -1460,13 +1484,22 @@ export class ServiceRequestService {
       .populate('created_by', ['first_name', 'last_name', 'profile_picture'])
       .populate({
         path: 'care_giver',
-        select: ['first_name', 'last_name', 'profile_picture', 'phone'],
-        populate: {
-          path: 'favorited',
-          match: {
-            user: user ? user._id : null,
+        select:
+          'first_name last_name profile_picture phone professional_profile',
+        populate: [
+          {
+            path: 'professional_profile',
+            populate: {
+              path: 'toal_care_given',
+            },
           },
-        },
+          {
+            path: 'favorited',
+            match: {
+              user: user ? user._id : null,
+            },
+          },
+        ],
       })
       .populate({
         path: 'care_type',
@@ -1571,7 +1604,14 @@ export class ServiceRequestService {
           },
           {
             path: 'care_giver',
-            select: 'first_name last_name profile_picture phone',
+            select:
+              'first_name last_name profile_picture phone professional_profile',
+            populate: {
+              path: 'professional_profile',
+              populate: {
+                path: 'toal_care_given',
+              },
+            },
           },
           {
             path: 'care_type',
