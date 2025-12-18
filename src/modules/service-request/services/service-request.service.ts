@@ -945,7 +945,7 @@ export class ServiceRequestService {
     return {
       status: 'success',
       message: 'Activity trail updated successfully',
-      data: await this.getRequestById(id),
+      data: dayLogs,
     };
   }
 
