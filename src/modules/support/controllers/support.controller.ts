@@ -66,6 +66,17 @@ export class SupportController {
     };
   }
 
+  @Get('/tickets/all')
+  @UseGuards(AuthGuard('jwt'))
+  async getAllTicket(@Query() params: TicketQueryDto, @AuthUser() user: any) {
+    const tickets = await this.supportService.getTickets(params);
+    return {
+      status: 'success',
+      message: 'Tickets fetched',
+      data: tickets,
+    };
+  }
+
   @Post('/tickets/create')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)

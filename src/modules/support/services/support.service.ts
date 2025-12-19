@@ -66,7 +66,7 @@ export class SupportService {
     };
   }
 
-  async getTickets(params: any, user: any) {
+  async getTickets(params: any, user?: any) {
     const { page = 1, pageSize = 50, ...rest } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
 

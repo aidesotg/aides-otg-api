@@ -1679,12 +1679,20 @@ export class ServiceRequestService {
       .populate({
         path: 'care_giver',
         select: ['first_name', 'last_name', 'profile_picture', 'phone'],
-        populate: {
-          path: 'favorited',
-          match: {
-            user: user ? user._id : null,
+        populate: [
+          {
+            path: 'favorited',
+            match: {
+              user: user ? user._id : null,
+            },
           },
-        },
+          {
+            path: 'professional_profile',
+            populate: {
+              path: 'toal_care_given',
+            },
+          },
+        ],
       })
       .populate({
         path: 'care_type',
@@ -1716,12 +1724,24 @@ export class ServiceRequestService {
           .findOne({
             day_id: date._id,
           })
-          .populate('care_giver', [
-            'first_name',
-            'last_name',
-            'profile_picture',
-            'phone',
-          ])
+          .populate({
+            path: 'care_giver',
+            select: ['first_name', 'last_name', 'profile_picture', 'phone'],
+            populate: [
+              {
+                path: 'favorited',
+                match: {
+                  user: user ? user._id : null,
+                },
+              },
+              {
+                path: 'professional_profile',
+                populate: {
+                  path: 'toal_care_given',
+                },
+              },
+            ],
+          })
           .lean()
           .exec();
 
