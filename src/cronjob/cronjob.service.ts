@@ -240,6 +240,7 @@ export class CronjobService implements OnModuleInit, OnModuleDestroy {
             'Rejected',
             'Expired',
             'In Progress',
+            'Accepted',
           ],
         },
         date_list: { $exists: true, $ne: [] },

@@ -274,3 +274,11 @@ UserSchema.virtual('completed_requests', {
   match: { status: 'completed' },
   count: true,
 });
+
+UserSchema.virtual('total_care_received', {
+  ref: 'ServiceRequestDayLogs',
+  localField: '_id',
+  foreignField: 'user',
+  match: { status: 'completed' },
+  count: true,
+});

@@ -40,11 +40,18 @@ export class ChatController {
     return this.chatService.fetchUserChannels(user._id, query);
   }
 
+  @Get('/service/:id/channels/admin')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async serviceChannelsAdmin(@AuthUser() user: any, @Param('id') id: any) {
+    return this.chatService.fetchServiceChannels(id);
+  }
+
   @Get('/service/:id/channels')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
   async serviceChannels(@AuthUser() user: any, @Param('id') id: any) {
-    return this.chatService.fetchServiceChannels(user, id);
+    return this.chatService.fetchServiceChannels(id, user);
   }
 
   @Get('/user/channels')

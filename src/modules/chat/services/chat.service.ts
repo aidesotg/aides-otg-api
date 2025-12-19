@@ -241,18 +241,19 @@ export class ChatService {
     };
   }
 
-  async fetchServiceChannels(user: any, serviceId: any) {
+  async fetchServiceChannels(serviceId: any, user?: any) {
     // console.log(channelId);
+    const query: any = { service: serviceId };
+    if (user) {
+      query['$or'] = [
+        {
+          'initiator.user_id': user._id,
+        },
+        { 'receiver.user_id': user._id },
+      ];
+    }
     const channels = await this.channelModel
-      .find({
-        $or: [
-          {
-            'initiator.user_id': user._id,
-          },
-          { 'receiver.user_id': user._id },
-        ],
-        service: serviceId,
-      })
+      .find(query)
       .populate('service')
       .sort({ createdAt: -1 })
       .exec();

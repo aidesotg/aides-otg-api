@@ -62,6 +62,8 @@ import constants from 'src/framework/constants';
 import { StripeService } from 'src/services/stripe.service';
 import { StripeAccountDto } from 'src/modules/wallet/dto/stripe-account.dto';
 import { LocationUpdate, RedisService } from 'src/services/redis.service';
+import { ServiceRequest } from 'src/modules/service-request/interface/service-request.interface';
+import { ServiceRequestDayLogs } from 'src/modules/service-request/interface/service-request-day-logs.schema';
 
 @Injectable()
 export class UserService {
@@ -78,6 +80,10 @@ export class UserService {
     @InjectModel('Kyc') private readonly kycModel: Model<Kyc>,
     @InjectModel('ProfessionalProfile')
     private readonly professionalProfileModel: Model<ProfessionalProfile>,
+    @InjectModel('ServiceRequest')
+    private readonly serviceRequestModel: Model<ServiceRequest>,
+    @InjectModel('ServiceRequestDayLogs')
+    private readonly serviceRequestDayLogsModel: Model<ServiceRequestDayLogs>,
     private roleService: RoleService,
     private miscService: MiscCLass,
     private mailerService: Mailer,
@@ -372,8 +378,25 @@ export class UserService {
     }
     return {
       ...userDetails.toObject(),
+      total_care_received: await this.getUserTotalCareReceived(user),
       wallet,
     };
+  }
+
+  async getUserTotalCareReceived(user: User) {
+    const totalRequestsCreated = await this.serviceRequestModel
+      .find({ $or: [{ user: user._id }, { beneficiary: user._id }] })
+      .lean()
+      .exec();
+    const requestIds = await Promise.all(
+      totalRequestsCreated.map((request: any) => request._id),
+    );
+    const totalCareReceived =
+      await this.serviceRequestDayLogsModel.countDocuments({
+        request: { $in: requestIds },
+        status: 'Completed',
+      });
+    return totalCareReceived;
   }
 
   async getUsers(params: any) {

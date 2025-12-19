@@ -44,6 +44,17 @@ export class SupportController {
     return this.supportService.getStatistics();
   }
 
+  @Get('/tickets/all')
+  @UseGuards(AuthGuard('jwt'))
+  async getAllTicket(@Query() params: TicketQueryDto, @AuthUser() user: any) {
+    const tickets = await this.supportService.getTickets(params);
+    return {
+      status: 'success',
+      message: 'Tickets fetched',
+      data: tickets,
+    };
+  }
+
   @Get('/tickets/:id')
   @UseGuards(AuthGuard('jwt'))
   async getTicketById(@Param('id') id: string) {
@@ -63,17 +74,6 @@ export class SupportController {
       status: 'success',
       message: 'Ticket messages fetched',
       data: messages,
-    };
-  }
-
-  @Get('/tickets/all')
-  @UseGuards(AuthGuard('jwt'))
-  async getAllTicket(@Query() params: TicketQueryDto, @AuthUser() user: any) {
-    const tickets = await this.supportService.getTickets(params);
-    return {
-      status: 'success',
-      message: 'Tickets fetched',
-      data: tickets,
     };
   }
 
