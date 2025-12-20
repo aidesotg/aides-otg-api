@@ -285,10 +285,18 @@ export class ServiceRequestService {
     );
     const { totals } = requestpaymentbreakdown;
     const booking_id = this.generateBookingId();
-    const beneficiaryDetails = await this.beneficiaryModel
+    let beneficiaryDetails: any = await this.beneficiaryModel
       .findById(createServiceDto.beneficiary)
+      .select('first_name last_name email phone profile_picture')
       .lean()
       .exec();
+    if (!beneficiaryDetails) {
+      beneficiaryDetails = await this.userModel
+        .findById(createServiceDto.beneficiary)
+        .select('first_name last_name email phone profile_picture')
+        .lean()
+        .exec();
+    }
     const payload = {
       amount: totals.userCoveredCarePrice,
       payment_method: createServiceDto.payment_method,
