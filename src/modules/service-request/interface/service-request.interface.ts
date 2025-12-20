@@ -43,6 +43,7 @@ export interface ServiceRequest extends mongoose.Document {
     fee_per_hour: number;
     platform_commission: number;
     caregiver_payout: number;
+    tax: number;
   };
   admin_first_day_reminder_sent: boolean;
   payment_method: 'client' | 'insurance' | 'both';

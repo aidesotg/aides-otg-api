@@ -37,6 +37,7 @@ import { Transaction } from 'src/modules/wallet/interface/transaction.interface'
 import moment from 'moment-timezone';
 import constants, { DEFAULT_TIMEZONE } from 'src/framework/constants';
 import { PoolWalletService } from 'src/modules/wallet/services/pool-wallet.service';
+import { RateSettings } from 'src/modules/rate/interface/rate-settings.interface';
 
 @Injectable()
 export class ServiceRequestService {
@@ -49,6 +50,8 @@ export class ServiceRequestService {
     @InjectModel('Service') private readonly serviceModel: Model<Service>,
     @InjectModel('Review') private readonly reviewModel: Model<Review>,
     @InjectModel('User') private readonly userModel: Model<User>,
+    @InjectModel('RateSettings')
+    private readonly rateSettingsModel: Model<RateSettings>,
     @InjectModel('Beneficiary')
     private readonly beneficiaryModel: Model<Beneficiary>,
     @InjectModel('UserBeneficiary')
@@ -297,8 +300,11 @@ export class ServiceRequestService {
         .lean()
         .exec();
     }
+    const taxRate = await this.rateSettingsModel.findOne().lean();
     const payload = {
-      amount: totals.userCoveredCarePrice,
+      amount:
+        totals.userCoveredCarePrice +
+        (totals.userCoveredCarePrice * (taxRate?.tax_percentage || 0)) / 100,
       payment_method: createServiceDto.payment_method,
       type: 'serviceRequest',
       request: {
@@ -405,78 +411,6 @@ export class ServiceRequestService {
     });
   }
 
-  // async createServiceRequest(
-  //   createServiceDto: CreateServiceRequestDto,
-  //   user: User,
-  //   origin?: string,
-  // ) {
-  //   const { beneficiary, date_list, ...rest } = createServiceDto;
-  //   let recepient_type = 'User';
-  //   let recepient_id = user._id;
-  //   if (!createServiceDto.self_care) {
-  //     const isBeneficiary = await this.userBeneficiaryModel.findOne({
-  //       beneficiary: beneficiary,
-  //       user: user._id,
-  //     });
-  //     if (!isBeneficiary) {
-  //       throw new NotFoundException({
-  //         status: 'error',
-  //         message: 'Beneficiary not found for user',
-  //       });
-  //     }
-  //     recepient_type = 'Beneficiary';
-  //     recepient_id = isBeneficiary._id;
-  //   }
-  //   const dateList = date_list as any;
-  //   for (const date of dateList) {
-  //     if (new Date(date.date) < new Date()) {
-  //       throw new BadRequestException({
-  //         status: 'error',
-  //         message: 'Dates in the date list cannot be in the past',
-  //       });
-  //     }
-  //     date.day_of_week = await this.miscService.getDayOfWeek(
-  //       date.date.toString(),
-  //     );
-  //   }
-  //   const data = {
-  //     ...createServiceDto,
-  //     beneficiary: recepient_id,
-  //     recepient_type: recepient_type,
-  //     booking_id: this.generateBookingId(),
-  //     date_list: dateList,
-  //     created_by: user._id,
-  //   };
-
-  //   const newRequest = new this.serviceRequestModel(data);
-  //   const request = await newRequest.save();
-
-  //   // const requestpaymentbreakdown = await this.calculateTotalPrice(request);
-  //   // const { totals } = requestpaymentbreakdown;
-
-  //   const response = await this.walletService.initiate(
-  //     {
-  //       amount: totals.userCoveredCarePrice,
-  //       payment_method: 'stripe',
-  //       type: 'serviceRequest',
-  //       requestId: request._id,
-  //     },
-  //     user,
-  //     origin,
-  //   );
-  //   //TODO: Send notification to care giver if care giver is passed
-
-  //   return {
-  //     status: 'success',
-  //     message: 'Request created',
-  //     data: {
-  //       request: await this.getRequestById(request._id),
-  //       paymentBreakdown: requestpaymentbreakdown,
-  //       checkoutUrl: response.data.checkoutUrl,
-  //     },
-  //   };
-  // }
-
   async calculateTotalPrice(request: CreateServiceRequestDto, user: User) {
     let insurance;
     if (!request.self_care) {
@@ -565,6 +499,8 @@ export class ServiceRequestService {
       0,
     );
 
+    const taxRate = await this.rateSettingsModel.findOne().lean().exec();
+
     return {
       insuranceCoveredCareTypes: insuranceCoveredCareTypesServices,
       userCoveredCareTypes: userCoveredCareTypesServices,
@@ -576,83 +512,10 @@ export class ServiceRequestService {
         feePerHour: totalPricePerHour,
         platformCommission: totalPrice - careGiverPayout,
         caregiverPayout: careGiverPayout,
+        taxRate: (totalPrice * (taxRate?.tax_percentage || 0)) / 100,
       },
     };
   }
-
-  // async calculateTotalPrice(request: CreateServiceRequestDto) {
-  //   let insurance;
-  //   if (request.recepient_type === 'Beneficiary') {
-  //     insurance = await this.insuranceModel
-  //       .findOne({
-  //         beneficiary: request.beneficiary.toString(),
-  //       })
-  //       .populate('insurance_company');
-  //   }
-  //   // if (!insurance) {
-  //   //   throw new NotFoundException({
-  //   //     status: 'error',
-  //   //     message: 'Insurance not found',
-  //   //   });
-  //   // }
-  //   const InsuranceCompany: InsuranceCompany =
-  //     insurance?.insurance_company as any;
-
-  //   const insuranceCoveredCareTypes = request.care_type.filter((service) => {
-  //     return InsuranceCompany?.services_covered?.includes(service);
-  //   });
-
-  //   const userCoveredCareTypes = request.care_type.filter((service) => {
-  //     return !insuranceCoveredCareTypes.includes(service);
-  //   });
-
-  //   // Fetch all care types services just once
-  //   const requestedCareTypesServices = await this.serviceModel.find({
-  //     _id: { $in: request.care_type },
-  //     status: 'active',
-  //   });
-
-  //   // Filter the fetched services based on coverage types
-  //   const userCoveredCareTypesServices = requestedCareTypesServices.filter(
-  //     (service) => {
-  //       return userCoveredCareTypes.some(
-  //         (careTypeId) => service._id.toString() === careTypeId.toString(),
-  //       );
-  //     },
-  //   );
-
-  //   const insuranceCoveredCareTypesServices = requestedCareTypesServices.filter(
-  //     (service) => {
-  //       return insuranceCoveredCareTypes.some(
-  //         (careTypeId) => service._id.toString() === careTypeId.toString(),
-  //       );
-  //     },
-  //   );
-
-  //   const totalPrice = requestedCareTypesServices.reduce((acc, service) => {
-  //     return acc + service.price;
-  //   }, 0);
-
-  //   const userCoveredCareTypesServicesPrice =
-  //     userCoveredCareTypesServices.reduce((acc, service) => {
-  //       return acc + service.price;
-  //     }, 0);
-
-  //   const insuranceCoveredCareTypesServicesPrice =
-  //     insuranceCoveredCareTypesServices.reduce((acc, service) => {
-  //       return acc + service.price;
-  //     }, 0);
-
-  //   return {
-  //     insuranceCoveredCareTypes,
-  //     userCoveredCareTypes,
-  //     totals: {
-  //       totalPrice,
-  //       userCoveredCarePrice: userCoveredCareTypesServicesPrice,
-  //       insuranceCoveredCarePrice: insuranceCoveredCareTypesServicesPrice,
-  //     },
-  //   };
-  // }
 
   async updateServiceRequestPayment(user: User, transaction: Transaction) {
     const requestBody = JSON.parse(transaction.details);
@@ -1307,7 +1170,7 @@ export class ServiceRequestService {
             populate: {
               path: 'professional_profile',
               populate: {
-                path: 'toal_care_given',
+                path: 'total_care_given',
               },
             },
           },
@@ -1440,7 +1303,7 @@ export class ServiceRequestService {
         populate: {
           path: 'professional_profile',
           populate: {
-            path: 'toal_care_given',
+            path: 'total_care_given',
           },
         },
       })
@@ -1498,7 +1361,7 @@ export class ServiceRequestService {
           {
             path: 'professional_profile',
             populate: {
-              path: 'toal_care_given',
+              path: 'total_care_given',
             },
           },
           {
@@ -1617,7 +1480,7 @@ export class ServiceRequestService {
             populate: {
               path: 'professional_profile',
               populate: {
-                path: 'toal_care_given',
+                path: 'total_care_given',
               },
             },
           },
@@ -1697,7 +1560,7 @@ export class ServiceRequestService {
           {
             path: 'professional_profile',
             populate: {
-              path: 'toal_care_given',
+              path: 'total_care_given',
             },
           },
         ],
@@ -1745,7 +1608,7 @@ export class ServiceRequestService {
               {
                 path: 'professional_profile',
                 populate: {
-                  path: 'toal_care_given',
+                  path: 'total_care_given',
                 },
               },
             ],
@@ -1755,6 +1618,7 @@ export class ServiceRequestService {
 
         date.activity_trail = activityTrail?.activity_trail || {};
         date.history = activityTrail?.status_history || [];
+        date.payment = activityTrail?.payment;
         return {
           ...date,
           status: activityTrail.status,
@@ -1962,20 +1826,23 @@ export class ServiceRequestService {
   }
 
   async assignCaregiverToRequest(id: string, caregiverId: string) {
-    const request = await this.serviceRequestModel
+    const dayLog: any = await this.serviceRequestDayLogsModel
       .findOne({
-        _id: id,
+        day_id: id,
       })
-      .populate('created_by');
+      .populate({
+        path: 'request',
+        populate: [{ path: 'care_type' }, { path: 'created_by' }],
+      });
 
-    if (!request) {
+    if (!dayLog) {
       throw new NotFoundException({
         status: 'error',
         message: 'Request not found',
       });
     }
 
-    if (String(request.care_giver) === String(caregiverId)) {
+    if (String(dayLog.care_giver) === String(caregiverId)) {
       throw new BadRequestException({
         status: 'error',
         message: 'Caregiver already assigned to this request',
@@ -2000,38 +1867,38 @@ export class ServiceRequestService {
       });
     }
 
-    request.care_giver = caregiver._id;
-    request.status = 'Pending';
-    request.status_history.push({
-      status: 'Pending',
-      created_at: new Date(),
-    });
-    await request.save();
+    dayLog.care_giver = caregiver._id;
+    dayLog.status = 'Pending';
+    // dayLog.status_history.push({
+    //   status: 'Pending',
+    //   created_at: new Date(),
+    // });
+    await dayLog.save();
 
     //send notification to caregiver
     await this.notificationService.sendMessage({
       user: caregiver,
       title: 'Request assigned',
-      message: `You have been assigned to the following request: ${request.care_type}, please repond to the request within 24 hours`,
+      message: `You have been assigned to the following request: ${dayLog.request?.care_type?.name}, please repond to the request within 24 hours`,
       resource: 'service_request',
-      resource_id: request._id.toString(),
+      resource_id: dayLog.request._id.toString(),
     });
 
     //send notification to client
     await this.notificationService.sendMessage({
-      user: request.created_by,
+      user: dayLog.request?.created_by,
       title: 'Request assigned',
-      message: `Your request for the following service: ${request.care_type} has been assigned to a caregiver`,
+      message: `Your request for the following service: ${dayLog.request?.care_type?.name} has been assigned to a caregiver`,
       resource: 'service_request',
-      resource_id: request._id.toString(),
+      resource_id: dayLog.request._id.toString(),
     });
 
-    const data = request.toObject();
-    delete data.created_by;
+    const data = dayLog.toObject();
+    delete data.request;
     return {
       status: 'success',
       message: 'Caregiver assigned to request successfully',
-      data,
+      data: dayLog,
     };
   }
   // async updateActivityTrail(

@@ -123,6 +123,7 @@ export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
       fee_per_hour: { type: Number },
       platform_commission: { type: Number },
       caregiver_payout: { type: Number },
+      tax: { type: Number },
     },
     admin_first_day_reminder_sent: {
       type: Boolean,

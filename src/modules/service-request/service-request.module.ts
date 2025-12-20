@@ -17,6 +17,7 @@ import { InsuranceSchema } from '../insurance/schema/insurance.schema';
 import { ServiceSchema } from '../service/schema/service.schema';
 import { WalletModule } from '../wallet/wallet.module';
 import { TransactionSchema } from '../wallet/schema/transaction.schema';
+import { RateSettingsSchema } from '../rate/schema/rate-settings.schema';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { TransactionSchema } from '../wallet/schema/transaction.schema';
       { name: 'Insurance', schema: InsuranceSchema },
       { name: 'Service', schema: ServiceSchema },
       { name: 'Transaction', schema: TransactionSchema },
+      { name: 'RateSettings', schema: RateSettingsSchema },
     ]),
     ServicesModule,
     NotificationModule,
