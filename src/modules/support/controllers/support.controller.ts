@@ -84,6 +84,13 @@ export class SupportController {
     return this.supportService.createTicket(body, user);
   }
 
+  @Post('/tickets/create/no-auth')
+  // @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async createTicketNoAuth(@Body() body: CreateTicketDto) {
+    return this.supportService.createTicketNoAuth(body);
+  }
+
   @Put('/tickets/:id/update')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)

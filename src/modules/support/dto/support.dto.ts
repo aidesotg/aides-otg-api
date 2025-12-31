@@ -9,6 +9,7 @@ import {
   ValidateNested,
   IsBoolean,
   IsMongoId,
+  IsEmail,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -80,6 +81,11 @@ export class CreateTicketDto {
   @IsMongoId()
   @IsOptional()
   against?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 }
 
 export class UpdateTicketDto {

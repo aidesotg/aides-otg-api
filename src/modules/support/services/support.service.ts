@@ -17,12 +17,15 @@ import {
 import { MiscCLass } from 'src/services/misc.service';
 import { NotificationService } from 'src/modules/notification/services/notification.service';
 import constants from 'src/framework/constants';
+import { User } from 'src/modules/user/interface/user.interface';
 
 @Injectable()
 export class SupportService {
   constructor(
     @InjectModel('Ticket') private readonly ticketModel: Model<Ticket>,
     @InjectModel('TicketMessage')
+    @InjectModel('User')
+    private readonly userModel: Model<User>,
     private readonly ticketMessageModel: Model<TicketMessage>,
     private miscService: MiscCLass,
     private notificationService: NotificationService,
@@ -47,6 +50,46 @@ export class SupportService {
       data.created_by_admin = true;
       data.created_by = createTicketDto.user;
     }
+
+    const newTicket = new this.ticketModel(data);
+    const ticket = await newTicket.save();
+
+    // Send notification to support team
+    // await this.notificationService.sendMessage(
+    //   { _id: 'admin' }, // This would be the admin user
+    //   'New Support Ticket',
+    //   `New ticket ${ticketNumber} has been created by ${user.fullname}`,
+    //   ticket._id,
+    // );
+
+    return {
+      status: 'success',
+      message: 'Ticket created successfully',
+      data: ticket,
+    };
+  }
+
+  async createTicketNoAuth(createTicketDto: CreateTicketDto) {
+    const ticketNumber = this.generateTicketNumber();
+    const user = await this.userModel.findOne({ email: createTicketDto.email });
+
+    if (!user) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'account not found`',
+      });
+    }
+
+    const data: any = {
+      ...createTicketDto,
+      ticket_number: ticketNumber,
+      created_by: user._id,
+    };
+
+    // if (createTicketDto.user) {
+    //   data.created_by_admin = true;
+    //   data.created_by = createTicketDto.user;
+    // }
 
     const newTicket = new this.ticketModel(data);
     const ticket = await newTicket.save();
