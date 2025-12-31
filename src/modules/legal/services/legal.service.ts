@@ -119,7 +119,7 @@ export class LegalService {
     };
   }
 
-  async getLegalDocuments(params: any, user: any) {
+  async getLegalDocuments(params: any) {
     const { page = 1, pageSize = 50, role, ...rest } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
 

@@ -28,12 +28,12 @@ export class LegalController {
   constructor(private readonly legalService: LegalService) {}
 
   @Get('/documents')
-  @UseGuards(AuthGuard('jwt'))
+  // @UseGuards(AuthGuard('jwt'))
   async getLegalDocuments(
     @Query() params: LegalDocumentQueryDto,
-    @AuthUser() user: any,
+    // @AuthUser() user: any,
   ) {
-    const documents = await this.legalService.getLegalDocuments(params, user);
+    const documents = await this.legalService.getLegalDocuments(params);
     return {
       status: 'success',
       message: 'Legal documents fetched',
@@ -42,14 +42,14 @@ export class LegalController {
   }
 
   @Get('/documents/active')
-  @UseGuards(AuthGuard('jwt'))
+  // @UseGuards(AuthGuard('jwt'))
   async getActiveDocuments(
     @Query() params: LegalDocumentQueryDto,
-    @AuthUser() user: any,
+    // @AuthUser() user: any,
   ) {
     const documents = await this.legalService.getLegalDocuments(
       { ...params, is_active: true },
-      user,
+      // user,
     );
     return {
       status: 'success',
@@ -59,7 +59,7 @@ export class LegalController {
   }
 
   @Get('/documents/latest')
-  @UseGuards(AuthGuard('jwt'))
+  // @UseGuards(AuthGuard('jwt'))
   async getLatestLegalDocument(@Query() params: any) {
     const document = await this.legalService.getLatestLegalDocument(
       params.title,
@@ -72,7 +72,7 @@ export class LegalController {
   }
 
   @Get('/documents/:id/history')
-  @UseGuards(AuthGuard('jwt'))
+  // @UseGuards(AuthGuard('jwt'))
   async getDocumentHistory(@Param('id') id: string, @Query() params: any) {
     const history = await this.legalService.getDocumentHistory(id, params);
     return {
@@ -83,7 +83,7 @@ export class LegalController {
   }
 
   @Get('/documents/:id')
-  @UseGuards(AuthGuard('jwt'))
+  // @UseGuards(AuthGuard('jwt'))
   async getLegalDocumentById(@Param('id') id: string) {
     const document = await this.legalService.getLegalDocumentById(id);
     return {

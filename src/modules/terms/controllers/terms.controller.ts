@@ -5,6 +5,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseFilters,
   UseGuards,
 } from '@nestjs/common';
@@ -20,8 +21,8 @@ export class TermsController {
   constructor(private readonly termsService: TermsService) {}
 
   @Get('/')
-  async getTerms() {
-    const terms = await this.termsService.getAllTerms();
+  async getTerms(@Query('type') type: string) {
+    const terms = await this.termsService.getAllTerms(type);
     return {
       status: 'success',
       message: 'Terms fetched',
