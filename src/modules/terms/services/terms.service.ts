@@ -3,11 +3,13 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UpdateContentDto } from '../dto/update-content.dto';
 import { Terms } from '../interface/terms.interface';
+import { MiscCLass } from 'src/services/misc.service';
 
 @Injectable()
 export class TermsService {
   constructor(
     @InjectModel('Terms') private readonly termsModel: Model<Terms>,
+    private miscService: MiscCLass,
   ) {}
 
   async createTerms(body: any) {
@@ -31,7 +33,7 @@ export class TermsService {
 
   async getAllTerms(type?: string) {
     const query: any = {};
-    if (type) query.type = type;
+    if (type) query.type = await this.miscService.globalSearch(type);
     const terms = await this.termsModel.find(query).exec();
 
     return terms;
@@ -39,7 +41,7 @@ export class TermsService {
 
   async getTerms(type?: string) {
     const query: any = {};
-    if (type) query.type = type;
+    if (type) query.type = await this.miscService.globalSearch(type);
     const terms = await this.termsModel.findOne(query).exec();
     if (!terms) {
       throw new HttpException(
