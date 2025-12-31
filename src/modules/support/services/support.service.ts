@@ -24,9 +24,10 @@ export class SupportService {
   constructor(
     @InjectModel('Ticket') private readonly ticketModel: Model<Ticket>,
     @InjectModel('TicketMessage')
+    private readonly ticketMessageModel: Model<TicketMessage>,
+
     @InjectModel('User')
     private readonly userModel: Model<User>,
-    private readonly ticketMessageModel: Model<TicketMessage>,
     private miscService: MiscCLass,
     private notificationService: NotificationService,
   ) {}
