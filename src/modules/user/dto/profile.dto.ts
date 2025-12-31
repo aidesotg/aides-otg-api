@@ -52,6 +52,11 @@ export class CreateProfileDto {
   @IsOptional()
   @Type(() => EmergencyContactDto)
   emergency_contact: EmergencyContactDto;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  hobbies_interests?: string;
 }
 
 export class UpdateProfileDto {
@@ -68,6 +73,7 @@ export class UpdateProfileDto {
   @ApiProperty() @IsArray() @IsOptional() special_requirements?: string[];
   @ApiProperty() @IsArray() @IsOptional() health_conditions?: string[];
   @ApiProperty() @IsString() @IsOptional() ssn?: string;
+  @ApiProperty() @IsString() @IsOptional() hobbies_interests?: string;
 }
 
 export class UpdatePhoneDto {

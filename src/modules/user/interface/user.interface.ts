@@ -80,6 +80,7 @@ export interface User extends mongoose.Document {
     };
   };
   last_login: Date;
+  hobbies_interests: string;
   readonly createdAt: Date;
   updatedAt: Date;
 }

@@ -20,6 +20,7 @@ export interface Beneficiary extends mongoose.Document {
     relationship: string;
   }[];
   show_label: boolean;
+  hobbies_interests: string;
   readonly createdAt: Date;
   updatedAt: Date;
 }

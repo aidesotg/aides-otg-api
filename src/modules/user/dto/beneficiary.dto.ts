@@ -75,6 +75,11 @@ export class CreateBeneficiaryDto {
   @IsBoolean()
   @IsOptional()
   show_label?: boolean;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  hobbies_interests?: string;
 }
 
 export class UpdateBeneficiaryDto {
@@ -140,4 +145,9 @@ export class UpdateBeneficiaryDto {
   @IsOptional()
   @Type(() => EmergencyContactDto)
   emergency_contact: EmergencyContactDto;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  hobbies_interests?: string;
 }

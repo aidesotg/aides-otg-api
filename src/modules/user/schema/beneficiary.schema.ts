@@ -65,6 +65,9 @@ export const BeneficiarySchema = new mongoose.Schema<Beneficiary>(
       type: Boolean,
       default: true,
     },
+    hobbies_interests: {
+      type: String,
+    },
   },
   {
     timestamps: true,

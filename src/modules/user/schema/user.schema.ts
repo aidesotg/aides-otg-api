@@ -199,6 +199,9 @@ export const UserSchema = new mongoose.Schema<User>(
       type: Date,
       default: null,
     },
+    hobbies_interests: {
+      type: String,
+    },
   },
   {
     timestamps: true,
