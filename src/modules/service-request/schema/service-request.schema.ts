@@ -114,6 +114,10 @@ export const ServiceRequestSchema = new mongoose.Schema<ServiceRequest>(
         },
       },
     ],
+    insurance_company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'InsuranceCompany',
+    },
     payments: {
       total: { type: Number },
       user_covered_payments: { type: Number },

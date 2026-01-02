@@ -35,10 +35,17 @@ export class InsuranceCompanyService {
   }
 
   async getInsurancesCompanies(params: any) {
-    const { page = 1, pageSize = 50, ...rest } = params;
+    const { page = 1, pageSize = 50, search, ...rest } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
     const query: any = await this.miscService.search(rest);
 
+    if (search) {
+      if (await this.miscService.IsObjectId(search)) {
+        query._id = search;
+      } else {
+        query['$or'] = [{ name: await this.miscService.globalSearch(search) }];
+      }
+    }
     const insurances = await this.insuranceCompanyModel
       .find(query)
       .skip(pagination.offset)

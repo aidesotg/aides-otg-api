@@ -25,7 +25,6 @@ export class SupportService {
     @InjectModel('Ticket') private readonly ticketModel: Model<Ticket>,
     @InjectModel('TicketMessage')
     private readonly ticketMessageModel: Model<TicketMessage>,
-
     @InjectModel('User')
     private readonly userModel: Model<User>,
     private miscService: MiscCLass,
@@ -111,7 +110,7 @@ export class SupportService {
   }
 
   async getTickets(params: any, user?: any) {
-    const { page = 1, pageSize = 50, ...rest } = params;
+    const { page = 1, pageSize = 50, search, ...rest } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
 
     const query: any = { is_deleted: false };
@@ -135,6 +134,17 @@ export class SupportService {
       query.createdAt = {};
       if (rest.start_date) query.createdAt.$gte = new Date(rest.start_date);
       if (rest.end_date) query.createdAt.$lte = new Date(rest.end_date);
+    }
+
+    if (search) {
+      if (await this.miscService.IsObjectId(search)) {
+        query._id = search;
+      } else {
+        query['$or'] = [
+          { subject: await this.miscService.globalSearch(search) },
+          { ticket_number: await this.miscService.globalSearch(search) },
+        ];
+      }
     }
 
     console.log(query);
@@ -408,6 +418,75 @@ export class SupportService {
 
     statistics.average_resolution_time =
       averageResolutionTime[0]?.average_resolution_time || 0;
+
+    return {
+      status: 'success',
+      message: 'Statistics fetched successfully',
+      data: statistics,
+    };
+  }
+
+  async getReportStatistics() {
+    const statistics: any = {
+      total_reports: await this.ticketModel.countDocuments({
+        $or: [{ category: 'service_report' }, { category: 'review_report' }],
+        is_deleted: false,
+      }),
+      total_open_reports: await this.ticketModel.countDocuments({
+        $or: [{ category: 'service_report' }, { category: 'review_report' }],
+        is_deleted: false,
+        status: { $ne: 'closed' },
+      }),
+      // total_pending_reports: await this.ticketModel.countDocuments({
+      //   $or: [{ category: 'service_report' }, { category: 'review_report' }],
+      //   is_deleted: false,
+      //   status: 'pending',
+      // }),
+      // total_in_review_reports: await this.ticketModel.countDocuments({
+      //   $or: [{ category: 'service_report' }, { category: 'review_report' }],
+      //   is_deleted: false,
+      //   status: 'in_review',
+      // }),
+
+      closed_reports: await this.ticketModel.countDocuments({
+        $or: [{ category: 'service_report' }, { category: 'review_report' }],
+        is_deleted: false,
+        status: 'closed',
+      }),
+    };
+
+    // const averageResolutionTime = await this.ticketModel.aggregate([
+    //   {
+    //     $match: {
+    //       is_deleted: false,
+    //       status: 'closed',
+    //       date_closed: { $ne: null },
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       resolution_time: {
+    //         $subtract: ['$date_closed', '$createdAt'],
+    //       },
+    //     },
+    //   },
+    //   {
+    //     $group: {
+    //       _id: null,
+    //       average_resolution_time: { $avg: '$resolution_time' },
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       average_resolution_time: {
+    //         $divide: ['$average_resolution_time', 60000], // Convert milliseconds to minutes
+    //       },
+    //     },
+    //   },
+    // ]);
+
+    // statistics.average_resolution_time =
+    //   averageResolutionTime[0]?.average_resolution_time || 0;
 
     return {
       status: 'success',

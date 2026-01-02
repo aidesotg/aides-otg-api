@@ -546,6 +546,19 @@ export class ServiceRequestService {
     const { beneficiary, date_list, ...rest } = createServiceDto;
     let recepient_type = 'User';
     let recepient_id = user._id;
+    let insurance;
+    if (!createServiceDto.self_care) {
+      insurance = await this.insuranceModel.findOne({
+        beneficiary: createServiceDto.beneficiary.toString(),
+      });
+      // .populate('insurance_company');
+    } else {
+      insurance = await this.insuranceModel.findOne({
+        user: user._id.toString(),
+      });
+      // .populate('insurance_company');
+    }
+
     if (!createServiceDto.self_care) {
       const isBeneficiary = await this.userBeneficiaryModel.findOne({
         beneficiary: beneficiary,
@@ -574,6 +587,7 @@ export class ServiceRequestService {
       date_list: dateList,
       created_by: user._id,
       payments,
+      insurance_company: insurance.insurance_company,
     };
 
     const newRequest = new this.serviceRequestModel(data);
@@ -830,6 +844,7 @@ export class ServiceRequestService {
       startDate,
       endDate,
       search,
+      insuranceId,
       ...rest
     } = params;
     const pagination = await this.miscService.paginate({ page, pageSize });
@@ -916,6 +931,10 @@ export class ServiceRequestService {
           query.$or = dateConditions;
         }
       }
+    }
+
+    if (insuranceId) {
+      query.insurance_company = insuranceId;
     }
 
     // Global search functionality

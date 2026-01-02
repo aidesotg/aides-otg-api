@@ -44,6 +44,12 @@ export class SupportController {
     return this.supportService.getStatistics();
   }
 
+  @Get('/report/statistics')
+  @UseGuards(AuthGuard('jwt'))
+  async getReportStatistics() {
+    return this.supportService.getReportStatistics();
+  }
+
   @Get('/tickets/all')
   @UseGuards(AuthGuard('jwt'))
   async getAllTicket(@Query() params: TicketQueryDto, @AuthUser() user: any) {

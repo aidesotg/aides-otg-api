@@ -9,6 +9,7 @@ export interface ServiceRequest extends mongoose.Document {
   recepient_type: string;
   beneficiary: mongoose.Schema.Types.ObjectId;
   details: string;
+  insurance_company: mongoose.Schema.Types.ObjectId;
   location: {
     street?: string;
     city: string;
