@@ -37,6 +37,7 @@ import {
   UpdateRequestLocationDto,
 } from './dto/redis.dto';
 import * as twilio from 'twilio';
+import { DialRecordingEvent } from 'twilio/lib/twiml/VoiceResponse';
 
 @Controller('services')
 export class ServicesController {
@@ -396,7 +397,9 @@ export class ServicesController {
       const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="alice">Connecting your call.</Say>
-  <Dial timeout="30" timeLimit="3600">
+  <Dial timeout="30" timeLimit="3600" record="record-from-ringing-dual"
+   recordingStatusCallback="https://myapp.com/recording-events"
+   recordingStatusCallbackEvent="in-progress completed absent">
     <Client>
       <Identity>${to || 'user'}</Identity>
     </Client>
@@ -453,6 +456,13 @@ export class ServicesController {
         callerId,
         answerOnBridge: true,
         timeout: 30,
+        record: 'record-from-ringing-dual',
+        recordingStatusCallback: `${process.env.APP_URL}/recording-events`,
+        recordingStatusCallbackEvent: [
+          'in-progress',
+          'completed',
+          'absent',
+        ] as DialRecordingEvent[],
       });
       dial.number(to);
     } else {

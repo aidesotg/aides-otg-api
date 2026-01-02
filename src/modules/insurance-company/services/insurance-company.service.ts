@@ -43,7 +43,9 @@ export class InsuranceCompanyService {
       if (await this.miscService.IsObjectId(search)) {
         query._id = search;
       } else {
-        query['$or'] = [{ name: await this.miscService.globalSearch(search) }];
+        query['$or'] = [
+          { company_name: await this.miscService.globalSearch(search) },
+        ];
       }
     }
     const insurances = await this.insuranceCompanyModel
