@@ -111,6 +111,7 @@ export class SupportService {
 
   async getTickets(params: any, user?: any) {
     const { page = 1, pageSize = 50, search, ...rest } = params;
+    console.log('🚀 ~ SupportService ~ getTickets ~ search:', search);
     const pagination = await this.miscService.paginate({ page, pageSize });
 
     const query: any = { is_deleted: false };

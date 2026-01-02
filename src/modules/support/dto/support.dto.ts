@@ -181,4 +181,9 @@ export class TicketQueryDto {
   @IsString()
   @IsOptional()
   end_date?: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  search?: string;
 }
