@@ -186,6 +186,7 @@ export class BeneficiaryService {
       search,
       hasInsurance,
       insuranceActive,
+      insuranceId,
       ...rest
     } = params;
 
@@ -255,12 +256,20 @@ export class BeneficiaryService {
     }
 
     // Insurance status filtering
-    if (hasInsurance !== undefined || insuranceActive !== undefined) {
+    if (
+      hasInsurance !== undefined ||
+      insuranceActive !== undefined ||
+      insuranceId !== undefined
+    ) {
       const insuranceQuery: any = { is_deleted: false };
 
       if (insuranceActive !== undefined) {
         insuranceQuery.is_active =
           insuranceActive === true || insuranceActive === 'true';
+      }
+
+      if (insuranceId !== undefined) {
+        insuranceQuery.insurance_company = insuranceId;
       }
 
       const matchingInsurances = await this.insuranceModel
