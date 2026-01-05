@@ -293,7 +293,7 @@ export class AuthenticationService {
 
       const data = {
         user: {
-          ...user.toObject(),
+          ...user.toJSON(),
           completed_requests: completedRequestsCount ?? 0,
         },
         token: `Bearer ${token}`,
@@ -427,7 +427,7 @@ export class AuthenticationService {
 
     const data = {
       user: {
-        ...user.toObject(),
+        ...user.toJSON(),
         completed_requests: completedRequestsCount ?? 0,
       },
       token: `Bearer ${token}`,
