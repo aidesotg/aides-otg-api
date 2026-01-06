@@ -27,6 +27,7 @@ import { AcceptRequestDto } from '../dto/accept-request.dto';
 import { UpdateActivityTrailDto } from '../dto/activity-trail.dto';
 import { CancelRequestDto } from '../dto/cancel-request.dto';
 import { AddReviewDto } from '../dto/add-review.dto';
+import { SaveCallSidDto } from '../dto/save-call-sid.dto';
 
 @ApiTags('service-request')
 @Controller('service-request')
@@ -195,6 +196,13 @@ export class ServiceRequestController {
       type,
       origin,
     );
+  }
+
+  @Post('/call-sid')
+  @UseGuards(AuthGuard('jwt'))
+  @UseFilters(ExceptionsLoggerFilter)
+  async saveCallSid(@Body() body: SaveCallSidDto, @AuthUser() user: any) {
+    return this.serviceService.saveCallSid(body.callSid, body.dayId);
   }
 
   @Post('/favorites')

@@ -377,7 +377,7 @@ export class UserService {
       console.log('Error getting user balance:', error);
     }
     return {
-      ...userDetails.toObject(),
+      ...userDetails.toJSON(),
       total_care_received: await this.getUserTotalCareReceived(user),
       wallet,
     };

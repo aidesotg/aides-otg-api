@@ -2519,4 +2519,22 @@ export class ServiceRequestService {
       },
     };
   }
+
+  async saveCallSid(callSid: string, dayId: string) {
+    const dayLog = await this.serviceRequestDayLogsModel.findOne({
+      $or: [{ _id: dayId }, { day_id: dayId }],
+    });
+    if (!dayLog) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Day log not found',
+      });
+    }
+    dayLog.call_sids.push(callSid);
+    await dayLog.save();
+    return {
+      status: 'success',
+      message: 'Call SID saved successfully',
+    };
+  }
 }

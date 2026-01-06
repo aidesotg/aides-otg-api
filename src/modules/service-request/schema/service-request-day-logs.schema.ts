@@ -68,6 +68,16 @@ export const ServiceRequestDayLogsSchema =
         enum: ['pending', 'paid', 'failed'],
         default: 'pending',
       },
+      call_sids: [
+        {
+          type: String,
+        },
+      ],
+      recording_urls: [
+        {
+          type: String,
+        },
+      ],
     },
     {
       timestamps: true,

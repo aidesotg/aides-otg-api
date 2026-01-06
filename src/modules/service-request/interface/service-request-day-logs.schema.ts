@@ -22,6 +22,8 @@ export interface ServiceRequestDayLogs extends mongoose.Document {
     caregiver_payout: number;
   };
   payment_status: string;
+  call_sids: string[];
+  recording_urls: string[];
   readonly createdAt: Date;
   updatedAt: Date;
 }
