@@ -15,6 +15,9 @@ export interface Ticket extends mongoose.Document {
   user_type: string;
   created_by_admin: boolean;
   date_closed: Date;
+  email: string;
+  phone: string;
+  name: string;
   readonly createdAt: Date;
   updatedAt: Date;
 }

@@ -24,7 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(request: any, payload: any): Promise<any> {
     // Extract token from request headers
-    const authHeader = request.headers?.authorization;
+    const authHeader = request.headers ? request.headers.authorization : '';
     const token = authHeader?.replace('Bearer ', '');
 
     if (!token) {

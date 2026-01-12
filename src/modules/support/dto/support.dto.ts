@@ -86,6 +86,16 @@ export class CreateTicketDto {
   @IsOptional()
   @IsEmail()
   email?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  name?: string;
 }
 
 export class UpdateTicketDto {

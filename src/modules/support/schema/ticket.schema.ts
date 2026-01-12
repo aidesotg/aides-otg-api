@@ -80,6 +80,18 @@ export const TicketSchema = new mongoose.Schema<Ticket>(
       enum: ['Review', 'ServiceRequest', 'Wallet', 'General'],
       default: 'General',
     },
+    email: {
+      type: String,
+      default: null,
+    },
+    phone: {
+      type: String,
+      default: null,
+    },
+    name: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

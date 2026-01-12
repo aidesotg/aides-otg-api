@@ -73,18 +73,20 @@ export class SupportService {
     const ticketNumber = this.generateTicketNumber();
     const user = await this.userModel.findOne({ email: createTicketDto.email });
 
-    if (!user) {
-      throw new NotFoundException({
-        status: 'error',
-        message: 'account not found`',
-      });
-    }
+    // if (!user) {
+    //   throw new NotFoundException({
+    //     status: 'error',
+    //     message: 'account not found`',
+    //   });
+    // }
 
     const data: any = {
       ...createTicketDto,
       ticket_number: ticketNumber,
-      created_by: user._id,
     };
+    if (user) {
+      data.created_by = user._id;
+    }
 
     // if (createTicketDto.user) {
     //   data.created_by_admin = true;
