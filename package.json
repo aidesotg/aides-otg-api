@@ -8,6 +8,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
+    "build:digitalocean": "npm install --legacy-peer-deps --production=false && npm run build && npm ci",
     "txt": "copyfiles services/states/*.txt dist/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
