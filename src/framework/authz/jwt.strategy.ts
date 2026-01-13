@@ -25,7 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(request: any, payload: any): Promise<any> {
     // Extract token from request headers
     const authHeader = request.headers ? request.headers.authorization : '';
-    const token = authHeader?.replace('Bearer ', '');
+    const token = authHeader ? authHeader.replace('Bearer ', '') : '';
 
     if (!token) {
       throw new UnauthorizedException({
@@ -35,7 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     // Terminate session and block access if token is expired
-    if (payload?.exp && Date.now() / 1000 > payload.exp) {
+    if (payload && payload.exp && Date.now() / 1000 > payload.exp) {
       await this.sessionModel.deleteOne({ jwt_token: token }).exec();
       throw new UnauthorizedException({
         status: 'error',
