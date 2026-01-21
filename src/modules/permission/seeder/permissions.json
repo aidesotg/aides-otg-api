@@ -1,30 +1,168 @@
 [
     {
-        "module": "role",
-        "name": "role:create",
-        "description": "can create new role and assign permissions"
+        "module": "broadcast",
+        "name": "broadcast:create",
+        "description": "can create broadcast"
     },
     {
-        "module": "role",
-        "name": "role:read",
-        "description": "can get all roles"
+        "module": "broadcast",
+        "name": "broadcast:delete",
+        "description": "can delete broadcast"
     },
     {
-        "module": "role",
-        "name": "role:update",
-        "description": "can update role/role permissions"
+        "module": "broadcast",
+        "name": "broadcast:read",
+        "description": "can view broadcast"
     },
     {
-        "module": "role",
-        "name": "role:delete",
-        "description": "can delete role"
+        "module": "broadcast",
+        "name": "broadcast:update",
+        "description": "can update broadcast"
     },
-
-    
+    {
+        "module": "caregiver",
+        "name": "caregiver:read",
+        "description": "can view caregiver"
+    },
+    {
+        "module": "caregiver",
+        "name": "caregiver:suspend",
+        "description": "can suspend caregiver"
+    },
+    {
+        "module": "caregiver",
+        "name": "caregiver:update",
+        "description": "can update caregiver"
+    },
+    {
+        "module": "faq",
+        "name": "faq:create",
+        "description": "can create faq"
+    },
+    {
+        "module": "faq",
+        "name": "faq:delete",
+        "description": "can delete faq"
+    },
+    {
+        "module": "faq",
+        "name": "faq:update",
+        "description": "can update faq"
+    },
+    {
+        "module": "insurance",
+        "name": "insurance:delete",
+        "description": "can delete insurance"
+    },
+    {
+        "module": "insurance",
+        "name": "insurance:update",
+        "description": "can update insurance"
+    },
+    {
+        "module": "insurance-company",
+        "name": "insurance-company:create",
+        "description": "can create insurance company"
+    },
+    {
+        "module": "insurance-company",
+        "name": "insurance-company:delete",
+        "description": "can delete insurance company"
+    },
+    {
+        "module": "insurance-company",
+        "name": "insurance-company:update",
+        "description": "can update insurance company"
+    },
+    {
+        "module": "legal",
+        "name": "legal:create",
+        "description": "can create legal"
+    },
+    {
+        "module": "legal",
+        "name": "legal:delete",
+        "description": "can delete legal"
+    },
+    {
+        "module": "legal",
+        "name": "legal:update",
+        "description": "can update legal"
+    },
+    {
+        "module": "rate",
+        "name": "rate:create",
+        "description": "can create rate"
+    },
+    {
+        "module": "rate",
+        "name": "rate:update",
+        "description": "can update rate"
+    },
+    {
+        "module": "service",
+        "name": "service:create",
+        "description": "can create service"
+    },
+    {
+        "module": "service",
+        "name": "service:delete",
+        "description": "can delete service"
+    },
+    {
+        "module": "service",
+        "name": "service:update",
+        "description": "can update service"
+    },
+    {
+        "module": "service-category",
+        "name": "service-category:create",
+        "description": "can create service category"
+    },
+    {
+        "module": "service-category",
+        "name": "service-category:delete",
+        "description": "can delete service category"
+    },
+    {
+        "module": "service-category",
+        "name": "service-category:update",
+        "description": "can update service category"
+    },
+    {
+        "module": "service-request",
+        "name": "service-request:update",
+        "description": "can update service request"
+    },
+    {
+        "module": "support",
+        "name": "support:read",
+        "description": "can view support"
+    },
+    {
+        "module": "support",
+        "name": "support:update",
+        "description": "can update support"
+    },
+    {
+        "module": "terms",
+        "name": "terms:create",
+        "description": "can create terms"
+    },
+    {
+        "module": "terms",
+        "name": "terms:update",
+        "description": "can update terms"
+    },
     {
         "module": "user",
         "name": "user:create",
         "description": "can create user"
+    },
+    {
+        "module": "user",
+        "name": "user:delete",
+        "description": "can delete user"
     },
     {
         "module": "user",
@@ -33,17 +171,17 @@
     },
     {
         "module": "user",
-        "name": "user:update-self",
-        "description": "can edit individual profile"
+        "name": "user:suspend",
+        "description": "can suspend user"
     },
     {
         "module": "user",
-        "name": "user:update-any",
-        "description": "can edit any profile"
+        "name": "user:update",
+        "description": "can update user"
     },
     {
-        "module": "user",
-        "name": "user:delete",
-        "description": "can delete user"
+        "module": "permission",
+        "name": "permission:update",
+        "description": "can update permission"
     }
 ]

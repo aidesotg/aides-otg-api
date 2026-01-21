@@ -19,11 +19,13 @@ import {
   CreateServiceDto,
   UpdateServiceDto,
 } from 'src/modules/service/dto/service.dto';
+import { Permissions } from 'src/framework/decorators/permissions.decorator';
+import { PermissionsGuard } from 'src/framework/guards/permissions.guard';
 
 @ApiTags('service')
 @Controller('service')
 export class ServiceController {
-  constructor(private readonly serviceService: ServiceService) {}
+  constructor(private readonly serviceService: ServiceService) { }
 
   @Get('/list')
   @UseGuards(AuthGuard('jwt'))
@@ -48,7 +50,8 @@ export class ServiceController {
   }
 
   @Post('/create')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('service:create')
   @UseFilters(ExceptionsLoggerFilter)
   async createServiceCategory(
     @Body() body: CreateServiceDto,
@@ -58,21 +61,24 @@ export class ServiceController {
   }
 
   @Put('/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('service:update')
   @UseFilters(ExceptionsLoggerFilter)
   async updateService(@Param('id') id: string, @Body() body: UpdateServiceDto) {
     return this.serviceService.updateService(id, body);
   }
 
   @Put('/:id/toggle-status')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('service:update')
   @UseFilters(ExceptionsLoggerFilter)
   async suspendService(@Param('id') id: string) {
     return this.serviceService.suspendService(id);
   }
 
   @Delete('/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('service:delete')
   @UseFilters(ExceptionsLoggerFilter)
   async deleteService(@Param('id') id: string) {
     return this.serviceService.deleteService(id);

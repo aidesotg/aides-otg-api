@@ -51,6 +51,7 @@ import { StripeAccountDto } from 'src/modules/wallet/dto/stripe-account.dto';
 import { LocationUpdate } from 'src/services/redis.service';
 import { AuthenticationService } from 'src/modules/authentication/services/authentication.service';
 import { Permissions } from 'src/framework/decorators/permissions.decorator';
+import { PermissionsGuard } from 'src/framework/guards/permissions.guard';
 
 @ApiTags('user')
 @Controller('user')
@@ -112,7 +113,7 @@ export class UserController {
   }
 
   @Post('/create')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('user:create')
   async createUser(@Body() body: CreateUserDto) {
     return this.userService.createUser(body);
@@ -365,7 +366,7 @@ export class UserController {
   }
 
   @Put('/:userId/update-role')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('user:update')
   @UseFilters(ExceptionsLoggerFilter)
   async updateRole(
@@ -376,7 +377,7 @@ export class UserController {
   }
 
   @Put('/:user/suspend')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('user:suspend')
   @UseFilters(ExceptionsLoggerFilter)
   async suspendUser(
@@ -387,7 +388,7 @@ export class UserController {
   }
 
   @Put('/:user/unsuspend')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('user:suspend')
   @UseFilters(ExceptionsLoggerFilter)
   async unsuspendUser(@Param('user') user: string) {
@@ -477,7 +478,7 @@ export class UserController {
   }
 
   @Put('/deactivate')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('user:suspend')
   @UseFilters(ExceptionsLoggerFilter)
   async deactivateUser(@AuthUser() user: any) {

@@ -28,11 +28,13 @@ import { UpdateActivityTrailDto } from '../dto/activity-trail.dto';
 import { CancelRequestDto } from '../dto/cancel-request.dto';
 import { AddReviewDto } from '../dto/add-review.dto';
 import { SaveCallSidDto } from '../dto/save-call-sid.dto';
+import { Permissions } from 'src/framework/decorators/permissions.decorator';
+import { PermissionsGuard } from 'src/framework/guards/permissions.guard';
 
 @ApiTags('service-request')
 @Controller('service-request')
 export class ServiceRequestController {
-  constructor(private readonly serviceService: ServiceRequestService) {}
+  constructor(private readonly serviceService: ServiceRequestService) { }
 
   @Get('')
   @UseGuards(AuthGuard('jwt'))
@@ -213,7 +215,8 @@ export class ServiceRequestController {
   }
 
   @Post('/:id/assign')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('service-request:update')
   @UseFilters(ExceptionsLoggerFilter)
   async assignCaregiverToRequest(
     @Param('id') id: string,
@@ -268,7 +271,8 @@ export class ServiceRequestController {
   }
 
   @Put('/:id/cancel')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('service-request:update')
   @UseFilters(ExceptionsLoggerFilter)
   async unassignCaregiverToRequest(
     @Param('id') id: string,

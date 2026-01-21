@@ -22,11 +22,13 @@ import {
 import { AuthUser } from 'src/framework/decorators/user.decorator';
 import { ExceptionsLoggerFilter } from 'src/framework/exceptions/exceptionLogger.filter';
 import { InsuranceInfoDto } from 'src/modules/insurance/dto/insurance.dto';
+import { Permissions } from 'src/framework/decorators/permissions.decorator';
+import { PermissionsGuard } from 'src/framework/guards/permissions.guard';
 
 @ApiTags('insurance')
 @Controller('insurance')
 export class InsuranceController {
-  constructor(private readonly insuranceService: InsuranceService) {}
+  constructor(private readonly insuranceService: InsuranceService) { }
 
   @Get('')
   @UseGuards(AuthGuard('jwt'))
@@ -92,7 +94,8 @@ export class InsuranceController {
   }
 
   @Put('/:id/update')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('insurance:update')
   @UseFilters(ExceptionsLoggerFilter)
   @ApiOperation({ summary: 'Update insurance by ID' })
   @ApiResponse({ status: 200, description: 'Insurance updated successfully' })
@@ -138,7 +141,8 @@ export class InsuranceController {
   }
 
   @Put('/:id/activate')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('insurance:update')
   @UseFilters(ExceptionsLoggerFilter)
   @ApiOperation({ summary: 'Activate insurance' })
   @ApiResponse({ status: 200, description: 'Insurance activated successfully' })
@@ -149,7 +153,8 @@ export class InsuranceController {
   }
 
   @Put('/:id/deactivate')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('insurance:update')
   @UseFilters(ExceptionsLoggerFilter)
   @ApiOperation({ summary: 'Deactivate insurance' })
   @ApiResponse({
@@ -163,7 +168,8 @@ export class InsuranceController {
   }
 
   @Delete('/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('insurance:delete')
   @UseFilters(ExceptionsLoggerFilter)
   @ApiOperation({ summary: 'Delete insurance (soft delete)' })
   @ApiResponse({ status: 200, description: 'Insurance deleted successfully' })

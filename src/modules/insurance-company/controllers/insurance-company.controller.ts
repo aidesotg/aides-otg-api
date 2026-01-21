@@ -21,16 +21,19 @@ import {
 } from '@nestjs/swagger';
 import { ExceptionsLoggerFilter } from 'src/framework/exceptions/exceptionLogger.filter';
 import { CreateInsuranceCompanyDto } from 'src/modules/insurance-company/dto/create-insurance.dto';
+import { Permissions } from 'src/framework/decorators/permissions.decorator';
+import { PermissionsGuard } from 'src/framework/guards/permissions.guard';
 
 @ApiTags('insurance-company')
 @Controller('insurance-company')
 export class InsuranceCompanyController {
   constructor(
     private readonly insuranceCompanyService: InsuranceCompanyService,
-  ) {}
+  ) { }
 
   @Post('')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('insurance-company:create')
   @UseFilters(ExceptionsLoggerFilter)
   @ApiOperation({ summary: 'Create a new insurance company' })
   @ApiResponse({
@@ -91,7 +94,8 @@ export class InsuranceCompanyController {
   }
 
   @Put('/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('insurance-company:update')
   @UseFilters(ExceptionsLoggerFilter)
   @ApiOperation({ summary: 'Update insurance company' })
   @ApiResponse({
@@ -111,7 +115,8 @@ export class InsuranceCompanyController {
   }
 
   @Put('/:id/toggle-status')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('insurance-company:update')
   @UseFilters(ExceptionsLoggerFilter)
   @ApiOperation({
     summary: 'Toggle insurance company status (activate/deactivate)',
@@ -127,7 +132,8 @@ export class InsuranceCompanyController {
   }
 
   @Delete('/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('insurance-company:delete')
   @UseFilters(ExceptionsLoggerFilter)
   @ApiOperation({ summary: 'Delete insurance company' })
   @ApiResponse({

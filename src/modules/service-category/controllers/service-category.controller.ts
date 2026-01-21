@@ -19,13 +19,15 @@ import {
   CreateServiceCategoryDto,
   UpdateServiceCategoryDto,
 } from 'src/modules/service-category/dto/service-category.dto';
+import { Permissions } from 'src/framework/decorators/permissions.decorator';
+import { PermissionsGuard } from 'src/framework/guards/permissions.guard';
 
 @ApiTags('service-category')
 @Controller('service-category')
 export class ServiceCategoryController {
   constructor(
     private readonly serviceCategoryService: ServiceCategoryService,
-  ) {}
+  ) { }
 
   @Get('')
   @UseGuards(AuthGuard('jwt'))
@@ -54,7 +56,8 @@ export class ServiceCategoryController {
   }
 
   @Post('/create')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('service-category:create')
   @UseFilters(ExceptionsLoggerFilter)
   async createServiceCategory(
     @Body() body: CreateServiceCategoryDto,
@@ -64,7 +67,8 @@ export class ServiceCategoryController {
   }
 
   @Put('/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('service-category:update')
   @UseFilters(ExceptionsLoggerFilter)
   async updateServiceCategory(
     @Param('id') id: string,
@@ -74,14 +78,16 @@ export class ServiceCategoryController {
   }
 
   @Put('/:id/toggle-status')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('service-category:update')
   @UseFilters(ExceptionsLoggerFilter)
   async suspendServiceCategory(@Param('id') id: string) {
     return this.serviceCategoryService.suspendServiceCategory(id);
   }
 
   @Delete('/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('service-category:delete')
   @UseFilters(ExceptionsLoggerFilter)
   async deleteServiceCategory(@Param('id') id: string) {
     return this.serviceCategoryService.deleteServiceCategory(id);

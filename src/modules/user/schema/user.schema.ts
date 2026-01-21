@@ -202,6 +202,11 @@ export const UserSchema = new mongoose.Schema<User>(
     hobbies_interests: {
       type: String,
     },
+    permissions: [
+      {
+        type: String,
+      },
+    ],
   },
   {
     timestamps: true,

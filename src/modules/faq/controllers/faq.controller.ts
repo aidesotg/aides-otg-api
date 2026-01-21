@@ -15,11 +15,13 @@ import { CreateFaqDto } from '../dto/faq.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { ExceptionsLoggerFilter } from 'src/framework/exceptions/exceptionLogger.filter';
 import { ApiTags } from '@nestjs/swagger';
+import { Permissions } from 'src/framework/decorators/permissions.decorator';
+import { PermissionsGuard } from 'src/framework/guards/permissions.guard';
 
 @ApiTags('faq')
 @Controller('faq')
 export class FaqController {
-  constructor(private readonly faqService: FaqService) {}
+  constructor(private readonly faqService: FaqService) { }
 
   /*
   Create faq 
@@ -27,7 +29,8 @@ export class FaqController {
   Route: api/v1/faqs
   */
   @Post('/')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('faq:create')
   @UseFilters(ExceptionsLoggerFilter)
   createFaq(@Body() createFaqDto: CreateFaqDto) {
     return this.faqService.create(createFaqDto);
@@ -70,7 +73,8 @@ export class FaqController {
   }
 
   @Put('/:faqId')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('faq:update')
   @UseFilters(ExceptionsLoggerFilter)
   async update(
     @Param('faqId') faqId: string,
@@ -80,13 +84,15 @@ export class FaqController {
   }
 
   @Post('/categories')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('faq:create')
   @UseFilters(ExceptionsLoggerFilter)
   async createFaqCategory(@Body('name') name: string) {
     return this.faqService.createFaqCategory(name);
   }
   @Put('/categories/:categoryId')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('faq:update')
   @UseFilters(ExceptionsLoggerFilter)
   async updateFaqCategory(
     @Param('categoryId') categoryId: string,
@@ -96,7 +102,8 @@ export class FaqController {
   }
 
   @Delete('/:faqId')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('faq:delete')
   @UseFilters(ExceptionsLoggerFilter)
   async deleteFaq(@Param('faqId') faqId: string) {
     return this.faqService.deleteFaq(faqId);

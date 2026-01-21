@@ -21,11 +21,13 @@ import {
   SignAgreementDto,
   LegalDocumentQueryDto,
 } from 'src/modules/legal/dto/legal.dto';
+import { Permissions } from 'src/framework/decorators/permissions.decorator';
+import { PermissionsGuard } from 'src/framework/guards/permissions.guard';
 
 @ApiTags('legal')
 @Controller('legal')
 export class LegalController {
-  constructor(private readonly legalService: LegalService) {}
+  constructor(private readonly legalService: LegalService) { }
 
   @Get('/documents')
   // @UseGuards(AuthGuard('jwt'))
@@ -130,7 +132,8 @@ export class LegalController {
   }
 
   @Post('/documents/create')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('legal:create')
   @UseFilters(ExceptionsLoggerFilter)
   async createLegalDocument(
     @Body() body: CreateLegalDocumentDto,
@@ -140,7 +143,8 @@ export class LegalController {
   }
 
   @Put('/documents/:id/update')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('legal:update')
   @UseFilters(ExceptionsLoggerFilter)
   async updateLegalDocument(
     @Param('id') id: string,
@@ -157,21 +161,24 @@ export class LegalController {
   }
 
   @Put('/documents/:id/activate')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('legal:update')
   @UseFilters(ExceptionsLoggerFilter)
   async activateDocument(@Param('id') id: string) {
     return this.legalService.activateDocument(id);
   }
 
   @Put('/documents/:id/deactivate')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('legal:update')
   @UseFilters(ExceptionsLoggerFilter)
   async deactivateDocument(@Param('id') id: string) {
     return this.legalService.deactivateDocument(id);
   }
 
   @Delete('/documents/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('legal:delete')
   @UseFilters(ExceptionsLoggerFilter)
   async deleteDocument(@Param('id') id: string) {
     return this.legalService.deleteDocument(id);

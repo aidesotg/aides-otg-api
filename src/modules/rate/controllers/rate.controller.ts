@@ -19,11 +19,13 @@ import {
   CreateRateSettingsDto,
   UpdateRateSettingsDto,
 } from 'src/modules/rate/dto/rate.dto';
+import { Permissions } from 'src/framework/decorators/permissions.decorator';
+import { PermissionsGuard } from 'src/framework/guards/permissions.guard';
 
 @ApiTags('rate')
 @Controller('rate')
 export class RateController {
-  constructor(private readonly rateService: RateService) {}
+  constructor(private readonly rateService: RateService) { }
 
   @Get('/settings')
   @UseGuards(AuthGuard('jwt'))
@@ -48,7 +50,8 @@ export class RateController {
   }
 
   @Post('/settings/create')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('rate:create')
   @UseFilters(ExceptionsLoggerFilter)
   async createRateSettings(
     @Body() body: CreateRateSettingsDto,
@@ -58,7 +61,8 @@ export class RateController {
   }
 
   @Put('/settings/update')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('rate:update')
   @UseFilters(ExceptionsLoggerFilter)
   async updateRateSettings(
     @Body() body: UpdateRateSettingsDto,
@@ -68,14 +72,16 @@ export class RateController {
   }
 
   @Put('/settings/activate')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('rate:update')
   @UseFilters(ExceptionsLoggerFilter)
   async activateRateSettings(@AuthUser() user: any) {
     return this.rateService.activateRateSettings(user);
   }
 
   @Put('/settings/deactivate')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions('rate:update')
   @UseFilters(ExceptionsLoggerFilter)
   async deactivateRateSettings(@AuthUser() user: any) {
     return this.rateService.deactivateRateSettings(user);

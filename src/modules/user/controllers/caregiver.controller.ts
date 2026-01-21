@@ -23,6 +23,7 @@ import { CaregiverService } from '../services/caregiver.service';
 import { UpdateApplicationStatusDto } from '../dto/update-application-status.dto';
 import { User } from '../interface/user.interface';
 import { Permissions } from 'src/framework/decorators/permissions.decorator';
+import { PermissionsGuard } from 'src/framework/guards/permissions.guard';
 
 @ApiTags('user/caregiver')
 @Controller('user/caregiver')
@@ -57,7 +58,7 @@ export class CaregiverController {
   }
 
   @Get('/applications/pending')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('caregiver:read')
   @UseFilters(ExceptionsLoggerFilter)
   async getPendingCaregiverApplications(
@@ -71,8 +72,7 @@ export class CaregiverController {
   }
 
   @Get('/applications/')
-  @UseGuards(AuthGuard('jwt'))
-
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('caregiver:read')
   @UseFilters(ExceptionsLoggerFilter)
   async getCaregiverApplications(@Query() params: any, @AuthUser() user: any) {
@@ -140,7 +140,7 @@ export class CaregiverController {
     return this.caregiverService.updateProfessionalProfile(body, user);
   }
   @Put('/profile/:id/suspend')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('caregiver:suspend')
   @UseFilters(ExceptionsLoggerFilter)
   async suspendCaregiver(
@@ -151,7 +151,7 @@ export class CaregiverController {
   }
 
   @Put('/profile/:id/unsuspend')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('caregiver:suspend')
   @UseFilters(ExceptionsLoggerFilter)
   async unsuspendCaregiver(@Param('id') id: string) {
@@ -159,7 +159,7 @@ export class CaregiverController {
   }
 
   @Put('/application/:id/status')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('caregiver:update')
   @UseFilters(ExceptionsLoggerFilter)
   async updateCaregiverApplicationStatus(

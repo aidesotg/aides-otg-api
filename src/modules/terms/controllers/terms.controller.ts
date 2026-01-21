@@ -15,6 +15,7 @@ import { UpdateContentDto } from '../dto/update-content.dto';
 import { TermsService } from '../services/terms.service';
 import { ExceptionsLoggerFilter } from 'src/framework/exceptions/exceptionLogger.filter';
 import { Permissions } from 'src/framework/decorators/permissions.decorator';
+import { PermissionsGuard } from 'src/framework/guards/permissions.guard';
 
 @ApiTags('terms')
 @Controller('terms')
@@ -42,7 +43,7 @@ export class TermsController {
   }
 
   @Post('/create')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('terms:create')
   @UseFilters(ExceptionsLoggerFilter)
   async createTerms(@Body() body: Partial<UpdateContentDto>) {
@@ -50,7 +51,7 @@ export class TermsController {
   }
 
   @Put('/update')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('terms:update')
   @UseFilters(ExceptionsLoggerFilter)
   async updateTerms(@Body() body: UpdateContentDto) {
@@ -58,7 +59,7 @@ export class TermsController {
   }
 
   @Put('/:type/update')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('terms:update')
   @UseFilters(ExceptionsLoggerFilter)
   async updateTypeTerms(

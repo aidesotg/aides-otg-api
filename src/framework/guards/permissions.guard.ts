@@ -4,7 +4,7 @@ import { Reflector } from '@nestjs/core';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) { }
 
   canActivate(
     context: ExecutionContext,
@@ -13,11 +13,14 @@ export class PermissionsGuard implements CanActivate {
       'permissions',
       context.getHandler(),
     );
+    console.log("🚀 ~ PermissionsGuard ~ canActivate ~ routePermissions:", routePermissions)
 
     const user = context.getArgs()[0].user;
-    const isAdmin = user.roles.map((role) => role.name == 'Super Admin');
+    const isAdmin = user.roles.filter((role) => role.name == 'Super Admin'
+    );
+    console.log("🚀 ~ PermissionsGuard ~ canActivate ~ isAdmin:", isAdmin)
 
-    if (!routePermissions?.length || isAdmin) {
+    if (!routePermissions?.length || isAdmin.length > 0) {
       return true;
     }
 
