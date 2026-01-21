@@ -59,7 +59,7 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly authenticationService: AuthenticationService,
-  ) {}
+  ) { }
 
   @Get('')
   @UseGuards(AuthGuard('jwt'))
