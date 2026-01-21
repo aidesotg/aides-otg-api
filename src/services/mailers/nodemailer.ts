@@ -16,6 +16,8 @@ class node_mailer implements IMailers {
       product: {
         name: 'AidesOnTheGo',
         link: '#',
+        logo: 'https://aidesotg.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2FLogo%20Coloured.2c1bf4fc.png&w=828&q=75',
+        copyright: `© ${new Date().getFullYear()} AidesOnTheGo. All rights reserved.`,
       },
     });
 

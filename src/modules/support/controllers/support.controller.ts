@@ -21,6 +21,7 @@ import {
   CreateTicketMessageDto,
   TicketQueryDto,
 } from '../dto/support.dto';
+import { Permissions } from 'src/framework/decorators/permissions.decorator';
 
 @ApiTags('support')
 @Controller('support')
@@ -52,6 +53,7 @@ export class SupportController {
 
   @Get('/tickets/all')
   @UseGuards(AuthGuard('jwt'))
+  @Permissions('support:read')
   async getAllTicket(@Query() params: TicketQueryDto, @AuthUser() user: any) {
     const tickets = await this.supportService.getTickets(params);
     return {
@@ -117,6 +119,7 @@ export class SupportController {
 
   @Put('/tickets/:id/assign')
   @UseGuards(AuthGuard('jwt'))
+  @Permissions('support:update')
   @UseFilters(ExceptionsLoggerFilter)
   async assignTicket(
     @Param('id') id: string,
@@ -127,6 +130,7 @@ export class SupportController {
 
   @Put('/tickets/:id/close')
   @UseGuards(AuthGuard('jwt'))
+  @Permissions('support:update')
   @UseFilters(ExceptionsLoggerFilter)
   async closeTicket(@Param('id') id: string) {
     return this.supportService.closeTicket(id);

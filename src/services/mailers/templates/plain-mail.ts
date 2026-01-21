@@ -31,6 +31,8 @@ class PlainMail implements Imail {
       body: {
         title: `Hi ${this.user.first_name ?? ''} ${this.user.last_name ?? ''}`,
         intro: [`${this.message}`, `${this.details}`],
+        outro: [`Best regards`, `The AidesOnTheGo Team`],
+        signature: false,
       },
     };
 

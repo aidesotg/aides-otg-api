@@ -22,11 +22,12 @@ import {
 import { CaregiverService } from '../services/caregiver.service';
 import { UpdateApplicationStatusDto } from '../dto/update-application-status.dto';
 import { User } from '../interface/user.interface';
+import { Permissions } from 'src/framework/decorators/permissions.decorator';
 
 @ApiTags('user/caregiver')
 @Controller('user/caregiver')
 export class CaregiverController {
-  constructor(private readonly caregiverService: CaregiverService) {}
+  constructor(private readonly caregiverService: CaregiverService) { }
   @Get('/list')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
@@ -57,6 +58,7 @@ export class CaregiverController {
 
   @Get('/applications/pending')
   @UseGuards(AuthGuard('jwt'))
+  @Permissions('caregiver:read')
   @UseFilters(ExceptionsLoggerFilter)
   async getPendingCaregiverApplications(
     @Query() params: any,
@@ -70,6 +72,8 @@ export class CaregiverController {
 
   @Get('/applications/')
   @UseGuards(AuthGuard('jwt'))
+
+  @Permissions('caregiver:read')
   @UseFilters(ExceptionsLoggerFilter)
   async getCaregiverApplications(@Query() params: any, @AuthUser() user: any) {
     return this.caregiverService.getCaregiverApplications(params);
@@ -137,6 +141,7 @@ export class CaregiverController {
   }
   @Put('/profile/:id/suspend')
   @UseGuards(AuthGuard('jwt'))
+  @Permissions('caregiver:suspend')
   @UseFilters(ExceptionsLoggerFilter)
   async suspendCaregiver(
     @Param('id') id: string,
@@ -147,6 +152,7 @@ export class CaregiverController {
 
   @Put('/profile/:id/unsuspend')
   @UseGuards(AuthGuard('jwt'))
+  @Permissions('caregiver:suspend')
   @UseFilters(ExceptionsLoggerFilter)
   async unsuspendCaregiver(@Param('id') id: string) {
     return this.caregiverService.unsuspendCaregiver(id);
@@ -154,6 +160,7 @@ export class CaregiverController {
 
   @Put('/application/:id/status')
   @UseGuards(AuthGuard('jwt'))
+  @Permissions('caregiver:update')
   @UseFilters(ExceptionsLoggerFilter)
   async updateCaregiverApplicationStatus(
     @Param('id') id: string,

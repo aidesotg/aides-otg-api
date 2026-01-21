@@ -14,15 +14,17 @@ export class PermissionsGuard implements CanActivate {
       context.getHandler(),
     );
 
-    const userPermissions = context.getArgs()[0].user.permissions;
+    const user = context.getArgs()[0].user;
+    const isAdmin = user.roles.map((role) => role.name == 'Super Admin');
 
-    if (!routePermissions) {
+    if (!routePermissions?.length || isAdmin) {
       return true;
     }
 
+
     const hasPermission = () =>
       routePermissions.every((routePermission) =>
-        userPermissions.includes(routePermission),
+        user.permissions.includes(routePermission),
       );
 
     return hasPermission();

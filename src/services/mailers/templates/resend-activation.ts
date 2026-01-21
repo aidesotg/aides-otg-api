@@ -26,9 +26,15 @@ class ResendActivationMail implements Imail {
       body: {
         title: `Hi`,
         intro: [
-          `please use this token to complete your registration, token expires in 4 hours`,
+          `Please use the verification code below:`,
+
           `<b>${this.token}</b>`,
+
+          `Enter this code on the verification page to complete your registration.`,
+          `This code will expire in 20 minutes.`,
         ],
+        outro: [`Best regards`, `The AidesOnTheGo Team`],
+        signature: false,
       },
     };
 

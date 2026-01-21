@@ -12,12 +12,12 @@ export class RolePermissionSeeder implements Seeder {
     private permissionRepository: Model<Permission>,
     @InjectModel('RolePermission')
     private roleAndPermissionRepository: Model<RolePermission>,
-  ) {}
+  ) { }
   async seed(): Promise<any> {
     const permissions = await this.permissionRepository.find();
 
     const role = await this.roleRepository.findOne({
-      name: 'super-admin',
+      name: 'Super Admin',
     });
     if (role) {
       for (const permission of permissions) {

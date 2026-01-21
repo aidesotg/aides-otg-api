@@ -26,10 +26,17 @@ class RegistrationMail implements Imail {
       body: {
         title: `Hi,`,
         intro: [
-          "Welcome to AidesOnTheGo! We're very excited to have you on board.",
-          `Please use this token to complete your registration, token expires in 4 hours`,
+          `Thank you for choosing AidesOnTheGo! To complete your registration, please use the verification code below:`,
+
           `<b>${this.token}</b>`,
+
+          `Enter this code on the verification page to complete your registration.`,
+          `This code will expire in 20 minutes.`,
+
+          `Welcome to smarter caregiver services!`,
         ],
+        outro: [`Best regards`, `The AidesOnTheGo Team`],
+        signature: false,
       },
     };
 

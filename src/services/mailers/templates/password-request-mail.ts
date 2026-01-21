@@ -30,8 +30,9 @@ class PasswordRequestMail implements Imail {
           `<b>${this.token}</b>`,
         ],
         outro:
-          "If you didn't initiate this request, ignore this mail or contact admin to verify your account status",
+          "If you didn't initiate this request, ignore this mail or contact our support team to verify your account status",
       },
+      signature: false,
     };
 
     return this.body;

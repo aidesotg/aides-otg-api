@@ -14,11 +14,12 @@ import { ApiTags } from '@nestjs/swagger';
 import { UpdateContentDto } from '../dto/update-content.dto';
 import { TermsService } from '../services/terms.service';
 import { ExceptionsLoggerFilter } from 'src/framework/exceptions/exceptionLogger.filter';
+import { Permissions } from 'src/framework/decorators/permissions.decorator';
 
 @ApiTags('terms')
 @Controller('terms')
 export class TermsController {
-  constructor(private readonly termsService: TermsService) {}
+  constructor(private readonly termsService: TermsService) { }
 
   @Get('/')
   async getTerms(@Query('type') type: string) {
@@ -42,6 +43,7 @@ export class TermsController {
 
   @Post('/create')
   @UseGuards(AuthGuard('jwt'))
+  @Permissions('terms:create')
   @UseFilters(ExceptionsLoggerFilter)
   async createTerms(@Body() body: Partial<UpdateContentDto>) {
     return this.termsService.createTerms(body);
@@ -49,6 +51,7 @@ export class TermsController {
 
   @Put('/update')
   @UseGuards(AuthGuard('jwt'))
+  @Permissions('terms:update')
   @UseFilters(ExceptionsLoggerFilter)
   async updateTerms(@Body() body: UpdateContentDto) {
     return this.termsService.updateTerms(body);
@@ -56,6 +59,7 @@ export class TermsController {
 
   @Put('/:type/update')
   @UseGuards(AuthGuard('jwt'))
+  @Permissions('terms:update')
   @UseFilters(ExceptionsLoggerFilter)
   async updateTypeTerms(
     @Body() body: UpdateContentDto,

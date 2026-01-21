@@ -27,9 +27,14 @@ class AdminLoginMail implements Imail {
         title: `Hi ${this.user.first_name} ${this.user.last_name}`,
         intro: [
           `A new login attempt was noticed on your account, use this token to verify that attempt`,
+
           `<b>${this.token}</b>`,
+
+          `Enter this code on the verification page to complete your login attempt.`,
+          `This code will expire in 4 hours.`,
         ],
-        outro: "If you didn't initiate this attempt, ignore this mail",
+        outro: [`Best regards`, `The AidesOnTheGo Team`],
+        signature: false,
       },
     };
 
