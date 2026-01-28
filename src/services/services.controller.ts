@@ -46,7 +46,7 @@ export class ServicesController {
     private miscService: MiscCLass,
     private twilioService: TwilioService,
     private redisService: RedisService,
-  ) {}
+  ) { }
 
   @Get('file/presign-url')
   @UseGuards(AuthGuard('jwt'))
@@ -457,7 +457,7 @@ export class ServicesController {
         answerOnBridge: true,
         timeout: 30,
         record: 'record-from-ringing-dual',
-        recordingStatusCallback: `${process.env.APP_URL}/recording-events`,
+        recordingStatusCallback: `${process.env.APP_URL}/services/twilio/recording-events`,
         recordingStatusCallbackEvent: [
           'in-progress',
           'completed',
@@ -476,5 +476,12 @@ export class ServicesController {
 
     res.type('text/xml');
     res.send(vr.toString());
+  }
+
+  @Post('twilio/recording-events')
+  async handleRecordingEvents(@Req() req: Request, @Res() res: Response) {
+    console.log('🚀 ~ ServicesController ~ handleRecordingEvents ~ req:', req.body);
+    return this.twilioService.handleCallRecordingCallback(req.body);
+
   }
 }

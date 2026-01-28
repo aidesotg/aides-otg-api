@@ -18,6 +18,7 @@ import { ServiceSchema } from '../service/schema/service.schema';
 import { WalletModule } from '../wallet/wallet.module';
 import { TransactionSchema } from '../wallet/schema/transaction.schema';
 import { RateSettingsSchema } from '../rate/schema/rate-settings.schema';
+import { CallRecordingSchema } from './schema/call-recordings.schema';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { RateSettingsSchema } from '../rate/schema/rate-settings.schema';
       { name: 'Service', schema: ServiceSchema },
       { name: 'Transaction', schema: TransactionSchema },
       { name: 'RateSettings', schema: RateSettingsSchema },
+      { name: 'CallRecording', schema: CallRecordingSchema },
     ]),
     ServicesModule,
     NotificationModule,
@@ -44,4 +46,4 @@ import { RateSettingsSchema } from '../rate/schema/rate-settings.schema';
   providers: [ServiceRequestService],
   exports: [ServiceRequestService, ServiceRequestModule],
 })
-export class ServiceRequestModule {}
+export class ServiceRequestModule { }

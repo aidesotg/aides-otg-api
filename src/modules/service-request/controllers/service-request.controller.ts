@@ -105,6 +105,12 @@ export class ServiceRequestController {
     };
   }
 
+  @Get('/call-recordings/:dayId')
+  @UseGuards(AuthGuard('jwt'))
+  async getCallRecordings(@Param('dayId') dayId: string) {
+    return this.serviceService.getCallRecordings(dayId);
+  }
+
   @Get('/favorites')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)

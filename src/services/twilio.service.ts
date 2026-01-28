@@ -1,18 +1,27 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { CallRecording } from 'src/modules/service-request/interface/call-recording.interface';
+import { ServiceRequestDayLogs } from 'src/modules/service-request/interface/service-request-day-logs.schema';
 import { Twilio } from 'twilio';
 import * as twilio from 'twilio';
+import axios from 'axios';
 
 @Injectable()
 export class TwilioService {
   private twilioClient: Twilio;
   private readonly logger = new Logger(TwilioService.name);
 
-  constructor(private configService: ConfigService) {
+  constructor
+    (@InjectModel('CallRecording') private readonly callRecordingModel: Model<CallRecording>,
+      @InjectModel('ServiceRequestDayLogs') private readonly serviceRequestDayLogsModel: Model<ServiceRequestDayLogs>,
+      private configService: ConfigService) {
     this.twilioClient = new Twilio(
       process.env.TWILIO_ACCOUNT_SID,
       process.env.TWILIO_AUTH_TOKEN,
     );
+
   }
 
   async sendSMS(to: string, message: string) {
@@ -326,4 +335,43 @@ export class TwilioService {
   //     throw error;
   //   }
   // }
+
+  async handleCallRecordingCallback(body: any) {
+    const dayLog = await this.serviceRequestDayLogsModel.findOne({
+      call_sids: { $in: [body.CallSid] }
+    })
+    if (dayLog) {
+      const newRecording = new this.callRecordingModel({
+        dayLog: dayLog._id,
+        day_id: dayLog.day_id,
+        recording_url: body.RecordingUrl,
+        call_sid: body.CallSid,
+        recording_duration: body.RecordingDuration,
+        recording_status: body.RecordingStatus,
+      })
+
+      let response;
+      if (body.RecordingStatus === 'completed') {
+        try {
+          response = await axios.get(
+            `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Recordings/${body.RecordingSid}.mp3?RequestedChannels=1`,
+            {
+              headers: {
+                'Authorization': `Basic ${Buffer.from(`${process.env.TWILIO_API_KEY_SID}:${process.env.TWILIO_API_KEY_SECRET}`).toString('base64')}`
+              }
+            }
+          );
+          // return response.data.data;
+        } catch (err) {
+          console.log("🚀 ~ TwilioService ~ handleCallRecordingCallback ~ err:", err)
+        }
+        if (response) {
+          // const base64 = Buffer.from(response.data).toString('base64');
+          // const url = await this.awsService.uploadFile(base64, `call-recordings/${body.RecordingSid}.mp3`);
+          newRecording.recording_url = `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Recordings/${body.RecordingSid}.mp3?RequestedChannels=1`;
+          await newRecording.save();
+        }
+      }
+    }
+  }
 }

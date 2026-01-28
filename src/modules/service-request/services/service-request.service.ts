@@ -38,6 +38,7 @@ import moment from 'moment-timezone';
 import constants, { DEFAULT_TIMEZONE } from 'src/framework/constants';
 import { PoolWalletService } from 'src/modules/wallet/services/pool-wallet.service';
 import { RateSettings } from 'src/modules/rate/interface/rate-settings.interface';
+import { CallRecording } from '../interface/call-recording.interface';
 
 @Injectable()
 export class ServiceRequestService {
@@ -59,6 +60,7 @@ export class ServiceRequestService {
     @InjectModel('Favorite') private readonly favoriteModel: Model<Favorite>,
     @InjectModel('Transaction')
     private readonly transactionModel: Model<Transaction>,
+    @InjectModel('CallRecording') private readonly callRecordingModel: Model<CallRecording>,
     private miscService: MiscCLass,
     private notificationService: NotificationService,
     private redisService: RedisService,
@@ -66,7 +68,7 @@ export class ServiceRequestService {
     private walletService: WalletService,
     @Inject(forwardRef(() => PoolWalletService))
     private poolWalletService: PoolWalletService,
-  ) {}
+  ) { }
 
   private generateBookingId() {
     const timestamp = Date.now().toString().slice(-6);
@@ -177,10 +179,10 @@ export class ServiceRequestService {
       dateValue instanceof Date
         ? moment(dateValue).tz(DEFAULT_TIMEZONE)
         : moment.tz(
-            dateValue,
-            ['YYYY-MM-DD', moment.ISO_8601],
-            DEFAULT_TIMEZONE,
-          );
+          dateValue,
+          ['YYYY-MM-DD', moment.ISO_8601],
+          DEFAULT_TIMEZONE,
+        );
 
     if (!momentObj.isValid()) {
       throw new BadRequestException({
@@ -818,10 +820,9 @@ export class ServiceRequestService {
 
     await this.notificationService.sendMessage({
       user: request.created_by,
-      title: `Service Update for day: ${
-        (request as any).date_list.find((date) => date.day_id === day_id)
-          ?.day_of_week
-      }`,
+      title: `Service Update for day: ${(request as any).date_list.find((date) => date.day_id === day_id)
+        ?.day_of_week
+        }`,
       message,
       resource: 'service_request',
       resource_id: request._id.toString(),
@@ -1820,9 +1821,8 @@ export class ServiceRequestService {
     await this.notificationService.sendMessage({
       user: request.created_by,
       title: 'Request accepted',
-      message: `Your request for the following service: ${
-        (request.care_type as unknown as Service)?.name
-      } has been ${status.toLowerCase()} by the care giver`,
+      message: `Your request for the following service: ${(request.care_type as unknown as Service)?.name
+        } has been ${status.toLowerCase()} by the care giver`,
       resource: 'service_request',
       resource_id: request._id.toString(),
     });
@@ -1830,9 +1830,8 @@ export class ServiceRequestService {
     await this.notificationService.sendMessage({
       user: user,
       title: `Request ${status.toLowerCase()}`,
-      message: `You ${status.toLowerCase()} a request for the following service: ${
-        (request.care_type as unknown as Service)?.name
-      }`,
+      message: `You ${status.toLowerCase()} a request for the following service: ${(request.care_type as unknown as Service)?.name
+        }`,
       resource: 'service_request',
       resource_id: request._id.toString(),
     });
@@ -2021,9 +2020,8 @@ export class ServiceRequestService {
     await this.notificationService.sendMessage({
       user: request.created_by,
       title: 'Request cancelled',
-      message: `Your request for the following service: ${
-        (request.care_type as unknown as Service)?.name
-      } has been cancelled by the caregiver`,
+      message: `Your request for the following service: ${(request.care_type as unknown as Service)?.name
+        } has been cancelled by the caregiver`,
       resource: 'service_request',
       resource_id: request._id.toString(),
     });
@@ -2032,9 +2030,8 @@ export class ServiceRequestService {
     await this.notificationService.sendMessage({
       user: user,
       title: 'Request cancelled',
-      message: `You cancelled the following service: ${
-        (request.care_type as unknown as Service)?.name
-      }`,
+      message: `You cancelled the following service: ${(request.care_type as unknown as Service)?.name
+        }`,
       resource: 'service_request',
       resource_id: request._id.toString(),
     });
@@ -2078,9 +2075,8 @@ export class ServiceRequestService {
       await this.notificationService.sendMessage({
         user: user,
         title: 'Request cancelled',
-        message: `Your request for the following service: ${
-          (request.care_type as unknown as Service)?.name
-        } has been cancelled r`,
+        message: `Your request for the following service: ${(request.care_type as unknown as Service)?.name
+          } has been cancelled r`,
         resource: 'service_request',
         resource_id: request._id.toString(),
       });
@@ -2089,9 +2085,8 @@ export class ServiceRequestService {
       await this.notificationService.sendMessage({
         user: request.care_giver,
         title: 'Request cancelled',
-        message: `The client cancelled the following service: ${
-          (request.care_type as unknown as Service)?.name
-        }`,
+        message: `The client cancelled the following service: ${(request.care_type as unknown as Service)?.name
+          }`,
         resource: 'service_request',
         resource_id: request._id.toString(),
       });
@@ -2141,9 +2136,8 @@ export class ServiceRequestService {
     await this.notificationService.sendMessage({
       user: request.created_by,
       title: 'Request cancelled',
-      message: `Your request for the following service: ${
-        (request.care_type as unknown as Service)?.name
-      } has been cancelled`,
+      message: `Your request for the following service: ${(request.care_type as unknown as Service)?.name
+        } has been cancelled`,
       resource: 'service_request',
       resource_id: request._id.toString(),
     });
@@ -2152,9 +2146,8 @@ export class ServiceRequestService {
     await this.notificationService.sendMessage({
       user: user,
       title: 'Request cancelled',
-      message: `You cancelled the following service: ${
-        (request.care_type as unknown as Service)?.name
-      }`,
+      message: `You cancelled the following service: ${(request.care_type as unknown as Service)?.name
+        }`,
       resource: 'service_request',
       resource_id: request._id.toString(),
     });
@@ -2200,9 +2193,8 @@ export class ServiceRequestService {
       await this.walletService.credit({
         id: careGiver._id,
         amount: dayLog.payment.caregiver_payout,
-        description: `Service request day payment for ${
-          (dayLog.request as any as ServiceRequest).booking_id
-        }`,
+        description: `Service request day payment for ${(dayLog.request as any as ServiceRequest).booking_id
+          }`,
         genus: constants.transactionGenus.EARNED,
       });
     } catch (error) {
@@ -2535,6 +2527,24 @@ export class ServiceRequestService {
     return {
       status: 'success',
       message: 'Call SID saved successfully',
+    };
+  }
+
+  async getCallRecordings(dayId: string) {
+    const dayLog = await this.serviceRequestDayLogsModel.findOne({
+      $or: [{ _id: dayId }, { day_id: dayId }],
+    });
+    if (!dayLog) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'Day log not found',
+      });
+    }
+    const callRecordings = await this.callRecordingModel.find({ day_id: dayLog.day_id });
+    return {
+      status: 'success',
+      message: 'Call recordings retrieved successfully',
+      data: callRecordings,
     };
   }
 }
