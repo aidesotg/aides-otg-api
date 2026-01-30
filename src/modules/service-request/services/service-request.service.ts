@@ -589,7 +589,7 @@ export class ServiceRequestService {
       date_list: dateList,
       created_by: user._id,
       payments,
-      insurance_company: insurance.insurance_company,
+      insurance_company: insurance?.insurance_company,
     };
 
     const newRequest = new this.serviceRequestModel(data);
