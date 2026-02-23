@@ -14,6 +14,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from 'src/modules/user/schema/user.schema';
 import { CallRecordingSchema } from 'src/modules/service-request/schema/call-recordings.schema';
 import { ServiceRequestDayLogsSchema } from 'src/modules/service-request/schema/service-request-day-logs.schema';
+import { KycAidService } from './kycaid.service';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ServiceRequestDayLogsSchema } from 'src/modules/service-request/schema/
     StripeService,
     RedisService,
     TwilioService,
+    KycAidService,
   ],
   exports: [
     Mailer,
@@ -45,6 +47,7 @@ import { ServiceRequestDayLogsSchema } from 'src/modules/service-request/schema/
     StripeService,
     RedisService,
     TwilioService,
+    KycAidService,
   ],
   controllers: [ServicesController],
 })

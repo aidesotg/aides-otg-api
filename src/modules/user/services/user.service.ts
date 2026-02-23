@@ -64,6 +64,8 @@ import { StripeAccountDto } from 'src/modules/wallet/dto/stripe-account.dto';
 import { LocationUpdate, RedisService } from 'src/services/redis.service';
 import { ServiceRequest } from 'src/modules/service-request/interface/service-request.interface';
 import { ServiceRequestDayLogs } from 'src/modules/service-request/interface/service-request-day-logs.schema';
+import { KycAidService } from 'src/services/kycaid.service';
+import moment from 'moment';
 
 @Injectable()
 export class UserService {
@@ -93,9 +95,10 @@ export class UserService {
     private insuranceService: InsuranceService,
     private stripeService: StripeService,
     private redisService: RedisService,
+    private kycaidService: KycAidService,
     @Inject(forwardRef(() => WalletService))
     private walletService: WalletService,
-  ) {}
+  ) { }
 
   private async generateClientId(user: User): Promise<string> {
     return `Cli${user._id.toString().toUpperCase().slice(-10)}`;
@@ -132,9 +135,24 @@ export class UserService {
         message: 'SSN already exists for another user',
       });
     }
+    const response = await this.kycaidService.verifyEIDV({
+      first_name: user.first_name,
+      last_name: user.last_name,
+      dob: '1976-02-21',
+      ssn: ssn,
+    });
+
+    if (response < 50) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'SSN is not valid',
+        data: { score: response },
+      });
+    }
     return {
       status: 'success',
       message: 'SSN is available',
+      data: { score: response },
     };
   }
 

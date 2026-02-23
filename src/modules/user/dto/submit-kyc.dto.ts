@@ -5,7 +5,7 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
-  IsOptional,
+  IsDateString,
   IsString,
   ValidateNested,
 } from 'class-validator';
@@ -23,7 +23,7 @@ export class SubmitKycDto {
   phone: string;
 
   @ApiProperty()
-  @IsString()
+  @IsDateString()
   @IsNotEmpty()
   date_of_birth: string;
 

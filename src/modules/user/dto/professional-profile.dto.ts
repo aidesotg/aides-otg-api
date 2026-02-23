@@ -10,6 +10,7 @@ import {
   ValidateNested,
   Min,
   Max,
+  IsDateString,
 } from 'class-validator';
 import { AddressDto } from './address.dto';
 import { BankDto } from './bank.dto';
@@ -95,7 +96,7 @@ export class ProfessionalProfileDto {
 export class CreateProfessionalProfileDto {
   @ApiProperty() @IsString() first_name: string;
   @ApiProperty() @IsString() last_name: string;
-  @ApiProperty() @IsString() date_of_birth: string;
+  @ApiProperty() @IsDateString() date_of_birth: string;
   @ApiProperty() @IsString() gender: string;
   @ApiProperty() @IsString() @IsOptional() profile_picture?: string;
   @ApiProperty() @IsString() ssn: string;
