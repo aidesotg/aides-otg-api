@@ -52,6 +52,7 @@ import { LocationUpdate } from 'src/services/redis.service';
 import { AuthenticationService } from 'src/modules/authentication/services/authentication.service';
 import { Permissions } from 'src/framework/decorators/permissions.decorator';
 import { PermissionsGuard } from 'src/framework/guards/permissions.guard';
+import { CheckSSNDto } from '../dto/check-ssn.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -98,9 +99,9 @@ export class UserController {
   }
 
   @Post('/check/ssn')
-  @UseGuards(AuthGuard('jwt'))
-  async checkDuplicateSSN(@Body('ssn') ssn: string, @AuthUser() user: any) {
-    return this.userService.checkDuplicateSSN(user, ssn);
+  // @UseGuards(OptionalAuthGuard)
+  async checkDuplicateSSN(@Body() body: CheckSSNDto) {
+    return this.userService.checkDuplicateSSN(body);
   }
 
   @Post('/check/phone')

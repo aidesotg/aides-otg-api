@@ -66,6 +66,7 @@ import { ServiceRequest } from 'src/modules/service-request/interface/service-re
 import { ServiceRequestDayLogs } from 'src/modules/service-request/interface/service-request-day-logs.schema';
 import { KycAidService } from 'src/services/kycaid.service';
 import moment from 'moment';
+import { CheckSSNDto } from '../dto/check-ssn.dto';
 
 @Injectable()
 export class UserService {
@@ -127,19 +128,19 @@ export class UserService {
     }
   }
 
-  async checkDuplicateSSN(user: User, ssn: string) {
-    const userSSNExists = await this.userModel.findOne({ ssn });
-    if (userSSNExists && userSSNExists._id.toString() !== user._id.toString()) {
+  async checkDuplicateSSN(body: CheckSSNDto) {
+    const userSSNExists = await this.userModel.findOne({ ssn: body.ssn });
+    if (userSSNExists) {
       throw new BadRequestException({
         status: 'error',
         message: 'SSN already exists for another user',
       });
     }
     const response = await this.kycaidService.verifyEIDV({
-      first_name: user.first_name,
-      last_name: user.last_name,
-      dob: '1976-02-21',
-      ssn: ssn,
+      first_name: body.first_name,
+      last_name: body.last_name,
+      dob: body.dob,
+      ssn: body.ssn,
     });
 
     if (response < 50) {
@@ -585,7 +586,7 @@ export class UserService {
       });
     }
 
-    if (data.ssn) await this.checkDuplicateSSN(userDetails, data.ssn);
+    if (data.ssn && data.ssn !== userDetails.ssn) await this.checkDuplicateSSN({ ssn: data.ssn, first_name: userDetails.first_name, last_name: userDetails.last_name, dob: userDetails.date_of_birth });
 
     for (const value in data) {
       if (value) {
