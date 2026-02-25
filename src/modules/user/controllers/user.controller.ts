@@ -486,7 +486,7 @@ export class UserController {
     return this.userService.deactivateUser(user);
   }
 
-  @Put('/')
+  @Put('/delete')
   @UseGuards(AuthGuard('jwt'))
   @UseFilters(ExceptionsLoggerFilter)
   async deleteUser(@AuthUser() user: any, @Body() body: DeleteAccountDto) {

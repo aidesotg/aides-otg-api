@@ -845,8 +845,8 @@ export class UserService {
     }
 
     userDetails.isDeleted = true;
-    userDetails.reason = body.reason;
-    userDetails.comment = body.comment;
+    if (body.reason) userDetails.reason = body.reason;
+    if (body.comment) userDetails.comment = body.comment;
     await userDetails.save();
 
     //TODO handle delete properly
@@ -1465,4 +1465,6 @@ export class UserService {
     }
     return userDetails.roles.some((role) => role.name === 'admin');
   }
+
+
 }

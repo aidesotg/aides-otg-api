@@ -67,6 +67,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       });
     }
 
+    if (user.isDeleted) {
+      throw new UnauthorizedException({
+        status: 'error',
+        message: 'Account not found',
+      });
+    }
+
     if (user.status === 'suspended') {
       throw new UnauthorizedException({
         status: 'error',
